@@ -120,37 +120,39 @@ class Puzzle:
 					self.createEdge((y,x), (y-1,x), Direction.UP)
 
 
-	def addOuterNib(self, singlePieceImgData, singlePieceWidth, nibHeight):
+	def addOuterNib(self, singlePieceImgData, xAxisLengthPostRotation, nibHeight):
 		# Use square nibs for now
 		nibWidth = nibHeight
 
-		boxWidth = math.floor((singlePieceWidth - nibWidth) / 2)
+		boxWidth = math.floor((xAxisLengthPostRotation - nibWidth) / 2)
 		singlePieceImgData[0:nibHeight, 0:boxWidth] = (0, 0, 0)
-		singlePieceImgData[0:nibHeight, singlePieceWidth - boxWidth : singlePieceWidth] = (0, 0, 0)
+		singlePieceImgData[0:nibHeight, boxWidth + nibWidth : xAxisLengthPostRotation] = (0, 0, 0)
 
 		return singlePieceImgData
 
-	def addInnerNib(self, singlePieceImgData, singlePieceWidth, nibHeight):
+	def addInnerNib(self, singlePieceImgData, xAxisLengthPostRotation, nibHeight):
 		# Use square nibs for now
 		nibWidth = nibHeight
 
-		boxWidth = math.floor((singlePieceWidth - nibWidth) / 2)
-		singlePieceImgData[0:nibHeight, 0:singlePieceWidth] = (0, 0, 0)
-		singlePieceImgData[nibHeight:2 * nibHeight, boxWidth : singlePieceWidth - boxWidth ] = (0, 0, 0)
+		boxWidth = math.floor((xAxisLengthPostRotation - nibWidth) / 2)
+		singlePieceImgData[0:nibHeight, 0:xAxisLengthPostRotation] = (0, 0, 0)
+		singlePieceImgData[nibHeight:2 * nibHeight, boxWidth : boxWidth + nibWidth ] = (0, 0, 0)
 
 		return singlePieceImgData
 
-	def addNibs(self, singlePieceImgData, singlePieceWidth, coords, nibHeight):
+	def addNibs(self, singlePieceImgData, singlePieceDimensions, coords, nibHeight):
 		x, y = coords
+		singlePieceWidth, singlePieceHeight = singlePieceDimensions
 
 		for direction in Direction.GetAllDirections():
+			xAxisLengthPostRotation = singlePieceHeight if (direction.value % 2) else singlePieceWidth
 			if (self.piecesArray[y][x].getEdgeGeometry(direction) == EdgeShape.OUT):
 				singlePieceImgData = np.rot90(singlePieceImgData, direction.value)
-				singlePieceImgData = self.addOuterNib(singlePieceImgData, singlePieceWidth, nibHeight)
+				singlePieceImgData = self.addOuterNib(singlePieceImgData, xAxisLengthPostRotation, nibHeight)
 				singlePieceImgData = np.rot90(singlePieceImgData, 4 - direction.value)
 			elif (self.piecesArray[y][x].getEdgeGeometry(direction) == EdgeShape.IN):
 				singlePieceImgData = np.rot90(singlePieceImgData, direction.value)
-				singlePieceImgData = self.addInnerNib(singlePieceImgData, singlePieceWidth, nibHeight)
+				singlePieceImgData = self.addInnerNib(singlePieceImgData, xAxisLengthPostRotation, nibHeight)
 				singlePieceImgData = np.rot90(singlePieceImgData, 4 - direction.value)
 		# print(singlePieceImgData)
 
@@ -181,7 +183,7 @@ class Puzzle:
 
 				singlePieceImgData = paddedImageArray[y1 + nibHeight : y2 + nibHeight, x1 + nibHeight : x2 + nibHeight].copy()
 
-				singlePieceImgData = self.addNibs(singlePieceImgData, singlePieceWidth, (x, y), nibHeight)
+				singlePieceImgData = self.addNibs(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
 				singlePieceImgData = np.pad(singlePieceImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_values = (255))
 				
 				if singlePuzzleCol is not None:
