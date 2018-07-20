@@ -30,12 +30,14 @@ class Direction(Enum):
 	def GetComplement(direction):
 		if (direction == Direction.UP):
 			direction = Direction.DOWN
-		if (direction == Direction.DOWN):
+		elif (direction == Direction.DOWN):
 			direction = Direction.UP
-		if (direction == Direction.RIGHT):
+		elif (direction == Direction.RIGHT):
 			direction = Direction.LEFT
-		if (direction == Direction.LEFT):
+		elif (direction == Direction.LEFT):
 			direction = Direction.RIGHT
+
+		return direction
 
 	def GetAllDirections():
 		return [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
@@ -89,11 +91,22 @@ class Puzzle:
 		self.piecesArray[piece0Coords[0]][piece0Coords[1]].setEdgeGeometry(p0EdgeDirection, p0EdgeShape)
 		self.piecesArray[piece1Coords[0]][piece1Coords[1]].setEdgeGeometry(p1EdgeDirection, p1EdgeShape)
 
+		# print("New edge")
+		# print(piece0Coords)
+		# print(p0EdgeShape)
+		# print(self.piecesArray[piece0Coords[0]][piece0Coords[1]].getEdgeGeometry(p0EdgeDirection))
+		# print(p0EdgeDirection)
+
+		# print("Compliment edge")
+		# print(piece1Coords)
+		# print(p1EdgeShape)
+		# print(self.piecesArray[piece1Coords[0]][piece1Coords[1]].getEdgeGeometry(p1EdgeDirection))
+		# print(p1EdgeDirection)
+
 	def generatePuzzleGeometry(self, xNumPieces, yNumPieces):
 		self.piecesArray = [[PuzzlePiece((y, x)) for x in range(xNumPieces)] for y in range(yNumPieces)]
 		for x in range(xNumPieces):
 			for y in range(yNumPieces):
-				self.piecesArray[y][x] = PuzzlePiece((y, x))
 				if (x < (xNumPieces - 1)):
 					self.createEdge((y,x), (y,x+1), Direction.RIGHT)
 
@@ -116,7 +129,7 @@ class Puzzle:
 
 		boxWidth = math.floor((singlePieceWidth - nibWidth) / 2)
 		singlePieceImgData[0:nibHeight, 0:boxWidth] = (0, 0, 0)
-		singlePieceImgData[0:nibHeight, singlePieceWidth - boxWidth : singlePieceWidth ] = (0, 0, 0)
+		singlePieceImgData[0:nibHeight, singlePieceWidth - boxWidth : singlePieceWidth] = (0, 0, 0)
 
 		return singlePieceImgData
 
@@ -172,15 +185,20 @@ class Puzzle:
 				y1 = (y * imgSliceHeight) - nibHeight
 				y2 = y1 + singlePieceHeight
 
-				singlePieceImgData = paddedImageArray[y1 + nibHeight : y2 + nibHeight, x1 + nibHeight : x2 + nibHeight]
+				singlePieceImgData = paddedImageArray[y1 + nibHeight : y2 + nibHeight, x1 + nibHeight : x2 + nibHeight].copy()
 
-				singlePieceWithNibsImgData = self.addNibs(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
-				paddedImagePiece = np.pad(singlePieceWithNibsImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_values = (255))
+				singlePieceImgData = self.addNibs(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
+				singlePieceImgData = np.pad(singlePieceImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_values = (255))
 				
 				if singlePuzzleCol is not None:
-					singlePuzzleCol = np.concatenate((singlePuzzleCol, paddedImagePiece), 0)
+					singlePuzzleCol = np.concatenate((singlePuzzleCol, singlePieceImgData), 0)
 				else:
-					singlePuzzleCol = paddedImagePiece
+					singlePuzzleCol = singlePieceImgData
+
+				
+				# imgDisp = Image.fromarray(singlePieceImgData, 'RGB')
+				# imgDisp.show()
+				# input("continue")
 
 
 			if finalImagePiece is not None:					
@@ -193,11 +211,7 @@ class Puzzle:
 				# piecesArray[x, y].imgData
 		imgDisp = Image.fromarray(finalImagePiece, 'RGB')
 		imgDisp.show()
-		aaa
 
-			# piecesArray[x, y].imgData
-		imgDisp = Image.fromarray(paddedImageArray, 'RGB')
-		imgDisp.show()
 
 	def generatePuzzle(self):
 		# Read in image
