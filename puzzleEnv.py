@@ -120,10 +120,7 @@ class Puzzle:
 					self.createEdge((y,x), (y-1,x), Direction.UP)
 
 
-	def addOuterNib(self, singlePieceImgData, singlePieceDimensions, coords, nibHeight):
-		x, y = coords
-		singlePieceWidth, singlePieceHeight = singlePieceDimensions
-
+	def addOuterNib(self, singlePieceImgData, singlePieceWidth, nibHeight):
 		# Use square nibs for now
 		nibWidth = nibHeight
 
@@ -133,10 +130,7 @@ class Puzzle:
 
 		return singlePieceImgData
 
-	def addInnerNib(self, singlePieceImgData, singlePieceDimensions, coords, nibHeight):
-		x, y = coords
-		singlePieceWidth, singlePieceHeight = singlePieceDimensions
-
+	def addInnerNib(self, singlePieceImgData, singlePieceWidth, nibHeight):
 		# Use square nibs for now
 		nibWidth = nibHeight
 
@@ -145,18 +139,18 @@ class Puzzle:
 		singlePieceImgData[nibHeight:2 * nibHeight, boxWidth : singlePieceWidth - boxWidth ] = (0, 0, 0)
 
 		return singlePieceImgData
-	def addNibs(self, singlePieceImgData, singlePieceDimensions, coords, nibHeight):
+
+	def addNibs(self, singlePieceImgData, singlePieceWidth, coords, nibHeight):
 		x, y = coords
-		singlePieceWidth, singlePieceHeight = singlePieceDimensions
 
 		for direction in Direction.GetAllDirections():
 			if (self.piecesArray[y][x].getEdgeGeometry(direction) == EdgeShape.OUT):
 				singlePieceImgData = np.rot90(singlePieceImgData, direction.value)
-				singlePieceImgData = self.addOuterNib(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
+				singlePieceImgData = self.addOuterNib(singlePieceImgData, singlePieceWidth, nibHeight)
 				singlePieceImgData = np.rot90(singlePieceImgData, 4 - direction.value)
 			elif (self.piecesArray[y][x].getEdgeGeometry(direction) == EdgeShape.IN):
 				singlePieceImgData = np.rot90(singlePieceImgData, direction.value)
-				singlePieceImgData = self.addInnerNib(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
+				singlePieceImgData = self.addInnerNib(singlePieceImgData, singlePieceWidth, nibHeight)
 				singlePieceImgData = np.rot90(singlePieceImgData, 4 - direction.value)
 		# print(singlePieceImgData)
 
@@ -187,7 +181,7 @@ class Puzzle:
 
 				singlePieceImgData = paddedImageArray[y1 + nibHeight : y2 + nibHeight, x1 + nibHeight : x2 + nibHeight].copy()
 
-				singlePieceImgData = self.addNibs(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
+				singlePieceImgData = self.addNibs(singlePieceImgData, singlePieceWidth, (x, y), nibHeight)
 				singlePieceImgData = np.pad(singlePieceImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_values = (255))
 				
 				if singlePuzzleCol is not None:
