@@ -169,11 +169,8 @@ class Puzzle:
 		imgSliceHeight = math.floor(imgHeight / yNumPieces)
 		singlePieceHeight = imgSliceHeight  + 2 * nibHeight 
 		paddedImageArray = np.pad(imageArray, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant')
-		# print(paddedImageArray)
 
-		finalImagePiece = None
 		for x in range(xNumPieces):
-			singlePuzzleCol = None
 			for y in range(yNumPieces):
 				x1 = (x * imgSliceWidth) - nibHeight
 				x2 = x1 + singlePieceWidth
@@ -186,28 +183,25 @@ class Puzzle:
 				singlePieceImgData = self.addNibs(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
 				singlePieceImgData = np.pad(singlePieceImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_values = (255))
 				
+				self.piecesArray[y][x].imgData = singlePieceImgData
+
+	def displayPuzzlePieces(self):
+		finalImagePiece = None
+		for x in range(self.xNumPieces):
+			singlePuzzleCol = None
+			for y in range(self.yNumPieces):
 				if singlePuzzleCol is not None:
-					singlePuzzleCol = np.concatenate((singlePuzzleCol, singlePieceImgData), 0)
+					singlePuzzleCol = np.concatenate((singlePuzzleCol, self.piecesArray[y][x].imgData), 0)
 				else:
-					singlePuzzleCol = singlePieceImgData
-
-				
-				# imgDisp = Image.fromarray(singlePieceImgData, 'RGB')
-				# imgDisp.show()
-				# input("continue")
-
+					singlePuzzleCol = self.piecesArray[y][x].imgData
 
 			if finalImagePiece is not None:					
 				finalImagePiece = np.concatenate((finalImagePiece, singlePuzzleCol), 1)
 			else:
 				finalImagePiece = singlePuzzleCol
-				# print(singlePieceWidth)
-				# print(singlePieceHeight)
-				# print(imgData.shape)
-				# piecesArray[x, y].imgData
+
 		imgDisp = Image.fromarray(finalImagePiece, 'RGB')
 		imgDisp.show()
-
 
 	def generatePuzzle(self):
 		# Read in image
@@ -219,6 +213,8 @@ class Puzzle:
 
 		# Break the image array into each piece
 		self.breakImageToPieces(self.xNumPieces, self.yNumPieces,im_array)
+
+		self.displayPuzzlePieces()
 
 def main():
 	puzzle = Puzzle('zambia_map.jpg',4, 4)
