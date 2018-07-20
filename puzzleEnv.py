@@ -1,7 +1,8 @@
 from enum import Enum
+from PIL import Image
 import numpy as np
 import random
-
+import math
 class EdgeShape(Enum):
 	STRAIGHT = 0
 	IN = 1
@@ -34,7 +35,8 @@ class Direction(Enum):
 
 
 class PuzzlePiece:
-	
+	NIB_PERCENT = 10 / 100
+
 	def init(self, imgData, coords):
 		self.imgData = imgData # tbd
 		self.coords = coords
@@ -76,30 +78,67 @@ class Puzzle:
 		piecesArray[piece0Coords].setEdgeGeometry(p0EdgeDirection, p0EdgeShape)
 		piecesArray[piece1Coords].setEdgeGeometry(p1EdgeDirection, p1EdgeShape)
 
-	def generatePuzzleGeometry(self, puzzleWidth, puzzleHeight):
-		self.piecesArray = numpy.zeros(shape=(puzzleWidth,puzzleHeight))
-		for x in puzzleWidth:
-			for y in puzzleHeight:
+	def generatePuzzleGeometry(self, xNumPieces, yNumPieces):
+		self.piecesArray = numpy.zeros(shape=(xNumPieces,yNumPieces))
+		for x in xNumPieces:
+			for y in yNumPieces:
 				piecesArray[x, y].coords = (x, y)
-				if (x < (puzzleWidth - 1)):
+				if (x < (xNumPieces - 1)):
 					createEdge((x,y), (x+1,y), Direction.RIGHT)
 
 				if (x > 0):
 					createEdge((x,y), (x-1,y), Direction.LEFT)
 
-				if (y < (puzzleWidth - 1)):
+				if (y < (xNumPieces - 1)):
 					createEdge((x,y), (x,y+1), Direction.DOWN)
 
 				if (y > 0):
 					createEdge((x,y), (x,y-1), Direction.UP)
 
-    # def breakImageToPieces(self, puzzleWidth, puzzleHeight, image):
-    #     generatePuzzleGeometry(puzzleWidth, puzzleHeight)
- 
+	def breakImageToPieces(xNumPieces, yNumPieces, imageArray):
+		# image = Image.open(input)
+		# pad = 4 #pixels
+		# padded_array = np.pad(im_array, ((pad,pad+1),(pad,pad+1),(0,0)), 'constant')
+        # generatePuzzleGeometry(xNumPieces, yNumPieces)
+
+		imgWidth, imgHeight, rgb = imageArray.shape
+
+		nibHeight = math.floor((imgWidth / xNumPieces) * PuzzlePiece.NIB_PERCENT)
+		imgSliceWidth = math.floor(imgWidth / xNumPieces) 
+		singlePieceWidth = imgSliceWidth + 2 * nibHeight
+		
+		imgSliceHeight = math.floor(imgHeight / yNumPieces)
+		singlePieceHeight = imgSliceHeight  + 2 * nibHeight 
+		paddedImageArray = np.pad(imageArray, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant')
+		# print(paddedImageArray)
+
+		for x in range(xNumPieces):
+			for y in range(yNumPieces):
+				x1 = (x * imgSliceWidth) - nibHeight
+				x2 = x1 + singlePieceWidth
+
+				y1 = (y * imgSliceHeight) - nibHeight
+				y2 = y1 + singlePieceHeight
+
+				imgData = paddedImageArray[y1 + nibHeight : y2 + nibHeight, x1 + nibHeight : x2 + nibHeight]
+				# print(singlePieceWidth)
+				# print(singlePieceHeight)
+				# print(imgData.shape)
+				# piecesArray[x, y].imgData
+				# imgDisp = Image.fromarray(imgData, 'RGB')
+				# imgDisp.show()
+				# aaa
+
+			# piecesArray[x, y].imgData
+		imgDisp = Image.fromarray(paddedImageArray, 'RGB')
+		imgDisp.show()
 
 def main():
+	image = Image.open('zambia_map.jpg')
+	im_array = np.array(image)
 
-    return
+	Puzzle.breakImageToPieces(4,4,im_array)
+	return
 
 if __name__ == "__main__":
     main()
