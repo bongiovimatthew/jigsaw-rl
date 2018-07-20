@@ -72,12 +72,18 @@ class PuzzlePiece:
 
 
 class Puzzle:
+	NUMBER_OF_PIECES_TO_SCALE_BY = 4
 
 	def __init__(self, imgLocation, xNumPieces, yNumPieces):
+
 		self.imgFileName = imgLocation
 		self.xNumPieces = xNumPieces
 		self.yNumPieces = yNumPieces
+
+		# These are built out by generatePuzzle
 		self.piecesArray = None
+		self.listOfPiecesAvailable = None
+		self.puzzleBoard = None
 
 	def createEdge(self, piece0Coords, piece1Coords, p0EdgeDirection):
 		if (self.piecesArray[piece0Coords[0]][piece0Coords[1]].getEdgeGeometry(p0EdgeDirection) != EdgeShape.STRAIGHT):
@@ -103,7 +109,7 @@ class Puzzle:
 		# print(self.piecesArray[piece1Coords[0]][piece1Coords[1]].getEdgeGeometry(p1EdgeDirection))
 		# print(p1EdgeDirection)
 
-	def generatePuzzleGeometry(self, xNumPieces, yNumPieces):
+	def generatePuzzlePieceGeometry(self, xNumPieces, yNumPieces):
 		self.piecesArray = [[PuzzlePiece((y, x)) for x in range(xNumPieces)] for y in range(yNumPieces)]
 		for x in range(xNumPieces):
 			for y in range(yNumPieces):
@@ -158,7 +164,7 @@ class Puzzle:
 
 		return singlePieceImgData
 
-
+	# Returns the size of a single piece
 	def breakImageToPieces(self, xNumPieces, yNumPieces, imageArray):
 		imgHeight, imgWidth, rgb = imageArray.shape
 		nibHeight = math.floor((imgWidth / xNumPieces) * PuzzlePiece.NIB_PERCENT)
@@ -185,8 +191,18 @@ class Puzzle:
 				
 				self.piecesArray[y][x].imgData = singlePieceImgData
 
-	def displayPuzzlePieces(self):
-		finalImagePiece = None
+		return (singlePieceWidth, singlePieceHeight)
+
+	def createPuzzleBoard(self, singlePieceWidth, singlePieceHeight):
+		self.puzzleBoard = np.zeros((singlePieceHeight * self.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, singlePieceWidth * self.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3))
+		return
+
+	def createPuzzlePieceArray(self):
+		self.listOfPiecesAvailable = [self.piecesArray[y][x] for y in range(self.yNumPieces) for x in range(self.xNumPieces)]
+		return
+	
+	def getPiecesAsOneBigImage(self):
+		finalImagePieces = None
 		for x in range(self.xNumPieces):
 			singlePuzzleCol = None
 			for y in range(self.yNumPieces):
@@ -195,13 +211,44 @@ class Puzzle:
 				else:
 					singlePuzzleCol = self.piecesArray[y][x].imgData
 
-			if finalImagePiece is not None:					
-				finalImagePiece = np.concatenate((finalImagePiece, singlePuzzleCol), 1)
+			if finalImagePieces is not None:					
+				finalImagePieces = np.concatenate((finalImagePieces, singlePuzzleCol), 1)
 			else:
-				finalImagePiece = singlePuzzleCol
+				finalImagePieces = singlePuzzleCol
 
-		imgDisp = Image.fromarray(finalImagePiece, 'RGB')
+		return finalImagePieces
+
+	def displayPuzzlePieces(self):
+		finalImagePieces = self.getPiecesAsOneBigImage()
+		imgDisp = Image.fromarray(finalImagePieces, 'RGB')
 		imgDisp.show()
+
+	def concatImages(self, img1, img2):
+		PADDING = 20
+
+		img1Width, img1Height = img1.size[:2]
+		img2Width, img2Height = img2.size[:2]
+
+		maxHeight = np.max([img1Height, img2Height]) + PADDING
+		totalWidth = img1Width+img2Width + PADDING
+
+		newImage = Image.new('RGB', (totalWidth, maxHeight), color=(255,255,255))
+		newImage.paste(img1, (PADDING, int((maxHeight - img1Height)/2))) 
+		newImage.paste(img2, (img1Width + PADDING, int((maxHeight - img2Height)/2))) 
+
+		return newImage
+
+	def displayPuzzle(self):
+		IMAGE_SCALE_RATIO = 4
+
+		puzzleBoardImg = Image.fromarray(self.puzzleBoard, 'RGB')
+		puzzleBoardImg = puzzleBoardImg.resize((math.floor(self.puzzleBoard.shape[1] / IMAGE_SCALE_RATIO), math.floor(self.puzzleBoard.shape[0] / IMAGE_SCALE_RATIO)))
+
+		finalImagePiecesArr = self.getPiecesAsOneBigImage()
+		imgPieces = Image.fromarray(finalImagePiecesArr, 'RGB')
+
+		finalPuzzleBoard = self.concatImages(puzzleBoardImg, imgPieces)
+		finalPuzzleBoard.show()
 
 	def generatePuzzle(self):
 		# Read in image
@@ -209,12 +256,18 @@ class Puzzle:
 		im_array = np.array(image)
 
 		# Generate the nibs that we want to use
-		self.generatePuzzleGeometry(self.xNumPieces, self.yNumPieces)
+		self.generatePuzzlePieceGeometry(self.xNumPieces, self.yNumPieces)
 
 		# Break the image array into each piece
-		self.breakImageToPieces(self.xNumPieces, self.yNumPieces,im_array)
+		singlePieceWidth, singlePieceHeight = self.breakImageToPieces(self.xNumPieces, self.yNumPieces, im_array)
 
-		self.displayPuzzlePieces()
+		self.createPuzzleBoard(singlePieceWidth, singlePieceHeight)
+
+		# Display the puzzle pieces
+		# self.displayPuzzlePieces()
+		
+		self.displayPuzzle()
+
 
 def main():
 	puzzle = Puzzle('zambia_map.jpg',4, 4)
