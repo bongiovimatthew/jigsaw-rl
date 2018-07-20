@@ -13,12 +13,12 @@ class EdgeShape(Enum):
 	OUT = 2
 
 	def GetComplement(edgeShape):
-		if (edgeShape == STRAIGHT):
-			return STRAIGHT
-		if (edgeShape == IN):
-			return OUT
+		if (edgeShape == EdgeShape.STRAIGHT):
+			return EdgeShape.STRAIGHT
+		if (edgeShape == EdgeShape.IN):
+			return EdgeShape.OUT
 
-		return IN
+		return EdgeShape.IN
 
 
 class Direction(Enum):
@@ -28,17 +28,17 @@ class Direction(Enum):
 	LEFT = 3
 
 	def GetComplement(direction):
-		if (direction == UP):
-			direction = DOWN
-		if (direction == DOWN):
-			direction = UP
-		if (direction == RIGHT):
-			direction = LEFT
-		if (direction == LEFT):
-			direction = RIGHT
+		if (direction == Direction.UP):
+			direction = Direction.DOWN
+		if (direction == Direction.DOWN):
+			direction = Direction.UP
+		if (direction == Direction.RIGHT):
+			direction = Direction.LEFT
+		if (direction == Direction.LEFT):
+			direction = Direction.RIGHT
 
 	def GetAllDirections():
-		return [UP, RIGHT, DOWN, LEFT]
+		return [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
 
 class PuzzlePiece:
 	NIB_PERCENT = 10 / 100
@@ -50,32 +50,32 @@ class PuzzlePiece:
 
 	def getEdgeGeometry(self, direction):
 		if direction == Direction.UP:
-			return EdgeShape(int(bin(self.edgeGeometry)[2:][6:8], 2))
+			return EdgeShape(int('{0:08b}'.format(self.edgeGeometry)[6:8], 2))
 		elif direction == Direction.RIGHT:
-			return EdgeShape(int(bin(self.edgeGeometry)[2:][4:6], 2))
+			return EdgeShape(int('{0:08b}'.format(self.edgeGeometry)[4:6], 2))
 		elif direction == Direction.DOWN:
-			return EdgeShape(int(bin(self.edgeGeometry)[2:][2:4], 2))
+			return EdgeShape(int('{0:08b}'.format(self.edgeGeometry)[2:4], 2))
 		elif direction == Direction.LEFT:
-			return EdgeShape(int(bin(self.edgeGeometry)[2:][0:2], 2))
+			return EdgeShape(int('{0:08b}'.format(self.edgeGeometry)[0:2], 2))
 
 	def setEdgeGeometry(self, direction, edgeShape):
-		if direction == UP:
-			edgeGeometry = edgeGeometry | (edgeShape)
-		elif direction == RIGHT:
-			edgeGeometry = edgeGeometry | (edgeShape << 2)
-		elif direction == DOWN:
-			edgeGeometry = edgeGeometry | (edgeShape << 4)
-		elif direction == LEFT:
-			edgeGeometry = edgeGeometry | (edgeShape << 6)
+		if direction == Direction.UP:
+			self.edgeGeometry = self.edgeGeometry | (edgeShape.value)
+		elif direction == Direction.RIGHT:
+			self.edgeGeometry = self.edgeGeometry | (edgeShape.value << 2)
+		elif direction == Direction.DOWN:
+			self.edgeGeometry = self.edgeGeometry | (edgeShape.value << 4)
+		elif direction == Direction.LEFT:
+			self.edgeGeometry = self.edgeGeometry | (edgeShape.value << 6)
 
 
 class Puzzle:
-	piecesArray = None
 
 	def __init__(self, imgLocation, xNumPieces, yNumPieces):
 		self.imgFileName = imgLocation
 		self.xNumPieces = xNumPieces
 		self.yNumPieces = yNumPieces
+		self.piecesArray = None
 
 	def createEdge(self, piece0Coords, piece1Coords, p0EdgeDirection):
 		if (self.piecesArray[piece0Coords[0]][piece0Coords[1]].getEdgeGeometry(p0EdgeDirection) != EdgeShape.STRAIGHT):
@@ -86,11 +86,11 @@ class Puzzle:
 		p0EdgeShape = EdgeShape(random.randint(1,2))
 		p1EdgeShape = EdgeShape.GetComplement(p0EdgeShape)
 
-		piecesArray[piece0Coords[0]][piece0Coords[1]].setEdgeGeometry(p0EdgeDirection, p0EdgeShape)
-		piecesArray[piece1Coords[0]][piece1Coords[1]].setEdgeGeometry(p1EdgeDirection, p1EdgeShape)
+		self.piecesArray[piece0Coords[0]][piece0Coords[1]].setEdgeGeometry(p0EdgeDirection, p0EdgeShape)
+		self.piecesArray[piece1Coords[0]][piece1Coords[1]].setEdgeGeometry(p1EdgeDirection, p1EdgeShape)
 
 	def generatePuzzleGeometry(self, xNumPieces, yNumPieces):
-		self.piecesArray = [[None for i in range(xNumPieces)] for i in range(yNumPieces)]
+		self.piecesArray = [[PuzzlePiece((y, x)) for x in range(xNumPieces)] for y in range(yNumPieces)]
 		for x in range(xNumPieces):
 			for y in range(yNumPieces):
 				self.piecesArray[y][x] = PuzzlePiece((y, x))
@@ -137,14 +137,14 @@ class Puzzle:
 		singlePieceWidth, singlePieceHeight = singlePieceDimensions
 
 		for direction in Direction.GetAllDirections():
-			if (piecesArray[x][y].getEdgeGeometry(direction) == EdgeShape.OUT):
+			if (self.piecesArray[y][x].getEdgeGeometry(direction) == EdgeShape.OUT):
 				singlePieceImgData = np.rot90(singlePieceImgData, direction.value)
 				singlePieceImgData = self.addOuterNib(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
 				singlePieceImgData = np.rot90(singlePieceImgData, 4 - direction.value)
-			elif (piecesArray[x][y].getEdgeGeometry(direction) == EdgeShape.IN):
-				singlePieceImgData = np.rot90(singlePieceImgData, rotation[direction])
+			elif (self.piecesArray[y][x].getEdgeGeometry(direction) == EdgeShape.IN):
+				singlePieceImgData = np.rot90(singlePieceImgData, direction.value)
 				singlePieceImgData = self.addInnerNib(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
-				singlePieceImgData = np.rot90(singlePieceImgData, 4 - rotation[direction])
+				singlePieceImgData = np.rot90(singlePieceImgData, 4 - direction.value)
 		# print(singlePieceImgData)
 
 		return singlePieceImgData
@@ -175,11 +175,18 @@ class Puzzle:
 				singlePieceImgData = paddedImageArray[y1 + nibHeight : y2 + nibHeight, x1 + nibHeight : x2 + nibHeight]
 
 				singlePieceWithNibsImgData = self.addNibs(singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
-				paddedImagePiece = np.pad(singlePieceWithNibsImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_value=(255,255,255))
-				np.concatenate((singlePuzzleCol, paddedImagePiece), 0)
+				paddedImagePiece = np.pad(singlePieceWithNibsImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_values = (255))
+				
+				if singlePuzzleCol is not None:
+					singlePuzzleCol = np.concatenate((singlePuzzleCol, paddedImagePiece), 0)
+				else:
+					singlePuzzleCol = paddedImagePiece
 
-			np.concatenate((finalImagePiece, singlePuzzleCol), 0)
 
+			if finalImagePiece is not None:					
+				finalImagePiece = np.concatenate((finalImagePiece, singlePuzzleCol), 1)
+			else:
+				finalImagePiece = singlePuzzleCol
 				# print(singlePieceWidth)
 				# print(singlePieceHeight)
 				# print(imgData.shape)
