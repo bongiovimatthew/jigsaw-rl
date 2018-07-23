@@ -16,6 +16,11 @@ class State:
 
 		return boardCopy
 
+	def getPieceUsingId(self, id):
+		for piece in self.pieceState:
+			if piece.id == id:
+				return piece
+
 	def getScoreOfAPieceInASingleDirection(self, piece, directionToLook, adjacentCoords_x, adjacentCoords_y):
 		CORRECT_IMAGE_SCORE = 100
 		CORRECT_GEOMMETRY_SCORE = 10
@@ -46,7 +51,7 @@ class State:
 					score += NOT_CONNECTED_SCORE
 				else:
 					adjacentPieceDirection = Direction.GetComplement(directionToLook)
-					adjacentPieceGeommetry = self.pieceState.getPieceUsingId(adjacentPieceId).getEdgeGeometry(adjacentPieceDirection) 
+					adjacentPieceGeommetry = self.getPieceUsingId(adjacentPieceId).getEdgeGeometry(adjacentPieceDirection) 
 					if adjacentPieceGeommetry == EdgeShape.GetComplement(pieceEdgeGeommetry):
 						score += CORRECT_GEOMMETRY_SCORE
 						if piece.correctEdges[directionToLook] == adjacentPieceId:
