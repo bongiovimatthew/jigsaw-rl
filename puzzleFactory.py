@@ -159,4 +159,4 @@ class PuzzleFactory:
 		return (singlePieceWidth, singlePieceHeight)
 
 	def createPuzzleBoard(self, puzzle):
-		puzzle.puzzleBoard = np.zeros((puzzle.singlePieceHeight * puzzle.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, puzzle.singlePieceWidth * puzzle.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3), dtype=np.int)
+		puzzle.puzzleBoard = np.zeros((puzzle.singlePieceHeight * puzzle.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, puzzle.singlePieceWidth * puzzle.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3), dtype=np.uint8)
