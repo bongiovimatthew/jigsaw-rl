@@ -23,18 +23,36 @@ class State:
 			baseX = piece.coords_x * piece.imgData.shape[1]
 			xWidth = piece.imgData.shape[1]
 
-			print(boardCopy.shape)
-			print(baseX, baseY)
-			print(piece.coords_x, piece.coords_y)
-
-			print(boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth].shape)
+			print("Shape")
 			print(piece.imgData.shape)
-			boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
-			
-			img = Image.fromarray(boardCopy, 'RGB')
-			img.show()
-			dfk
 
+			np.savetxt("pieceImageData.txt", piece.imgData, delimiter="_", fmt="%s")
+
+			#img = Image.fromarray(piece.imgData.copy(), 'RGB')
+			#img.show()
+
+			blank = np.zeros((126, 126, 3), dtype=np.int)
+
+			np.savetxt("blankImageData.txt", blank, delimiter="_", fmt="%s")
+
+			#img = Image.fromarray(blank.copy(), 'RGB')
+			#img.show()
+
+			for x in range(126):
+				for y in range(126):
+					blank[x,y] = [0, 255, 0]
+
+			#blank[0 : 126, 0 : 126] = [0, 255, 0] #piece.imgData
+
+			img = Image.fromarray(blank, 'RGB')
+			img.show()
+
+			np.savetxt("greenImageData.txt", blank, delimiter="_", fmt="%s")
+
+			bp 
+
+			#boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
+			
 		return boardCopy
 
 	def getPieceUsingId(self, id):
