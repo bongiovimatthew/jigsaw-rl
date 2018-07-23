@@ -114,11 +114,11 @@ class Puzzle:
 		# print(p1EdgeDirection)
 
 	def generatePuzzlePieces(self, xNumPieces, yNumPieces):
-		self.piecesArray = [[PuzzlePiece((y, x)) for x in range(xNumPieces)] for y in range(yNumPieces)]
+		self.piecesArray = [[PuzzlePiece() for x in range(xNumPieces)] for y in range(yNumPieces)]
 		for x in range(xNumPieces):
 			for y in range(yNumPieces):
-				piecesArray[y][x].coords_x = 
-				piecesArray[y][x].coords_y = 
+				piecesArray[y][x].coords_x = random.randint(0, getPuzzleBoardWidth(self.singlePieceWidth))
+				piecesArray[y][x].coords_y = random.randint(0, getPuzzleBoardHeight(self.singlePieceHeight))
 
 				if (x < (xNumPieces - 1)):
 					self.createEdge((y,x), (y,x+1), Direction.RIGHT)
@@ -282,6 +282,8 @@ class Puzzle:
 		# Break the image array into each piece
 		singlePieceWidth, singlePieceHeight = self.breakImageToPieces(self.xNumPieces, self.yNumPieces, im_array)
 
+		self.singlePieceHeight = singlePieceHeight
+		self.singlePieceWidth = singlePieceWidth	
 		self.puzzleBoard = self.createPuzzleBoard(singlePieceWidth, singlePieceHeight)
 
 		# Display the puzzle pieces
