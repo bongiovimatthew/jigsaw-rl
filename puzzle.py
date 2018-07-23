@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import random
 import math
+import uuid
 
 # y = im.shape[0]
 # x = im.shape[1]
@@ -43,12 +44,15 @@ class Direction(Enum):
 		return [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
 
 class PuzzlePiece:
-	NIB_PERCENT = 10 / 100
+	NIB_PERCENT = 20 / 100
 
-	def __init__(self, coords):
-		# self.imgData = imgData # tbd
-		self.coords = coords
+	def __init__(self):
+		self.imgData = None
+		#(singlePieceHeight * self.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, singlePieceWidth * self.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3) 
+		self.coords_x = random.randint(0, 10)
+		self.coords_y = random.randint(0, 10)
 		self.edgeGeometry = 0 # L, D, R, U (2 bits per direction totals 1 byte)
+		self.id = uuid.uuid4()
 
 	def getEdgeGeometry(self, direction):
 		if direction == Direction.UP:
@@ -72,7 +76,7 @@ class PuzzlePiece:
 
 
 class Puzzle:
-	NUMBER_OF_PIECES_TO_SCALE_BY = 4
+	NUMBER_OF_PIECES_TO_SCALE_BY = 3
 
 	def __init__(self, imgLocation, xNumPieces, yNumPieces):
 
@@ -109,10 +113,13 @@ class Puzzle:
 		# print(self.piecesArray[piece1Coords[0]][piece1Coords[1]].getEdgeGeometry(p1EdgeDirection))
 		# print(p1EdgeDirection)
 
-	def generatePuzzlePieceGeometry(self, xNumPieces, yNumPieces):
+	def generatePuzzlePieces(self, xNumPieces, yNumPieces):
 		self.piecesArray = [[PuzzlePiece((y, x)) for x in range(xNumPieces)] for y in range(yNumPieces)]
 		for x in range(xNumPieces):
 			for y in range(yNumPieces):
+				piecesArray[y][x].coords_x = 
+				piecesArray[y][x].coords_y = 
+
 				if (x < (xNumPieces - 1)):
 					self.createEdge((y,x), (y,x+1), Direction.RIGHT)
 
@@ -193,13 +200,27 @@ class Puzzle:
 
 		return (singlePieceWidth, singlePieceHeight)
 
+	def getPuzzleBoardWidth(self, singlePieceWidth):
+		return singlePieceWidth * self.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY
+
+	def getPuzzleBoardHeight(self, singlePieceHeight):
+		return singlePieceHeight * self.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY
+
 	def createPuzzleBoard(self, singlePieceWidth, singlePieceHeight):
-		self.puzzleBoard = np.zeros((singlePieceHeight * self.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, singlePieceWidth * self.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3))
+		self.puzzleBoard = np.zeros((getPuzzleBoardHeight(singlePieceHeight), getPuzzleBoardHeight(singlePieceWidth), 3))
 		return
 
-	def createPuzzlePieceArray(self):
+	def getCorrectPuzzleArray(self):
+		return self.piecesArray
+
+	# Generates the randomly placed, randomly rotated pieces
+	#  Rotation based on image data (no geom) 
+	def createRandomPuzzlePieceArray(self):
 		self.listOfPiecesAvailable = [self.piecesArray[y][x] for y in range(self.yNumPieces) for x in range(self.xNumPieces)]
-		return
+		random.shuffle(self.listOfPiecesAvailable)
+		for piece in listOfPiecesAvailable:
+			piece.imgData = np.rot90(piece.imgData, random.randint(0,3))
+		return self.listOfPiecesAvailable
 	
 	def getPiecesAsOneBigImage(self):
 		finalImagePieces = None
@@ -256,17 +277,17 @@ class Puzzle:
 		im_array = np.array(image)
 
 		# Generate the nibs that we want to use
-		self.generatePuzzlePieceGeometry(self.xNumPieces, self.yNumPieces)
+		self.generatePuzzlePieces(self.xNumPieces, self.yNumPieces)
 
 		# Break the image array into each piece
 		singlePieceWidth, singlePieceHeight = self.breakImageToPieces(self.xNumPieces, self.yNumPieces, im_array)
 
-		self.createPuzzleBoard(singlePieceWidth, singlePieceHeight)
+		self.puzzleBoard = self.createPuzzleBoard(singlePieceWidth, singlePieceHeight)
 
 		# Display the puzzle pieces
 		# self.displayPuzzlePieces()
 		
-		self.displayPuzzle()
+		#self.displayPuzzle()
 
 
 def main():
