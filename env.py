@@ -1,18 +1,39 @@
+import numpy as np
+
+# Remove when done testing 
+from PIL import Image
+
+
 class State:
 	
-	def __init__(self):
+	def __init__(self, puzzle):
 
-		puzzle = Puzzle('zambia_map.jpg',4, 4)
-		puzzle.generatePuzzle()
 		self.pieceState = puzzle.createRandomPuzzlePieceArray()
-		self.board = puzzle.createPuzzleBoard()
+		self.board = puzzle.puzzleBoard
 		self.solution = puzzle.getCorrectPuzzleArray()
 		
-
 	def getStateImage(self):
-		boardCopy = copy(self.board)
+		boardCopy = self.board.copy()
+		piece = self.pieceState[0]
+
 		for piece in self.pieceState: 
-			boardCopy[piece.coords_y:piece.coords_y + piece.imgData.shape[0]][piece.coords_x: piece.coords_x + piece.imgData.shape[1]] = piece.imgData 
+			baseY = piece.coords_y * piece.imgData.shape[0]
+			yHeight = piece.imgData.shape[0]
+
+			baseX = piece.coords_x * piece.imgData.shape[1]
+			xWidth = piece.imgData.shape[1]
+
+			print(boardCopy.shape)
+			print(baseX, baseY)
+			print(piece.coords_x, piece.coords_y)
+
+			print(boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth].shape)
+			print(piece.imgData.shape)
+			boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
+			
+			img = Image.fromarray(boardCopy, 'RGB')
+			img.show()
+			dfk
 
 		return boardCopy
 

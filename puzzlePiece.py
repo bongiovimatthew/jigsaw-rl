@@ -2,6 +2,7 @@ import random
 import uuid
 from edge import EdgeShape
 from direction import Direction 
+import numpy as np
 
 class PuzzlePiece:
 	NIB_PERCENT = 20 / 100

@@ -25,7 +25,8 @@ class PuzzleFactory:
 
 		# Slice the full image, and apply the correct edge geometry to the image data
 		puzzle.singlePieceWidth, puzzle.singlePieceHeight = self.generatePuzzlePieceImages(puzzle, im_array)
-		puzzle.puzzleBoard = self.createPuzzleBoard(puzzle)
+		self.createPuzzleBoard(puzzle)
+
 		self.generateCorrectEdges(puzzle)
 
 		return puzzle 
@@ -35,27 +36,27 @@ class PuzzleFactory:
 			for y in range(puzzle.yNumPieces):
 				# UPPER EDGE
 				if y > 0:
-					puzzle.piecesArray[y][x].correctEdgeIds.add(puzzle.piecesArray[y - 1][x].id)
+					puzzle.piecesArray[y][x].correctEdgeIds.append(puzzle.piecesArray[y - 1][x].id)
 				else:
-					puzzle.piecesArray[y][x].correctEdgeIds.add(0)
+					puzzle.piecesArray[y][x].correctEdgeIds.append(0)
 
 				# RIGHT EDGE
 				if x < (puzzle.xNumPieces - 1):
-					puzzle.piecesArray[y][x].correctEdgeIds.add(puzzle.piecesArray[y][x + 1].id)
+					puzzle.piecesArray[y][x].correctEdgeIds.append(puzzle.piecesArray[y][x + 1].id)
 				else:
-					puzzle.piecesArray[y][x].correctEdgeIds.add(0)
+					puzzle.piecesArray[y][x].correctEdgeIds.append(0)
 
 				# DOWN EDGE
 				if y < (puzzle.yNumPieces - 1):
-					puzzle.piecesArray[y][x].correctEdgeIds.add(puzzle.piecesArray[y + 1][x].id)
+					puzzle.piecesArray[y][x].correctEdgeIds.append(puzzle.piecesArray[y + 1][x].id)
 				else:
-					puzzle.piecesArray[y][x].correctEdgeIds.add(0)
+					puzzle.piecesArray[y][x].correctEdgeIds.append(0)
 
 				# LEFT EDGE
 				if x > 0:
-					puzzle.piecesArray[y][x].correctEdgeIds.add(puzzle.piecesArray[y][x - 1].id)
+					puzzle.piecesArray[y][x].correctEdgeIds.append(puzzle.piecesArray[y][x - 1].id)
 				else:
-					puzzle.piecesArray[y][x].correctEdgeIds.add(0)	
+					puzzle.piecesArray[y][x].correctEdgeIds.append(0)	
 
 	def createEdge(self, puzzle, piece0Coords, piece1Coords, p0EdgeDirection):
 		if (puzzle.piecesArray[piece0Coords[0]][piece0Coords[1]].getEdgeGeometry(p0EdgeDirection) != EdgeShape.STRAIGHT):
@@ -74,8 +75,8 @@ class PuzzleFactory:
 
 		for x in range(puzzle.xNumPieces):
 			for y in range(puzzle.yNumPieces):
-				#piecesArray[y][x].coords_x = random.randint(0, self.getPuzzleBoardWidth(self.singlePieceWidth))
-				#piecesArray[y][x].coords_y = random.randint(0, self.getPuzzleBoardHeight(self.singlePieceHeight))
+				#piecesArray[y][x].coords_x = random.randint(0, puzzle.xNumPieces)
+				#piecesArray[y][x].coords_y = random.randint(0, puzzle.yNumPieces)
 
 				if (x < (puzzle.xNumPieces - 1)):
 					self.createEdge(puzzle, (y,x), (y,x+1), Direction.RIGHT)
@@ -159,4 +160,3 @@ class PuzzleFactory:
 
 	def createPuzzleBoard(self, puzzle):
 		puzzle.puzzleBoard = np.zeros((puzzle.singlePieceHeight * puzzle.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, puzzle.singlePieceWidth * puzzle.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3))
-		return
