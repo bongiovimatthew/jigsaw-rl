@@ -3,15 +3,15 @@ import uuid
 from edge import EdgeShape
 from direction import Direction 
 import numpy as np
+from PIL import Image
 
 class PuzzlePiece:
 	NIB_PERCENT = 20 / 100
 
 	def __init__(self):
 		self.imgData = None
-		#(singlePieceHeight * self.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, singlePieceWidth * self.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3) 
-		self.coords_x = random.randint(0, 10)
-		self.coords_y = random.randint(0, 10)
+		self.coords_x = None
+		self.coords_y = None
 		self.edgeGeometry = 0 # L, D, R, U (2 bits per direction totals 1 byte)
 		self.id = uuid.uuid4()
 		self.correctEdgeIds = []
@@ -37,6 +37,10 @@ class PuzzlePiece:
 			self.edgeGeometry = self.edgeGeometry | (edgeShape.value << 6)
 
 	def rotate(self):
-		rotationAmount = random.randint(0,3)
+		rotationAmount = random.randint(0, 3)
 		self.imgData = np.rot90(self.imgData, rotationAmount)
 		self.edgeGeometry = self.edgeGeometry << (2 * rotationAmount) | self.edgeGeometry >> (8 - 2 * rotationAmount)
+
+	def displayPiece(self):
+		img = Image.fromarray(self.imgData, 'RGB')
+		img.show()

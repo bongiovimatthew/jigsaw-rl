@@ -1,4 +1,6 @@
 import numpy as np
+from direction import Direction 
+from edge import EdgeShape
 
 # Remove when done testing 
 from PIL import Image
@@ -6,9 +8,9 @@ from PIL import Image
 
 class State:
 	
-	def __init__(self, puzzle):
+	def __init__(self, puzzle, randomizedPieces):
 
-		self.pieceState = puzzle.createRandomPuzzlePieceArray()
+		self.pieceState = randomizedPieces 
 		self.board = puzzle.puzzleBoard
 		self.solution = puzzle.getCorrectPuzzleArray()
 		
@@ -45,7 +47,7 @@ class State:
 			if adjacentCoords_x < 0 or adjacentCoords_y < 0:
 				score += CORRECT_GEOMMETRY_SCORE + CORRECT_IMAGE_SCORE
 			else:
-				adjacentPieceId = self.puzzleBoardAsPiecesArray[adjacentCoords_y][adjacentCoords_x]
+				adjacentPieceId = self.solution[adjacentCoords_y][adjacentCoords_x]
 				if (adjacentPieceId != 0):
 					score += INCORRECT_GEOMMETRY_SCORE
 				else:
@@ -57,7 +59,7 @@ class State:
 			if adjacentCoords_x < 0 or adjacentCoords_y < 0:
 				score += NOT_CONNECTED_SCORE
 			else:
-				adjacentPieceId = self.puzzleBoardAsPiecesArray[adjacentCoords_y][adjacentCoords_x]
+				adjacentPieceId = self.solution[adjacentCoords_y][adjacentCoords_x]
 				if (adjacentPieceId == 0):
 					score += NOT_CONNECTED_SCORE
 				else:
@@ -80,12 +82,3 @@ class State:
 			score += self.getScoreOfAPieceInASingleDirection(piece, Direction.RIGHT, piece.coords_x + 1, piece.coords_y)
 			score += self.getScoreOfAPieceInASingleDirection(piece, Direction.UP, piece.coords_x, piece.coords_y - 1)
 			score += self.getScoreOfAPieceInASingleDirection(piece, Direction.DOWN, piece.coords_x, piece.coords_y + 1)
-
-
-def main():
-	state = State()
-
-	return
-
-if __name__ == "__main__":
-    main()

@@ -23,19 +23,6 @@ class Puzzle:
 	def getCorrectPuzzleArray(self):
 		return self.piecesArray
 
-	# Generates the randomly placed, randomly rotated pieces
-	#  Rotation based on image data (no geom) 
-	def createRandomPuzzlePieceArray(self):
-		listOfPiecesAvailable = [self.piecesArray[y][x] for y in range(self.yNumPieces) for x in range(self.xNumPieces)]
-		random.shuffle(listOfPiecesAvailable)
-		
-		for piece in listOfPiecesAvailable:
-			piece.coords_x = random.randint(0, self.xNumPieces)
-			piece.coords_y = random.randint(0, self.yNumPieces)
-			piece.rotate()
-		return listOfPiecesAvailable
-
-
 
 	#
 	# Puzzle Display Functions 
