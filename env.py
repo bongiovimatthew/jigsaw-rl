@@ -6,6 +6,7 @@ class State:
 		puzzle.generatePuzzle()
 		self.pieceState = puzzle.createRandomPuzzlePieceArray()
 		self.board = puzzle.createPuzzleBoard()
+		self.solution = puzzle.getCorrectPuzzleArray()
 		
 
 	def getStateImage(self):
@@ -15,10 +16,14 @@ class State:
 
 		return boardCopy
 
+	def getScoreOfCurrentState(self): 
+
+		for piece in self.pieceState: 
+			
 
 
 def main():
-	
+	state = State()
 
 	return
 

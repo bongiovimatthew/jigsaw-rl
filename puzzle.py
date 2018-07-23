@@ -53,6 +53,7 @@ class PuzzlePiece:
 		self.coords_y = random.randint(0, 10)
 		self.edgeGeometry = 0 # L, D, R, U (2 bits per direction totals 1 byte)
 		self.id = uuid.uuid4()
+		self.correctEdgeIds = []
 
 	def getEdgeGeometry(self, direction):
 		if direction == Direction.UP:
@@ -73,6 +74,11 @@ class PuzzlePiece:
 			self.edgeGeometry = self.edgeGeometry | (edgeShape.value << 4)
 		elif direction == Direction.LEFT:
 			self.edgeGeometry = self.edgeGeometry | (edgeShape.value << 6)
+
+	def rotate(self):
+		rotationAmount = random.randint(0,3)
+		self.imgData = np.rot90(self.imgData, rotationAmount)
+		self.edgeGeometry = self.edgeGeometry << (2 * rotationAmount) | self.edgeGeometry >> (8 - 2 * rotationAmount)
 
 
 class Puzzle:
@@ -219,7 +225,7 @@ class Puzzle:
 		self.listOfPiecesAvailable = [self.piecesArray[y][x] for y in range(self.yNumPieces) for x in range(self.xNumPieces)]
 		random.shuffle(self.listOfPiecesAvailable)
 		for piece in listOfPiecesAvailable:
-			piece.imgData = np.rot90(piece.imgData, random.randint(0,3))
+			piece.rotate()
 		return self.listOfPiecesAvailable
 	
 	def getPiecesAsOneBigImage(self):
@@ -285,6 +291,13 @@ class Puzzle:
 		self.singlePieceHeight = singlePieceHeight
 		self.singlePieceWidth = singlePieceWidth	
 		self.puzzleBoard = self.createPuzzleBoard(singlePieceWidth, singlePieceHeight)
+
+		for x in range(self.xNumPieces):
+			for y in range(self.yNumPieces):
+				self.piecesArray[y][x] 
+				piece.correctEdgeIds   # U, R, D, L
+		
+			
 
 		# Display the puzzle pieces
 		# self.displayPuzzlePieces()
