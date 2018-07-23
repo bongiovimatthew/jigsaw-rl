@@ -177,6 +177,8 @@ class Puzzle:
 
 		return singlePieceImgData
 
+	def getPieceUsingId
+
 	# Returns the size of a single piece
 	def breakImageToPieces(self, xNumPieces, yNumPieces, imageArray):
 		imgHeight, imgWidth, rgb = imageArray.shape
@@ -294,8 +296,31 @@ class Puzzle:
 
 		for x in range(self.xNumPieces):
 			for y in range(self.yNumPieces):
-				self.piecesArray[y][x] 
-				piece.correctEdgeIds   # U, R, D, L
+				# UPPER EDGE
+				if y > 0:
+					self.piecesArray[y][x].correctEdgeIds.add(self.piecesArray[y - 1][x].id)
+				else:
+					self.piecesArray[y][x].correctEdgeIds.add(0)
+
+				# RIGHT EDGE
+				if x < (self.xNumPieces - 1):
+					self.piecesArray[y][x].correctEdgeIds.add(self.piecesArray[y][x + 1].id)
+				else:
+					self.piecesArray[y][x].correctEdgeIds.add(0)
+
+				# DOWN EDGE
+				if y < (self.yNumPieces - 1):
+					self.piecesArray[y][x].correctEdgeIds.add(self.piecesArray[y + 1][x].id)
+				else:
+					self.piecesArray[y][x].correctEdgeIds.add(0)
+
+				# LEFT EDGE
+				if x > 0:
+					self.piecesArray[y][x].correctEdgeIds.add(self.piecesArray[y][x - 1].id)
+				else:
+					self.piecesArray[y][x].correctEdgeIds.add(0)
+
+
 		
 			
 
