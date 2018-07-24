@@ -2,6 +2,7 @@ import numpy as np
 from direction import Direction 
 from edge import EdgeShape
 from enum import Enum
+from puzzleFactory import PuzzleFactory
 
 #from gym.envs.toy_text import discrete
 
@@ -52,8 +53,21 @@ class PuzzleEnvironment(Environment):
 
     MAX_ACTIONS_NUM = 7
 
-    def __init__(self, puzzle, randomizedPieces, guidArray):
-        
+    def __init__(self):
+        self.setupEnvironment()
+        self.debugMode = False
+
+    def reset(self):
+        self.setupEnvironment()
+        return self.render()
+
+    def setupEnvironment(self):
+
+        # Generate the puzzle 
+        factory = PuzzleFactory()
+        puzzle = factory.generatePuzzle('images\\rainier.jpg', 3, 3)
+        randomizedPieces, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
+
         # pieceState is an array of PuzzlePiece objects
         self.pieceState = randomizedPieces 
         self.puzzle = puzzle
@@ -62,7 +76,6 @@ class PuzzleEnvironment(Environment):
         self.currentPieceIndex = 0
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
 
-        self.debugMode = True 
 
     def action(self): 
         return self.action_space
@@ -138,7 +151,7 @@ class PuzzleEnvironment(Environment):
             direction = directions[action - 4]
             self._translate_piece(currentPiece.id, direction)
 
-        return 
+        return self.render()
 
     def step(self, action):
         reward = self.getScoreOfCurrentState()
@@ -151,9 +164,9 @@ class PuzzleEnvironment(Environment):
 
         print("Current Reward: {0}, IsDone: {1}".format(reward, done))
         print("Peforming Action: {0}".format(Actions(action)))
-        return (self._convert_state(action), reward, done)
+        return (self._convert_state(action), reward, done, None)
         
-    def render(self):
+    def render(self, mode=None):
         boardCopy = self.puzzle.puzzleBoard.copy()
         piece = self.pieceState[0]
         count = 0

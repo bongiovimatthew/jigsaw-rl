@@ -1,4 +1,9 @@
 from IAgent import Agent 
+from collections import namedtuple
+
+import numpy as np
+Q_Tuple = namedtuple('Q_Tuple', 'state action')
+
 class QLearningAgent(Agent):
     
     def __init__(self, actions, epsilon=0.01, alpha=0.5, gamma=1):
