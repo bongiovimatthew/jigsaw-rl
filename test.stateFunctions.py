@@ -25,7 +25,7 @@ def TestActions():
 	puzzle = factory.generatePuzzle('images\\rainier.jpg', 3, 3)
 	initialPieceState, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
 
-	env = PuzzleEnvironment(puzzle, initialPieceState, guidArray)
+	env = PuzzleEnvironment()
 
 	img = Image.fromarray(env.render(), 'RGB')
 	img.show()
