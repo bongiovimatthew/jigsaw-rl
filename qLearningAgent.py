@@ -1,5 +1,6 @@
 from IAgent import Agent 
 from collections import namedtuple
+import matplotlib.pyplot as plt
 
 import numpy as np
 Q_Tuple = namedtuple('Q_Tuple', 'state action')
@@ -22,6 +23,22 @@ class QLearningAgent(Agent):
         # the dictionary of Q values for state,action pairs 
         # Key is a tuple of (state, action), value is the Q value of that pair 
         self.QDict = {}
+
+        self.metric_qarrayHit = 0.0
+        self.metric_qarrayMiss = 0.0
+        self.metric_totalQarray = 0.0
+        self.metric_totalQarrayLengthOnHit = 0.0
+
+        # totalQarrayLengthOnHit / qarrayHit gives average qarray length on hit
+
+        self.metric_totalReward = 0.0
+        self.metric_rewardOps = 0.0
+
+        self.metric_totalExplores = 0.0
+        
+        #self.fig = plt.figure()
+        #self.fig.show()
+
         
     def stateToString(self, state):
         mystring = ""
@@ -32,11 +49,52 @@ class QLearningAgent(Agent):
                 mystring += str(digit)
         return mystring    
     
+    def displayMetrics(self):
+
+        
+        #self.fig.text(2, 6, 'testing', fontsize=15)
+        
+
+        hitToMissRatio = 0.0
+        if self.metric_qarrayMiss != 0: 
+            hitToMissRatio = self.metric_qarrayHit / self.metric_qarrayMiss
+
+        print("-----------------------------------------------------------------------")
+        print("Num QArray Hits: {0}".format(self.metric_qarrayHit))
+        print("Num QArray Miss: {0}".format(self.metric_qarrayMiss))
+        print("Hit to Miss Ratio: {0}".format(hitToMissRatio))
+
+        print("Num Explores: {0}".format(self.metric_totalExplores))
+        print("Num Total QArray Ops (num exploits): {0}".format(self.metric_totalQarray))
+
+        exploitExploreRatio = 0.0
+        if self.metric_totalExplores != 0: 
+            exploitExploreRatio = self.metric_totalQarray / self.metric_totalExplores
+
+        print("Exploit / Explore Ratio: {0}".format(exploitExploreRatio))
+
+        avgQArrayLen = 0
+        avgReward = 0
+        if self.metric_qarrayHit != 0: 
+            avgQArrayLen = self.metric_totalQarrayLengthOnHit / self.metric_qarrayHit
+
+        if self.metric_rewardOps != 0: 
+            avgReward = self.metric_totalReward / self.metric_rewardOps
+
+        print("Avg Num Qs in QArray on Hits: {0}".format(avgQArrayLen))
+        print("Avg Reward: {0}".format(avgReward))
+        print("-----------------------------------------------------------------------")
+        print()
+        print()
+        return 
+
     def act(self, state):
+
+        self.displayMetrics()
+
         stateStr = self.stateToString(state)      
         action = np.random.randint(0, self.num_actions) 
         
-        ## TODO 2
         ## Implement epsilon greedy policy here
         choice = None
         if self.epsilon == 0:
@@ -47,12 +105,18 @@ class QLearningAgent(Agent):
             choice = np.random.binomial(1, self.epsilon)
             
         if choice == 1:
+            self.metric_totalExplores += 1
             return action
         else:
+            self.metric_totalQarray += 1 
             applicableQValues = [QDictKey for QDictKey in self.QDict.keys() if QDictKey.state==stateStr and self.QDict[QDictKey] != 0]
             if len(applicableQValues) == 0:
+                self.metric_qarrayMiss += 1
                 return action
             
+            self.metric_qarrayHit += 1
+            self.metric_totalQarrayLengthOnHit += len(applicableQValues)
+
             maxQValue = self.QDict[applicableQValues[0]]
             relevantQStates = [applicableQValues[0]]
             for QDictKey in applicableQValues[1:]:
@@ -70,8 +134,10 @@ class QLearningAgent(Agent):
     def learn(self, state1, action1, reward, state2, done):
         state1Str = self.stateToString(state1)
         state2Str = self.stateToString(state2)
+
+        self.metric_totalReward += reward
+        self.metric_rewardOps += 1
         
-        ## TODO 3
         ## Implement the q-learning update here
         Q1 = Q_Tuple(state1Str, action1)
         
@@ -83,7 +149,6 @@ class QLearningAgent(Agent):
                     
         applicableQValues = [QDictKey for QDictKey in self.QDict.keys() if QDictKey.state==state2Str and self.QDict[QDictKey] != 0 ]
         if len(applicableQValues) > 0:
-#             print("len: " + str(len(applicableQValues)))
             maxQStateValue = self.QDict[applicableQValues[0]]
             for QDictKey in applicableQValues[1:]:
                 if self.QDict[QDictKey] > maxQStateValue:
