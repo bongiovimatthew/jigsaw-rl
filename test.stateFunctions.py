@@ -40,11 +40,11 @@ def TestActions():
 	ACTION_TRANS_DOWN = 6
 	ACTION_TRANS_LEFT = 7
 
-	for i in range(5): 
-		randomAction = random.randint(1, 7)
-		env.step(randomAction)
+	# for i in range(200): 
+	# 	randomAction = random.randint(0, 7)
+	# 	env.step(randomAction)
 
-	#env.step(ACTION_CYCLE)
+	env.step(ACTION_CYCLE)
 	#env.step(ACTION_TRANS_DOWN)
 
 	img = Image.fromarray(env.render(), 'RGB')

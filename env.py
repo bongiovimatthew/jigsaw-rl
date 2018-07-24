@@ -141,14 +141,15 @@ class PuzzleEnvironment(Environment):
         return 
 
     def step(self, action):
-        reward = 1 #self.getScoreOfCurrentState()
-        done = False #self.isDone(reward)
+        reward = self.getScoreOfCurrentState()
+        done = self.isDone(reward)
         if done:
             reward *= 100
 
         # info = {'prob':self.P[self.s][action][0][0]}
         # self.s = self.P[self.s][action][0][1]
 
+        print("Current Reward: {0}, IsDone: {1}".format(reward, done))
         print("Peforming Action: {0}".format(Actions(action)))
         return (self._convert_state(action), reward, done)
         
@@ -174,11 +175,9 @@ class PuzzleEnvironment(Environment):
         return boardCopy
 
     def isDone(self, reward):
-        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * self.puzzle.getCorrectPuzzleArray.shape[1] * self.puzzle.getCorrectPuzzleArray.shape[0]:
+        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()):
             return True
-
         return False
-
 
     def getPieceUsingId(self, id):
         for piece in self.pieceState:
@@ -196,10 +195,10 @@ class PuzzleEnvironment(Environment):
                 # print(adjacentCoords_x, adjacentCoords_y)
                 score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
             else:
-                adjacentPieceId = self.guidArray[adjacentCoords_y][adjacentCoords_x]
+                adjacentPieceIdLength = len(self.guidArray[adjacentCoords_y][adjacentCoords_x])
                 # print("AdjpieceID")
                 # print(adjacentPieceId)
-                if (adjacentPieceId != 0):
+                if (adjacentPieceIdLength != 0):
                     score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE
                 else:
                     score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
@@ -209,18 +208,19 @@ class PuzzleEnvironment(Environment):
             if adjacentCoords_x < 0 or adjacentCoords_y < 0 or adjacentCoords_x >= len(self.guidArray[0]) or adjacentCoords_y >= len(self.guidArray):
                 score += PuzzleEnvironment.NOT_CONNECTED_SCORE
             else:
-                adjacentPieceId = self.guidArray[adjacentCoords_y][adjacentCoords_x]
-                if (adjacentPieceId == 0):
+                adjacentPieceIds = self.guidArray[adjacentCoords_y][adjacentCoords_x]
+                if (len(adjacentPieceIds) == 0):
                     score += PuzzleEnvironment.NOT_CONNECTED_SCORE
                 else:
-                    adjacentPieceDirection = Direction.GetComplement(directionToLook)
-                    adjacentPieceGeommetry = self.getPieceUsingId(adjacentPieceId).getEdgeGeometry(adjacentPieceDirection) 
-                    if adjacentPieceGeommetry == EdgeShape.GetComplement(pieceEdgeGeommetry):
-                        score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
-                        if piece.correctEdgeIds[directionToLook.value] == adjacentPieceId:
-                            score += PuzzleEnvironment.CORRECT_IMAGE_SCORE
-                    else:
-                        score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE
+                    for adjacentPieceId in adjacentPieceIds:
+                        adjacentPieceDirection = Direction.GetComplement(directionToLook)
+                        adjacentPieceGeommetry = self.getPieceUsingId(adjacentPieceId).getEdgeGeometry(adjacentPieceDirection) 
+                        if adjacentPieceGeommetry == EdgeShape.GetComplement(pieceEdgeGeommetry):
+                            score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
+                            if piece.correctEdgeIds[directionToLook.value] == adjacentPieceId:
+                                score += PuzzleEnvironment.CORRECT_IMAGE_SCORE
+                        else:
+                            score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE
 
         return score
 
