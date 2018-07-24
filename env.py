@@ -23,6 +23,11 @@ class ActionSpace(object):
         self.n = len(actions)
 
 class PuzzleEnvironment(Environment):
+	CORRECT_IMAGE_SCORE = 100
+	CORRECT_GEOMMETRY_SCORE = 10
+	INCORRECT_GEOMMETRY_SCORE = -2
+	NOT_CONNECTED_SCORE = -1
+
 	
 	def __init__(self, puzzle, randomizedPieces):
 
@@ -42,12 +47,15 @@ class PuzzleEnvironment(Environment):
         return np.asarray(list(converted), dtype=np.float32)
 
 	def step(self, action):
-        reward = self.P[self.s][action][0][2]
-        done = self.P[self.s][action][0][3]
-        info = {'prob':self.P[self.s][action][0][0]}
-        self.s = self.P[self.s][action][0][1]
+        reward = self.getScoreOfCurrentState()
+        done = self.isDone(reward)
+        if done:
+        	reward *= 100
 
-        return (self._convert_state(self.s), reward, done, info)
+        # info = {'prob':self.P[self.s][action][0][0]}
+        # self.s = self.P[self.s][action][0][1]
+
+        return (self._convert_state(self.s, action), reward, done, info)
 		
 	def render(self):
 		boardCopy = self.board.copy()
@@ -64,48 +72,50 @@ class PuzzleEnvironment(Environment):
 			
 		return boardCopy
 
+	def isDone(self, reward):
+		if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * self.solution.shape[1] * self.solution.shape[0]:
+			return True
+
+		return False
+
+
 	def getPieceUsingId(self, id):
 		for piece in self.pieceState:
 			if piece.id == id:
 				return piece
 
 	def getScoreOfAPieceInASingleDirection(self, piece, directionToLook, adjacentCoords_x, adjacentCoords_y):
-		CORRECT_IMAGE_SCORE = 100
-		CORRECT_GEOMMETRY_SCORE = 10
-		INCORRECT_GEOMMETRY_SCORE = -2
-		NOT_CONNECTED_SCORE = -1
-
 		score = 0
 		pieceEdgeGeommetry = piece.getEdgeGeometry(directionToLook)
 
 		if (pieceEdgeGeommetry == EdgeShape.STRAIGHT):
 			if adjacentCoords_x < 0 or adjacentCoords_y < 0:
-				score += CORRECT_GEOMMETRY_SCORE + CORRECT_IMAGE_SCORE
+				score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
 			else:
 				adjacentPieceId = self.puzzleBoardAsPiecesArray[adjacentCoords_y][adjacentCoords_x]
 				if (adjacentPieceId != 0):
-					score += INCORRECT_GEOMMETRY_SCORE
+					score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE
 				else:
-					score += CORRECT_GEOMMETRY_SCORE + CORRECT_IMAGE_SCORE
+					score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
 
 
 		# Account for IN and OUT
 		else:
 			if adjacentCoords_x < 0 or adjacentCoords_y < 0:
-				score += NOT_CONNECTED_SCORE
+				score += PuzzleEnvironment.NOT_CONNECTED_SCORE
 			else:
 				adjacentPieceId = self.puzzleBoardAsPiecesArray[adjacentCoords_y][adjacentCoords_x]
 				if (adjacentPieceId == 0):
-					score += NOT_CONNECTED_SCORE
+					score += PuzzleEnvironment.NOT_CONNECTED_SCORE
 				else:
 					adjacentPieceDirection = Direction.GetComplement(directionToLook)
 					adjacentPieceGeommetry = self.getPieceUsingId(adjacentPieceId).getEdgeGeometry(adjacentPieceDirection) 
 					if adjacentPieceGeommetry == EdgeShape.GetComplement(pieceEdgeGeommetry):
-						score += CORRECT_GEOMMETRY_SCORE
+						score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
 						if piece.correctEdges[directionToLook] == adjacentPieceId:
-							score += CORRECT_IMAGE_SCORE
+							score += PuzzleEnvironment.CORRECT_IMAGE_SCORE
 					else:
-						score += INCORRECT_GEOMMETRY_SCORE
+						score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE
 
 		return score
 
