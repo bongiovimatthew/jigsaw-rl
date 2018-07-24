@@ -24,31 +24,48 @@ class ActionSpace(object):
 
 class PuzzleEnvironment(Environment):
 	
-	def __init__(self, puzzle, randomizedPieces):
+	# actions: 
+	# 0 - cycle selected piece 
+	# 1 - rotate 90 counterclockwise once 
+	# 2 - rot90 cc twice 
+	# 3 - rot90 cc three times 
+	# 4 - translate up 
+	# 5 - translate right 
+	# 6 - translate down 
+	# 7 - translate left 
+	MAX_ACTIONS_NUM = 7
 
+	def __init__(self, puzzle, randomizedPieces):
 		self.pieceState = randomizedPieces 
 		self.board = puzzle.puzzleBoard
 		self.solution = puzzle.getCorrectPuzzleArray()
+		self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
+
+	def action(self): 
+		return self.action_space
 
     def _limit_coordinates(self, coord):
-        coord[0] = min(coord[0], self.shape[0] - 1)
-        coord[0] = max(coord[0], 0)
-        coord[1] = min(coord[1], self.shape[1] - 1)
-        coord[1] = max(coord[1], 0)
-        return coord
+        #coord[0] = min(coord[0], self.shape[0] - 1)
+        #coord[0] = max(coord[0], 0)
+        #coord[1] = min(coord[1], self.shape[1] - 1)
+        #coord[1] = max(coord[1], 0)
+        #return coord
+        return
 
 	def _convert_state(self, state):
-        converted = np.unravel_index(state, self.shape)
-        return np.asarray(list(converted), dtype=np.float32)
+        #converted = np.unravel_index(state, self.shape)
+        #return np.asarray(list(converted), dtype=np.float32)
+        return 
 
 	def step(self, action):
-        reward = self.P[self.s][action][0][2]
-        done = self.P[self.s][action][0][3]
-        info = {'prob':self.P[self.s][action][0][0]}
-        self.s = self.P[self.s][action][0][1]
+        #reward = self.P[self.s][action][0][2]
+        #done = self.P[self.s][action][0][3]
+        #info = {'prob':self.P[self.s][action][0][0]}
+        #self.s = self.P[self.s][action][0][1]
 
-        return (self._convert_state(self.s), reward, done, info)
-		
+        #return (self._convert_state(self.s), reward, done, info)
+		return 
+
 	def render(self):
 		boardCopy = self.board.copy()
 		piece = self.pieceState[0]
