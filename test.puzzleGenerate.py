@@ -4,7 +4,7 @@ from puzzleFactory import PuzzleFactory
 def TestGenerateAndDisplayPuzzle():
 	factory = PuzzleFactory()
 	puzzle = factory.generatePuzzle('images\\rainier.jpg', 4, 4)
-	puzzle.displayPuzzlePieces()
+	puzzle.displayPuzzlePieces('board', None)
 
 def TestPuzzlePieceRotate(): 
 	factory = PuzzleFactory()

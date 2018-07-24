@@ -174,7 +174,7 @@ class PuzzleFactory:
 		for i in range(sideDimension):
 			initialPieceGuidArray.append([])
 			for j in range(sideDimension):
-				initialPieceGuidArray[i].append(i+j)
+				initialPieceGuidArray[i].append(0)
 		 
 		for piece in listOfPiecesAvailable:
 			piece.coords_x = random.randint(0, sideDimension - 1)
@@ -183,4 +183,4 @@ class PuzzleFactory:
 
 			initialPieceGuidArray[piece.coords_y][piece.coords_x] = piece.id 
 
-		return listOfPiecesAvailable
+		return (listOfPiecesAvailable, initialPieceGuidArray)

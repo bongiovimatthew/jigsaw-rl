@@ -1,18 +1,25 @@
 from puzzle import Puzzle
 from puzzleFactory import PuzzleFactory 
-from env import State
+from env import PuzzleEnvironment
 from PIL import Image
+
+def DrawPiecesInArrayOrder(initialPieceState, puzzle):
+	puzzle.displayPuzzlePieces('line', initialPieceState)
+	
+
 
 def main():
 	factory = PuzzleFactory()
 	puzzle = factory.generatePuzzle('images\\rainier.jpg', 3, 3)
-	initialPieceState = factory.createRandomPuzzlePieceArray(puzzle)
+	initialPieceState, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
 
-	state = State(puzzle, initialPieceState)
-	img = Image.fromarray(state.render(), 'RGB')
+	env = PuzzleEnvironment(puzzle, initialPieceState, guidArray)
+	img = Image.fromarray(env.render(), 'RGB')
 	img.show()
 
-	print("Current State Score: %s" % state.getScoreOfCurrentState())
+	print("Current State Score: {0}".format(env.getScoreOfCurrentState()))
+	DrawPiecesInArrayOrder(initialPieceState, puzzle)
+
 
 if __name__ == "__main__":
     main()
