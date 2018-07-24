@@ -75,9 +75,6 @@ class PuzzleFactory:
 
 		for x in range(puzzle.xNumPieces):
 			for y in range(puzzle.yNumPieces):
-				#piecesArray[y][x].coords_x = random.randint(0, puzzle.xNumPieces)
-				#piecesArray[y][x].coords_y = random.randint(0, puzzle.yNumPieces)
-
 				if (x < (puzzle.xNumPieces - 1)):
 					self.createEdge(puzzle, (y,x), (y,x+1), Direction.RIGHT)
 
@@ -174,13 +171,13 @@ class PuzzleFactory:
 		for i in range(sideDimension):
 			initialPieceGuidArray.append([])
 			for j in range(sideDimension):
-				initialPieceGuidArray[i].append(0)
+				initialPieceGuidArray[i].append([0])
 		 
 		for piece in listOfPiecesAvailable:
 			piece.coords_x = random.randint(0, sideDimension - 1)
 			piece.coords_y = random.randint(0, sideDimension - 1)
 			piece.rotate()
 
-			initialPieceGuidArray[piece.coords_y][piece.coords_x] = piece.id 
+			initialPieceGuidArray[piece.coords_y][piece.coords_x].append(piece.id) 
 
 		return (listOfPiecesAvailable, initialPieceGuidArray)

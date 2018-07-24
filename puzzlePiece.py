@@ -38,6 +38,9 @@ class PuzzlePiece:
 
 	def rotate(self):
 		rotationAmount = random.randint(0, 3)
+		self.rotate_defined(rotationAmount)
+
+	def rotate_defined(self, rotationAmount):
 		self.imgData = np.rot90(self.imgData, rotationAmount)
 
 		ror = lambda val, r_bits, max_bits: \
