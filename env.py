@@ -55,7 +55,8 @@ class PuzzleEnvironment(Environment):
 
     def __init__(self):
         self.setupEnvironment()
-        self.debugMode = False
+        self.oldScore = 0
+        self.debugMode = True
 
     def reset(self):
         self.setupEnvironment()
@@ -75,6 +76,7 @@ class PuzzleEnvironment(Environment):
         self.guidArray = guidArray
         self.currentPieceIndex = 0
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
+        self.oldScore = self.getScoreOfCurrentState()
 
 
     def action(self): 
@@ -154,15 +156,21 @@ class PuzzleEnvironment(Environment):
         return self.render()
 
     def step(self, action):
-        reward = self.getScoreOfCurrentState()
-        done = self.isDone(reward)
+        currentScore = self.getScoreOfCurrentState()
+        done = self.isMaxReward(currentScore)
+
+        reward = currentScore - self.oldScore
+        self.oldScore = currentScore
         if done:
             reward *= 100
+        # elif 
 
         # info = {'prob':self.P[self.s][action][0][0]}
         # self.s = self.P[self.s][action][0][1]
 
-        print("Current Reward: {0}, IsDone: {1}".format(reward, done))
+        print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, self.oldScore))
+        if (done):
+            print("COMPLETED EPISODE!, reward:{0}".format(reward))
         print("Peforming Action: {0}".format(Actions(action)))
         return (self._convert_state(action), reward, done, None)
         
@@ -187,7 +195,7 @@ class PuzzleEnvironment(Environment):
             
         return boardCopy
 
-    def isDone(self, reward):
+    def isMaxReward(self, reward):
         if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()):
             return True
         return False
@@ -206,15 +214,15 @@ class PuzzleEnvironment(Environment):
             if adjacentCoords_x < 0 or adjacentCoords_y < 0 or adjacentCoords_x >= len(self.guidArray[0]) or adjacentCoords_y >= len(self.guidArray):
                 # print("Coords of adjacent")
                 # print(adjacentCoords_x, adjacentCoords_y)
-                score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
+                score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
             else:
                 adjacentPieceIdLength = len(self.guidArray[adjacentCoords_y][adjacentCoords_x])
                 # print("AdjpieceID")
                 # print(adjacentPieceId)
                 if (adjacentPieceIdLength != 0):
-                    score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE
+                    score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE 
                 else:
-                    score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
+                    score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
 
         # Account for IN and OUT
         else:

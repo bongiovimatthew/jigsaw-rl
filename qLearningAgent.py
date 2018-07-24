@@ -6,7 +6,7 @@ Q_Tuple = namedtuple('Q_Tuple', 'state action')
 
 class QLearningAgent(Agent):
     
-    def __init__(self, actions, epsilon=0.01, alpha=0.5, gamma=1):
+    def __init__(self, actions, epsilon=0.6, alpha=0.5, gamma=1):
         super(QLearningAgent, self).__init__(actions)
         
         # epsilon is the rate of exploration - higher epsilon means more exploring 
