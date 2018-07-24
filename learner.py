@@ -3,12 +3,12 @@ from env import PuzzleEnvironment
 from qLearningAgent import QLearningAgent 
 
 def main():
-	# Generate the puzzle 
-	factory = PuzzleFactory()
-	puzzle = factory.generatePuzzle('images\\rainier.jpg', 3, 3)
-	initialPieceState, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
+    # Generate the puzzle 
+    factory = PuzzleFactory()
+    puzzle = factory.generatePuzzle('images\\rainier.jpg', 3, 3)
+    initialPieceState, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
 
-	env = PuzzleEnvironment(puzzle, initialPieceState, guidArray)
+    env = PuzzleEnvironment(puzzle, initialPieceState, guidArray)
 
     interactive = True
     agent = QLearningAgent(range(env.action_space.n))
