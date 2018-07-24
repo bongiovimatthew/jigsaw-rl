@@ -9,7 +9,7 @@ def main():
     interactive = True
     agent = QLearningAgent(range(env.action_space.n))
     experiment = Experiment(env, agent)
-    experiment.run_qlearning(10, interactive)
+    experiment.run_qlearning(1, interactive)
 
 if __name__ == "__main__":
     main()
