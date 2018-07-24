@@ -9,7 +9,7 @@ def main():
 	initialPieceState = factory.createRandomPuzzlePieceArray(puzzle)
 
 	state = State(puzzle, initialPieceState)
-	img = Image.fromarray(state.getStateImage(), 'RGB')
+	img = Image.fromarray(state.render(), 'RGB')
 	img.show()
 
 	print("Current State Score: %s" % state.getScoreOfCurrentState())

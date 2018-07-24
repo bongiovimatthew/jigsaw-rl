@@ -2,19 +2,54 @@ import numpy as np
 from direction import Direction 
 from edge import EdgeShape
 
-# Remove when done testing 
-from PIL import Image
+#from gym.envs.toy_text import discrete
 
+### Interface
+class Environment(object):
 
-class State:
+    def reset(self):
+        raise NotImplementedError('Inheriting classes must override reset.')
+
+    def actions(self):
+        raise NotImplementedError('Inheriting classes must override actions.')
+
+    def step(self):
+        raise NotImplementedError('Inheriting classes must override step')
+
+class ActionSpace(object):
+    
+    def __init__(self, actions):
+        self.actions = actions
+        self.n = len(actions)
+
+class PuzzleEnvironment(Environment):
 	
 	def __init__(self, puzzle, randomizedPieces):
 
 		self.pieceState = randomizedPieces 
 		self.board = puzzle.puzzleBoard
 		self.solution = puzzle.getCorrectPuzzleArray()
+
+    def _limit_coordinates(self, coord):
+        coord[0] = min(coord[0], self.shape[0] - 1)
+        coord[0] = max(coord[0], 0)
+        coord[1] = min(coord[1], self.shape[1] - 1)
+        coord[1] = max(coord[1], 0)
+        return coord
+
+	def _convert_state(self, state):
+        converted = np.unravel_index(state, self.shape)
+        return np.asarray(list(converted), dtype=np.float32)
+
+	def step(self, action):
+        reward = self.P[self.s][action][0][2]
+        done = self.P[self.s][action][0][3]
+        info = {'prob':self.P[self.s][action][0][0]}
+        self.s = self.P[self.s][action][0][1]
+
+        return (self._convert_state(self.s), reward, done, info)
 		
-	def getStateImage(self):
+	def render(self):
 		boardCopy = self.board.copy()
 		piece = self.pieceState[0]
 
@@ -47,7 +82,7 @@ class State:
 			if adjacentCoords_x < 0 or adjacentCoords_y < 0:
 				score += CORRECT_GEOMMETRY_SCORE + CORRECT_IMAGE_SCORE
 			else:
-				adjacentPieceId = self.solution[adjacentCoords_y][adjacentCoords_x]
+				adjacentPieceId = self.puzzleBoardAsPiecesArray[adjacentCoords_y][adjacentCoords_x]
 				if (adjacentPieceId != 0):
 					score += INCORRECT_GEOMMETRY_SCORE
 				else:
@@ -59,7 +94,7 @@ class State:
 			if adjacentCoords_x < 0 or adjacentCoords_y < 0:
 				score += NOT_CONNECTED_SCORE
 			else:
-				adjacentPieceId = self.solution[adjacentCoords_y][adjacentCoords_x]
+				adjacentPieceId = self.puzzleBoardAsPiecesArray[adjacentCoords_y][adjacentCoords_x]
 				if (adjacentPieceId == 0):
 					score += NOT_CONNECTED_SCORE
 				else:
