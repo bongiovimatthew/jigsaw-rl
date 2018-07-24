@@ -66,7 +66,7 @@ class PuzzleEnvironment(Environment):
 
         # Generate the puzzle 
         factory = PuzzleFactory()
-        puzzle = factory.generatePuzzle('images\\rainier.jpg', 3, 3)
+        puzzle = factory.generatePuzzle('images\\rainier_small.jpg', 3, 3)
         randomizedPieces, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
 
         # pieceState is an array of PuzzlePiece objects
@@ -119,13 +119,6 @@ class PuzzleEnvironment(Environment):
                         newX = x - 1
                         if newX < 0: 
                             newX = 0 
-
-                    # print("y,x")
-                    # print(y, x)
-                    # print("newy,newx")
-                    # print(newY, newX)
-                    # print("guidArray")
-                    # print(self.guidArray)
 
                     self.guidArray[y][x].remove(pieceId)
                     self.guidArray[newY][newX].append(pieceId)
