@@ -9,12 +9,18 @@ class QLearningAgent(Agent):
     def __init__(self, actions, epsilon=0.01, alpha=0.5, gamma=1):
         super(QLearningAgent, self).__init__(actions)
         
-        ## TODO 1
-        ## Initialize empty dictionary here
-        ## In addition, initialize the value of epsilon, alpha and gamma
+        # epsilon is the rate of exploration - higher epsilon means more exploring 
         self.epsilon = epsilon
+
+        # the rate at which we learn
         self.alpha = alpha
+
+        # the rate at which you discount a reward that is further away in steps - higher gamma means 
+        #  a future reward is valued more highly at the current time 
         self.gamma = gamma
+
+        # the dictionary of Q values for state,action pairs 
+        # Key is a tuple of (state, action), value is the Q value of that pair 
         self.QDict = {}
         
     def stateToString(self, state):
