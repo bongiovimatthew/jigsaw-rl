@@ -36,9 +36,13 @@ class PuzzleEnvironment(Environment):
 	MAX_ACTIONS_NUM = 7
 
 	def __init__(self, puzzle, randomizedPieces):
+		
 		self.pieceState = randomizedPieces 
-		self.board = puzzle.puzzleBoard
-		self.solution = puzzle.getCorrectPuzzleArray()
+		#self.board = puzzle.puzzleBoard
+		#self.solution = puzzle.getCorrectPuzzleArray()
+		
+		self.puzzle = puzzle 
+
 		self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
 
 	def action(self): 
@@ -52,7 +56,9 @@ class PuzzleEnvironment(Environment):
         #return coord
         return
 
-	def _convert_state(self, state):
+	def _convert_state(self, state, action):
+
+		# Move the selected 
         #converted = np.unravel_index(state, self.shape)
         #return np.asarray(list(converted), dtype=np.float32)
         return 
@@ -67,7 +73,7 @@ class PuzzleEnvironment(Environment):
 		return 
 
 	def render(self):
-		boardCopy = self.board.copy()
+		boardCopy = self.puzzle.puzzleBoard.copy()
 		piece = self.pieceState[0]
 
 		for piece in self.pieceState: 
