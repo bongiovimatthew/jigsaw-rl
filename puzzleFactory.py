@@ -87,6 +87,13 @@ class PuzzleFactory:
 				if (y > 0):
 					self.createEdge(puzzle, (y,x), (y-1,x), Direction.UP)
 
+				# print("y:{0}, x:{1}, direction:{2}, getEdgeGeometry:{3}".format(y, x, Direction.RIGHT, puzzle.piecesArray[y][x].getEdgeGeometry(Direction.RIGHT)))
+
+				# print("y:{0}, x:{1}, direction:{2}, getEdgeGeometry:{3}".format(y, x, Direction.DOWN, puzzle.piecesArray[y][x].getEdgeGeometry(Direction.DOWN)))
+
+				# print("y:{0}, x:{1}, direction:{2}, getEdgeGeometry:{3}".format(y, x, Direction.LEFT, puzzle.piecesArray[y][x].getEdgeGeometry(Direction.LEFT)))
+
+				# print("y:{0}, x:{1}, direction:{2}, getEdgeGeometry:{3}".format(y, x, Direction.UP, puzzle.piecesArray[y][x].getEdgeGeometry(Direction.UP)))
 
 	def addOuterNib(self, singlePieceImgData, xAxisLengthPostRotation, nibHeight):
 		# Use square nibs for now
@@ -157,6 +164,7 @@ class PuzzleFactory:
 
 	def createPuzzleBoard(self, puzzle):
 		puzzle.puzzleBoard = np.zeros((puzzle.singlePieceHeight * puzzle.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, puzzle.singlePieceWidth * puzzle.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3), dtype=np.uint8)
+	
 
 	# Generates the randomly placed, randomly rotated pieces
 	#  Rotation based on image data (no geom) 

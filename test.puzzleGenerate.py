@@ -17,8 +17,8 @@ def TestPuzzlePieceRotate():
 	print(puzzle.piecesArray[0][0].edgeGeometry)
 
 def main():
-	#TestGenerateAndDisplayPuzzle()
-	TestPuzzlePieceRotate()
+	TestGenerateAndDisplayPuzzle()
+	# TestPuzzlePieceRotate()
 
 if __name__ == "__main__":
     main()
