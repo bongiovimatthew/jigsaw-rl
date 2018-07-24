@@ -39,7 +39,12 @@ class PuzzlePiece:
 	def rotate(self):
 		rotationAmount = random.randint(0, 3)
 		self.imgData = np.rot90(self.imgData, rotationAmount)
-		self.edgeGeometry = self.edgeGeometry << (2 * rotationAmount) | self.edgeGeometry >> (8 - 2 * rotationAmount)
+
+		ror = lambda val, r_bits, max_bits: \
+		    ((val & (2**max_bits-1)) >> r_bits%max_bits) | \
+		    (val << (max_bits-(r_bits%max_bits)) & (2**max_bits-1))
+
+		self.edgeGeometry = ror(self.edgeGeometry, (4 - rotationAmount) * 2, 8)
 
 	def displayPiece(self):
 		img = Image.fromarray(self.imgData, 'RGB')
