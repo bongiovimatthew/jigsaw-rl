@@ -19,6 +19,12 @@ def process_img(observation):
     # Reshape input to meet with CNTK expectations.
     img = np.reshape(input_img, (3, 342, 342))
 
+
+    img2 = np.reshape(img, (342, 342, 3))
+    imgDisp = Image.fromarray(img2, 'RGB')
+    imgDisp.show()
+
+
     # Mapping from RGB to gray scale. (Shape remains unchanged.)
     # Y = (2*R + 5*G + 1*B)/8
 
