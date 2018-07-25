@@ -8,7 +8,7 @@ from direction import Direction
 from edge import EdgeShape
 
 class PuzzleFactory:
-	NUMBER_OF_PIECES_TO_SCALE_BY = 3
+	NUMBER_OF_PIECES_TO_SCALE_BY = 2
 
 	def __init__(self):
 		return 
