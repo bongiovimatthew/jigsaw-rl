@@ -84,4 +84,5 @@ def save_model(agent, shared_params):
     agent.save_model(shared_params, path_model_pi, path_model_v)
     
 def load_model(net):
-    net.load_model(path_model_pi, path_model_v)
+    if os.path.exists(path_model_pi) and os.path.exists(path_model_v):
+        net.load_model(path_model_pi, path_model_v)
