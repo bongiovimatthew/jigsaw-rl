@@ -123,14 +123,15 @@ class PuzzleEnvironment(Environment):
                         if newX < 0: 
                             newX = 0 
 
-                    self.guidArray[y][x].remove(pieceId)
-                    self.guidArray[newY][newX].append(pieceId)
-                    
-                    # Update pieceState 
-                    for piece in self.pieceState: 
-                        if piece.id == pieceId: 
-                            piece.coords_x = newX
-                            piece.coords_y = newY
+                    if len(self.guidArray[newY][newX]) == 0: 
+                        self.guidArray[y][x].remove(pieceId)
+                        self.guidArray[newY][newX].append(pieceId)
+                        
+                        # Update pieceState 
+                        for piece in self.pieceState: 
+                            if piece.id == pieceId: 
+                                piece.coords_x = newX
+                                piece.coords_y = newY
                     return
 
     def _convert_state(self, action):
