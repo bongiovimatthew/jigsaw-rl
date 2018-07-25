@@ -36,6 +36,7 @@ class Actions(Enum):
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 4
+    INCORRECT_OVERLAY_SCORE = -2
     CORRECT_GEOMMETRY_SCORE = 1
     INCORRECT_GEOMMETRY_SCORE = -2
     NOT_CONNECTED_SCORE = -1
@@ -165,7 +166,7 @@ class PuzzleEnvironment(Environment):
         # info = {'prob':self.P[self.s][action][0][0]}
         # self.s = self.P[self.s][action][0][1]
 
-        if self.stepCount % 1000 == 0:
+        if self.stepCount % 100 == 0:
             logger.log_scores(self.stepCount, currentScore, tempOldScore)
         
         if (self.debugMode):
@@ -197,7 +198,9 @@ class PuzzleEnvironment(Environment):
                 # Add a green bar on the current piece 
                 boardCopy[ baseY : baseY + yHeight, baseX : baseX + 5] = [0, 255, 0]                
             count += 1
-            
+            if (self.debugMode):
+                print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
+
         return boardCopy
 
     def isMaxReward(self, reward):
@@ -265,5 +268,9 @@ class PuzzleEnvironment(Environment):
             # print(lScore, rScore, uScore, dScore)
             count += 1
             score += lScore + rScore + uScore + dScore
+
+            if len(self.guidArray[piece.coords_y][piece.coords_x]) > 1:
+                score -= PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
+
 
         return score
