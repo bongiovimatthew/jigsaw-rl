@@ -179,6 +179,7 @@ class Agent:
         self.averageScore = 0
         self.slidingWindowAverageScore = 0
         self.numStepsForRunningMetrics = 0
+        self.stepsForAverageRewards = 0
         self.slidingWindowScoresArray = []
         self.numberOfTimesExecutedEachAction = [0 for i in range(self.env.action_space.n)]
     
@@ -228,6 +229,7 @@ class Agent:
         rewards = info["rewards"]
         score = info["score"]
         self.numStepsForRunningMetrics += 1
+        self.stepsForAverageRewards += 1
 
         if rewards < 0:
             self.negativeRewardCount += 1
@@ -239,7 +241,7 @@ class Agent:
             self.positiveRewardCount += 1
 
 
-        self.averageRewards = ((self.averageRewards * (self.t - 1)) + rewards) / self.t
+        self.averageRewards = ((self.averageRewards * (self.stepsForAverageRewards - 1)) + rewards) / self.stepsForAverageRewards
         self.averageScore = ((self.averageScore * (self.t - 1)) + score) / self.t
 
         self.slidingWindowAverageScore = 0
@@ -266,6 +268,7 @@ class Agent:
         self.positiveRewardCount = 0
         self.zeroRewardCount = 0
         self.averageRewards = 0
+        self.stepsForAverageRewards = 0
         self.numStepsForRunningMetrics = 0
         self.numberOfTimesExecutedEachAction = [0 for i in range(self.env.action_space.n)]
 
@@ -278,7 +281,7 @@ class Agent:
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*2)/self.T_max) * self.T) # first decreasing, then it is constant
+        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
         
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
