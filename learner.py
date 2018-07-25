@@ -5,6 +5,7 @@ from gym import wrappers
 import dnn
 from Environment.env import PuzzleEnvironment
 from PIL import Image
+from Diagnostics.logger import Logger as logger
 
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution

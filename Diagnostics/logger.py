@@ -3,18 +3,20 @@ import shutil
 import json
 import time
 import numpy as np
-
 from scipy.misc import imsave
 
 class Logger: 
+
     root = 'files'
+    modelsRoot = 'models'
     path_rewards = 'files/rewards/'
     path_losses = 'files/losses/'
     path_meta = 'files/metadata.json'
-    path_model_pi = 'files/model_pi.model'
-    path_model_v = 'files/model_v.model'
+    path_model_pi = 'models/model_pi.model'
+    path_model_v = 'models/model_v.model'
     path_scores = 'files/scores/'
     path_state_images = 'files/state_images/'
+    path_metrics = 'files/metrics/'
 
     def create_folders(atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
         if os.path.exists(Logger.root):
@@ -22,22 +24,26 @@ class Logger:
             # print ('The folder named files will be deleted!')
             # input ('Press Enter to continue.')
             shutil.rmtree(Logger.root)
+
+        if not os.path.exists(Logger.modelsRoot):
+            os.makedirs(Logger.modelsRoot)
             
         # Create the new folders.
         os.makedirs(Logger.path_rewards)
         os.makedirs(Logger.path_losses)
         os.makedirs(Logger.path_scores)
         os.makedirs(Logger.path_state_images)
+        os.makedirs(Logger.path_metrics)
 
         metadata = [time.strftime("%d/%m/%y"), atari_name, 'cores '+str(cores), 'tmax '+str(tmax), 'gl '+str(game_length), 'Tmax '+str(Tmax), 'C '+str(C), 'gamma '+str(gamma), 'lr '+str(lr)]
         with open(Logger.path_meta, "w") as f:
             f.write(json.dumps(metadata))
 
-    def log_state_image(boardData):
+    def log_state_image(boardData, steps, learner_id):
         #pngfile = "testImage.png"
         #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
         timestr = time.strftime("%Y%m%d-%H%M%S")
-        file_path = Logger.path_state_images + "stateImage_" + timestr + ".png"
+        file_path = Logger.path_state_images + "stateImage_" + str(learner_id) + "_" + str(steps) + "_" + timestr + ".png"
 
         input_img = np.array(boardData)
         
@@ -47,10 +53,17 @@ class Logger:
         print(grayScaleImg.shape)
         imsave(file_path, grayScaleImg)
 
-    def log_scores(iteration, currentScore, oldScore):
-        file_name = Logger.path_scores + "score_" + ".txt"
+    def log_metrics(info, iteration, learner_id):
+        log_scores(iteration, learner_id, info['score'], info['oldScore'], info['averageScore'], info['slidingWindowAverageScore'])
+
+        file_name = Logger.path_metrics + "metrics_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:
-            f.write("Step {0}: PreviousScore: {1}, CurrentScore: {2}\r\n".format(iteration, oldScore, currentScore))
+            f.write("Step {0}: negativeRewardCount: {1}, zeroRewardCount: {2} positiveRewardCount: {3} averageRewards: {4}\r\n".format(iteration, info["negativeRewardCount"], info["zeroRewardCount"], info["positiveRewardCount"], info["averageRewards"]))
+
+    def log_scores(iteration, learner_id, currentScore, oldScore, averageScore, slidingWindowAverageScore):
+        file_name = Logger.path_scores + "score_" + str(learner_id) + ".txt"
+        with open(file_name, "a+") as f:
+            f.write("Step {0}: PreviousScore: {1}, CurrentScore: {2} AverageScore: {3} SlidingWindowAverageScore: {4}\r\n".format(iteration, oldScore, currentScore, averageScore, slidingWindowAverageScore))
 
     def log_rewards(rewards, iteration, learner_id, rnd):
         file_name = Logger.path_rewards + "rwd_" + str(iteration) + "_" + str(learner_id) + "_" + str(rnd) + ".json"
@@ -71,4 +84,5 @@ class Logger:
         agent.save_model(shared_params, Logger.path_model_pi, Logger.path_model_v)
         
     def load_model(net):
-        net.load_model(Logger.path_model_pi, Logger.path_model_v)
+        if os.path.exists(Logger.path_model_pi) and os.path.exists(Logger.path_model_v):
+            net.load_model(Logger.path_model_pi, Logger.path_model_v)
