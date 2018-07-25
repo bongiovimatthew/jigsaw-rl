@@ -23,7 +23,6 @@ class MetricsManager:
         fig.canvas.draw()
         plt.show()
         #fig.canvas.flush_events()
-
         return 
 
     def displayGraphs(self):
