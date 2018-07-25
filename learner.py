@@ -179,6 +179,7 @@ class Agent:
         self.averageRewards = 0
         self.averageScore = 0
         self.slidingWindowAverageScore = 0
+        self.numStepsForRunningMetrics = 0
         self.slidingWindowScoresArray = []
     
     def get_net(self):
@@ -223,6 +224,7 @@ class Agent:
     def update_and_get_metrics(self, info):
         rewards = info["rewards"]
         score = info["score"]
+        self.numStepsForRunningMetrics += 1
 
         if rewards < 0:
             self.negativeRewardCount += 1
@@ -254,7 +256,13 @@ class Agent:
 
         return info
 
-        
+    def reset_running_metrics(self):
+        self.negativeRewardCount = 0
+        self.positiveRewardCount = 0
+        self.zeroRewardCount = 0
+        self.averageRewards = 0
+        self.numStepsForRunningMetrics = 0
+
     def play_game_for_a_while(self):
     
         if self.is_terminal:
@@ -277,6 +285,7 @@ class Agent:
             if self.debugMode and self.t % 50 == 0: 
                 logger.log_metrics(info, self.t, self.learner_id)
                 logger.log_state_image(self.s_t, self.t, self.learner_id)
+                self.reset_running_metrics()
 
             self.is_terminal = self.queue.get_is_last_terminal()
             if self.T % self.C == 0: # log loss when evaluation happens
