@@ -167,9 +167,13 @@ class PuzzleEnvironment(Environment):
 
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
-            if (done):
-                print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
             print("Peforming Action: {0}".format(Actions(action)))
+
+        if (done):
+            print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
+            img = Image.fromarray(self.render(), 'RGB')
+            img.show()            
+
         return (self._convert_state(action), reward, done, None)
         
     def render(self, mode=None):
