@@ -185,14 +185,14 @@ class PuzzleFactory:
 				initialPieceGuidArray[i].append([])
 		 
 		for piece in listOfPiecesAvailable:
-			piece.rotate()
+			# piece.rotate()
 
 			done = False 
 			while not done: 
 				piece.coords_x = random.randint(0, sideDimension - 1)
 				piece.coords_y = random.randint(0, sideDimension - 1)
 
-				if len(initialPieceGuidArray[piece.coords_y][piece.coords_x] == 0)
+				if len(initialPieceGuidArray[piece.coords_y][piece.coords_x]) == 0:
 					initialPieceGuidArray[piece.coords_y][piece.coords_x].append(piece.id) 
 					done = True 
 

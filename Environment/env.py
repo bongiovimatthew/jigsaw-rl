@@ -25,13 +25,13 @@ class ActionSpace(object):
 
 class Actions(Enum):
     ACTION_CYCLE = 0 
-    ACTION_ROT90_1 = 1
-    ACTION_ROT90_2 = 2
-    ACTION_ROT90_3 = 3
-    ACTION_TRANS_UP = 4
-    ACTION_TRANS_RIGHT = 5
-    ACTION_TRANS_DOWN = 6
-    ACTION_TRANS_LEFT = 7
+    ACTION_TRANS_UP = 1
+    ACTION_TRANS_RIGHT = 2
+    ACTION_TRANS_DOWN = 3
+    ACTION_TRANS_LEFT = 4
+    ACTION_ROT90_1 = 5
+    ACTION_ROT90_2 = 6
+    ACTION_ROT90_3 = 7
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 4
@@ -51,7 +51,7 @@ class PuzzleEnvironment(Environment):
     # 7 - translate left 
 
 
-    MAX_ACTIONS_NUM = 7
+    MAX_ACTIONS_NUM = 4
 
     def __init__(self):
         self.oldScore = 0
