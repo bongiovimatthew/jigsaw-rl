@@ -3,8 +3,7 @@ from direction import Direction
 from edge import EdgeShape
 from enum import Enum
 from puzzleFactory import PuzzleFactory
-
-#from gym.envs.toy_text import discrete
+import logger
 
 ### Interface
 class Environment(object):
@@ -165,6 +164,9 @@ class PuzzleEnvironment(Environment):
         # info = {'prob':self.P[self.s][action][0][0]}
         # self.s = self.P[self.s][action][0][1]
 
+        if self.stepCount % 1000 == 0:
+            logger.log_scores(self.stepCount, currentScore, tempOldScore)
+        
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
             if (done):

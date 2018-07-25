@@ -1,13 +1,19 @@
 Metrics: 
 
-Number of moves that result in negative reward, zero, positive 
+2) Print out image after CNN
 
-Avg rewards over time per one game 
+3) Number of moves that result in negative reward, zero, positive 
 
-avg score of 50 moves (sliding window) - (start of game, end of game, every 1000 steps? )
+4) Avg rewards over time per one game 
 
-Image at start of game and every 1000 steps 
+5) avg score of 50 moves (sliding window) - (start of game, end of game, every 1000 steps? )
 
-Print out image after CNN
+6) Print out image of CNN filters 
 
-Print out image of CNN filters 
+
+
+
+
+Done: 
+
+1) Image at start of game and every 50 steps 

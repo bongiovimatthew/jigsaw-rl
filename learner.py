@@ -185,6 +185,7 @@ class Agent:
         
         self.diff = []
         self.epsilon = 1.0
+        self.debugMode = True 
     
     def get_net(self):
         return self.net
@@ -238,6 +239,10 @@ class Agent:
             self.T += 1
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
             self.s_t = env_step(self.env, self.queue, action)
+
+            if self.debugMode and self.t % 50 == 0: 
+                logger.log_state_image(self.s_t)
+
             self.is_terminal = self.queue.get_is_last_terminal()
             if self.T % self.C == 0: # log loss when evaluation happens
                 self.signal = True
