@@ -21,9 +21,9 @@ def TestInitialScoring():
 
 
 def TestActions(): 
-	factory = PuzzleFactory()
-	puzzle = factory.generatePuzzle('images\\rainier_small.jpg', 3, 3)
-	initialPieceState, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
+	#factory = PuzzleFactory()
+	#puzzle = factory.generatePuzzle('images\\rainier_small.jpg', 3, 3)
+	#initialPieceState, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
 
 	env = PuzzleEnvironment()
 

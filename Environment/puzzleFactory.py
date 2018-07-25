@@ -2,10 +2,11 @@ from PIL import Image
 import numpy as np
 import random 
 import math 
-from puzzle import Puzzle 
-from puzzlePiece import PuzzlePiece
-from direction import Direction 
-from edge import EdgeShape
+
+from Environment.puzzlePiece import PuzzlePiece 
+from Environment.direction import Direction 
+from Environment.edge import EdgeShape 
+from Environment.puzzle import Puzzle 
 
 class PuzzleFactory:
 	NUMBER_OF_PIECES_TO_SCALE_BY = 2

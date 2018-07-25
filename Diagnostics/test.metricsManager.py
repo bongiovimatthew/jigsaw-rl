@@ -5,7 +5,6 @@ def TestDrawGraphs():
 	manager.displayMetricsGraph()
 	return 
 
-
 def main():
 	TestDrawGraphs()
 

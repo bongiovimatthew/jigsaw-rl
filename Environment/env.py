@@ -1,10 +1,9 @@
 import numpy as np
-from direction import Direction 
-from edge import EdgeShape
 from enum import Enum
-from puzzleFactory import PuzzleFactory
-import logger
-from PIL import Image
+
+from Environment.direction import Direction 
+from Environment.edge import EdgeShape 
+from Environment.puzzleFactory import PuzzleFactory
 
 ### Interface
 class Environment(object):
@@ -36,7 +35,7 @@ class Actions(Enum):
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 4
-    INCORRECT_OVERLAY_SCORE = -4
+    INCORRECT_OVERLAY_SCORE = -200
     CORRECT_GEOMMETRY_SCORE = 1
     INCORRECT_GEOMMETRY_SCORE = -2
     NOT_CONNECTED_SCORE = -1
@@ -154,7 +153,7 @@ class PuzzleEnvironment(Environment):
     def step(self, action):
         self.stepCount += 1
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore) or (self.stepCount > 9990)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 500)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore
@@ -162,14 +161,9 @@ class PuzzleEnvironment(Environment):
         reward = currentScore - tempOldScore
         if self.isMaxReward(currentScore):
             reward *= 100
-        # elif 
 
         info = {'score':currentScore, 'oldScore': tempOldScore}
-        # self.s = self.P[self.s][action][0][1]
 
-        # if self.stepCount % 100 == 0:
-        #     logger.log_scores(self.stepCount, currentScore, tempOldScore)
-        
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
             print("Peforming Action: {0}".format(Actions(action)))
@@ -218,16 +212,13 @@ class PuzzleEnvironment(Environment):
         score = 0
         pieceEdgeGeommetry = piece.getEdgeGeometry(directionToLook)
 
-        # print("Direction:{0}, pieceEdgeGeommetry:{1}, adjacentCoords_x:{2}, adjacentCoords_y:{3}".format(directionToLook, pieceEdgeGeommetry, adjacentCoords_x, adjacentCoords_y))
         if (pieceEdgeGeommetry == EdgeShape.STRAIGHT):
             if adjacentCoords_x < 0 or adjacentCoords_y < 0 or adjacentCoords_x >= len(self.guidArray[0]) or adjacentCoords_y >= len(self.guidArray):
-                # print("Coords of adjacent")
-                # print(adjacentCoords_x, adjacentCoords_y)
+
                 score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
             else:
                 adjacentPieceIdLength = len(self.guidArray[adjacentCoords_y][adjacentCoords_x])
-                # print("AdjpieceID")
-                # print(adjacentPieceId)
+
                 if (adjacentPieceIdLength != 0):
                     score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE 
                 else:
@@ -263,10 +254,6 @@ class PuzzleEnvironment(Environment):
             rScore = self.getScoreOfAPieceInASingleDirection(piece, Direction.RIGHT, piece.coords_x + 1, piece.coords_y)
             uScore = self.getScoreOfAPieceInASingleDirection(piece, Direction.UP, piece.coords_x, piece.coords_y - 1)
             dScore = self.getScoreOfAPieceInASingleDirection(piece, Direction.DOWN, piece.coords_x, piece.coords_y + 1)
-            
-            # print("Piece count {0}".format(count))
-            # print("l,r,u,d")
-            # print(lScore, rScore, uScore, dScore)
             count += 1
             score += lScore + rScore + uScore + dScore
 

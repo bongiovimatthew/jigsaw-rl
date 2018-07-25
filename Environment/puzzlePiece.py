@@ -1,7 +1,9 @@
 import random
 import uuid
-from edge import EdgeShape
-from direction import Direction 
+
+from Environment.direction import Direction 
+from Environment.edge import EdgeShape  
+
 import numpy as np
 from PIL import Image
 

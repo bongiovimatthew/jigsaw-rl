@@ -1,8 +1,10 @@
 from enum import Enum
 from PIL import Image
-from puzzlePiece import PuzzlePiece
-from edge import EdgeShape
-from direction import Direction
+
+from Environment.direction import Direction 
+from Environment.edge import EdgeShape 
+from Environment.puzzlePiece import PuzzlePiece 
+
 import numpy as np
 import random
 import math
