@@ -47,14 +47,7 @@ class PuzzlePiece:
 		    ((val & (2**max_bits-1)) >> r_bits%max_bits) | \
 		    (val << (max_bits-(r_bits%max_bits)) & (2**max_bits-1))
 
-		# print("ROTATE! rotationAmount:{0}, edgeGeometry:{1:08b}, finalEdgeGeometry:{2:08b}".format(rotationAmount, self.edgeGeometry, ror(self.edgeGeometry, (rotationAmount) * 2, 8)))
-
 		self.edgeGeometry = ror(self.edgeGeometry, (rotationAmount) * 2, 8)
-		# print(self.getEdgeGeometry(Direction.LEFT))
-		# print(self.getEdgeGeometry(Direction.DOWN))
-		# print(self.getEdgeGeometry(Direction.RIGHT))
-		# print(self.getEdgeGeometry(Direction.UP))
-		# self.displayPiece()
 
 	def displayPiece(self):
 		img = Image.fromarray(self.imgData, 'RGB')
