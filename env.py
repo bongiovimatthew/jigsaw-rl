@@ -154,7 +154,7 @@ class PuzzleEnvironment(Environment):
     def step(self, action):
         self.stepCount += 1
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore) or (self.stepCount > 1000)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 9990)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore
