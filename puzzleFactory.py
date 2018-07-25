@@ -165,14 +165,16 @@ class PuzzleFactory:
 	def createPuzzleBoard(self, puzzle):
 		puzzle.puzzleBoard = np.zeros((puzzle.singlePieceHeight * puzzle.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, puzzle.singlePieceWidth * puzzle.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3), dtype=np.uint8)
 	
+	def createRandomPuzzlePieceArray(self, puzzle):		
+		listOfPiecesAvailable = [puzzle.piecesArray[y][x] for y in range(puzzle.yNumPieces) for x in range(puzzle.xNumPieces)]
+		random.shuffle(listOfPiecesAvailable)
+
+		return listOfPiecesAvailable
 
 	# Generates the randomly placed, randomly rotated pieces
 	#  Rotation based on image data (no geom) 
-	def createRandomPuzzlePieceArray(self, puzzle):
-		listOfPiecesAvailable = [puzzle.piecesArray[y][x] for y in range(puzzle.yNumPieces) for x in range(puzzle.xNumPieces)]
-		random.shuffle(listOfPiecesAvailable)
-		
-		sideDimension = puzzle.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY
+	def placePiecesOnBoard(puzzle, listOfPiecesAvailable):		
+		sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY
 
 		initialPieceGuidArray = []
 
@@ -188,4 +190,4 @@ class PuzzleFactory:
 
 			initialPieceGuidArray[piece.coords_y][piece.coords_x].append(piece.id) 
 
-		return (listOfPiecesAvailable, initialPieceGuidArray)
+		return initialPieceGuidArray

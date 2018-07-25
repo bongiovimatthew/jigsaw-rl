@@ -54,30 +54,32 @@ class PuzzleEnvironment(Environment):
     MAX_ACTIONS_NUM = 7
 
     def __init__(self):
-        self.setupEnvironment()
         self.oldScore = 0
         self.debugMode = True
+        self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
+
+        # Generate the puzzle 
+        factory = PuzzleFactory()
+        puzzle = factory.generatePuzzle('images\\rainier_small.jpg', 3, 3)
+        randomizedPieces = factory.createRandomPuzzlePieceArray(puzzle)
+        
+        # pieceState is an array of PuzzlePiece objects
+        self.pieceState = randomizedPieces 
+        self.puzzle = puzzle
+
+        self.setupEnvironment()
 
     def reset(self):
         self.setupEnvironment()
         return self.render()
 
     def setupEnvironment(self):
-
-        # Generate the puzzle 
-        factory = PuzzleFactory()
-        puzzle = factory.generatePuzzle('images\\rainier_small.jpg', 3, 3)
-        randomizedPieces, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
-
-        # pieceState is an array of PuzzlePiece objects
-        self.pieceState = randomizedPieces 
-        self.puzzle = puzzle
         # Contains the relative position of the piece IDs in the current state 
-        self.guidArray = guidArray
-        self.currentPieceIndex = 0
-        self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
-        self.oldScore = self.getScoreOfCurrentState()
+        self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState)
 
+        self.currentPieceIndex = 0
+        self.oldScore = self.getScoreOfCurrentState()
+        self.stepCount = 0
 
     def action(self): 
         return self.action_space
@@ -149,22 +151,25 @@ class PuzzleEnvironment(Environment):
         return self.render()
 
     def step(self, action):
+        self.stepCount += 1
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 9998)
 
         reward = currentScore - self.oldScore
+        tempOldScore = self.oldScore
         self.oldScore = currentScore
-        if done:
+        if self.isMaxReward(currentScore):
             reward *= 100
         # elif 
 
         # info = {'prob':self.P[self.s][action][0][0]}
         # self.s = self.P[self.s][action][0][1]
 
-        print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, self.oldScore))
-        if (done):
-            print("COMPLETED EPISODE!, reward:{0}".format(reward))
-        print("Peforming Action: {0}".format(Actions(action)))
+        if (self.debugMode):
+            print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
+            if (done):
+                print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
+            print("Peforming Action: {0}".format(Actions(action)))
         return (self._convert_state(action), reward, done, None)
         
     def render(self, mode=None):
@@ -181,7 +186,7 @@ class PuzzleEnvironment(Environment):
 
             boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
 
-            if self.debugMode and self.currentPieceIndex == count: 
+            if self.currentPieceIndex == count: 
                 # Add a green bar on the current piece 
                 boardCopy[ baseY : baseY + yHeight, baseX : baseX + 15] = [0, 255, 0]                
             count += 1
