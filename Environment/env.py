@@ -153,6 +153,8 @@ class PuzzleEnvironment(Environment):
 
     def step(self, action):
         self.stepCount += 1
+
+        next_state = self._convert_state(action)
         currentScore = self.getScoreOfCurrentState()
         done = self.isMaxReward(currentScore) or (self.stepCount > 500)
 
@@ -174,7 +176,7 @@ class PuzzleEnvironment(Environment):
             img = Image.fromarray(self.render(), 'RGB')
             img.show()            
 
-        return (self._convert_state(action), reward, done, info)
+        return (next_state, reward, done, info)
         
     def render(self, mode=None):
         boardCopy = self.puzzle.puzzleBoard.copy()
