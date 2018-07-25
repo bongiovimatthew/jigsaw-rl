@@ -1,4 +1,0 @@
-Step 50: negativeRewardCount: 4, zeroRewardCount: 43 positiveRewardCount: 3 averageRewards: -0.6000000000000001
-Step 100: negativeRewardCount: 13, zeroRewardCount: 74 positiveRewardCount: 13 averageRewards: -0.23
-Step 150: negativeRewardCount: 20, zeroRewardCount: 106 positiveRewardCount: 24 averageRewards: -0.05333333333333334
-Step 200: negativeRewardCount: 31, zeroRewardCount: 137 positiveRewardCount: 32 averageRewards: -0.155

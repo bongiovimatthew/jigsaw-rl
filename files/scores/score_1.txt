@@ -1,4 +1,0 @@
-Step 50: PreviousScore: 24, CurrentScore: 30 AverageScore: 38.48 SlidingWindowAverageScore: 38.48
-Step 100: PreviousScore: 16, CurrentScore: 22 AverageScore: 35.84000000000001 SlidingWindowAverageScore: 33.2
-Step 150: PreviousScore: 58, CurrentScore: 58 AverageScore: 37.946666666666665 SlidingWindowAverageScore: 42.16
-Step 200: PreviousScore: 54, CurrentScore: 54 AverageScore: 41.77500000000002 SlidingWindowAverageScore: 53.26
