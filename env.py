@@ -153,7 +153,7 @@ class PuzzleEnvironment(Environment):
     def step(self, action):
         self.stepCount += 1
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore) or (self.stepCount > 9998)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 9990)
 
         reward = currentScore - self.oldScore
         tempOldScore = self.oldScore
@@ -212,7 +212,7 @@ class PuzzleEnvironment(Environment):
             if adjacentCoords_x < 0 or adjacentCoords_y < 0 or adjacentCoords_x >= len(self.guidArray[0]) or adjacentCoords_y >= len(self.guidArray):
                 # print("Coords of adjacent")
                 # print(adjacentCoords_x, adjacentCoords_y)
-                score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
+                score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
             else:
                 adjacentPieceIdLength = len(self.guidArray[adjacentCoords_y][adjacentCoords_x])
                 # print("AdjpieceID")
@@ -220,7 +220,7 @@ class PuzzleEnvironment(Environment):
                 if (adjacentPieceIdLength != 0):
                     score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE 
                 else:
-                    score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
+                    score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
 
         # Account for IN and OUT
         else:
