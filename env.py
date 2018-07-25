@@ -4,6 +4,7 @@ from edge import EdgeShape
 from enum import Enum
 from puzzleFactory import PuzzleFactory
 import logger
+from PIL import Image
 
 ### Interface
 class Environment(object):
