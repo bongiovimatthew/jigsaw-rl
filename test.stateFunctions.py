@@ -22,7 +22,7 @@ def TestInitialScoring():
 
 def TestActions(): 
 	factory = PuzzleFactory()
-	puzzle = factory.generatePuzzle('images\\rainier.jpg', 3, 3)
+	puzzle = factory.generatePuzzle('images\\rainier_small.jpg', 3, 3)
 	initialPieceState, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
 
 	env = PuzzleEnvironment()

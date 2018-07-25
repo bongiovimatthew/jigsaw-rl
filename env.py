@@ -183,7 +183,7 @@ class PuzzleEnvironment(Environment):
 
             if self.debugMode and self.currentPieceIndex == count: 
                 # Add a green bar on the current piece 
-                boardCopy[ baseY : baseY + yHeight, baseX : baseX + 15] = [0, 255, 0]                
+                boardCopy[ baseY : baseY + yHeight, baseX : baseX + 5] = [0, 255, 0]                
             count += 1
             
         return boardCopy

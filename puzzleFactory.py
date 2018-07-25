@@ -144,7 +144,7 @@ class PuzzleFactory:
 		imgSliceHeight = math.floor(imgHeight / puzzle.yNumPieces)
 		singlePieceHeight = imgSliceHeight  + 2 * nibHeight 
 		paddedImageArray = np.pad(imageArray, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant')
-
+		
 		for x in range(puzzle.xNumPieces):
 			for y in range(puzzle.yNumPieces):
 				x1 = (x * imgSliceWidth) - nibHeight
@@ -156,7 +156,7 @@ class PuzzleFactory:
 				singlePieceImgData = paddedImageArray[y1 + nibHeight : y2 + nibHeight, x1 + nibHeight : x2 + nibHeight].copy()
 
 				singlePieceImgData = self.addNibs(puzzle, singlePieceImgData, (singlePieceWidth, singlePieceHeight), (x, y), nibHeight)
-				singlePieceImgData = np.pad(singlePieceImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_values = (255))
+				#singlePieceImgData = np.pad(singlePieceImgData, ((nibHeight, nibHeight), (nibHeight, nibHeight),(0,0)), 'constant', constant_values = (255))
 				
 				puzzle.piecesArray[y][x].imgData = singlePieceImgData
 
