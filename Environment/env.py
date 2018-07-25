@@ -35,7 +35,7 @@ class Actions(Enum):
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 4
-    INCORRECT_OVERLAY_SCORE = -4
+    INCORRECT_OVERLAY_SCORE = -200
     CORRECT_GEOMMETRY_SCORE = 1
     INCORRECT_GEOMMETRY_SCORE = -2
     NOT_CONNECTED_SCORE = -1
