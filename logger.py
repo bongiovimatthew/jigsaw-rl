@@ -2,6 +2,8 @@ import os
 import shutil
 import json
 import time
+import numpy as np
+
 from scipy.misc import imsave
 
 root = 'files'
@@ -35,7 +37,14 @@ def log_state_image(boardData):
     #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
     timestr = time.strftime("%Y%m%d-%H%M%S")
     file_path = path_state_images + "stateImage_" + timestr + ".png"
-    imsave(file_path, boardData)
+
+    input_img = np.array(boardData)
+    
+    # Reshape input to meet with CNTK expectations.
+    grayScaleImg = np.reshape(input_img, (84, 84))
+
+    print(grayScaleImg.shape)
+    imsave(file_path, grayScaleImg)
 
 def log_scores(iteration, currentScore, oldScore):
     file_name = path_scores + "score_" + ".txt"
