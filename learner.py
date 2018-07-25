@@ -120,7 +120,7 @@ def process_img(observation):
     input_img = np.array(observation)
     
     # Reshape input to meet with CNTK expectations.
-    img = np.reshape(input_img, (3, 432, 432))
+    img = np.reshape(input_img, (3, 342, 342))
     
     # Cropping the playing area. The shape is based on empirical decision.
     # img_cropped = np.zeros((3, 185, 160))
@@ -212,6 +212,7 @@ class Agent:
                 self.evaluate_during_training()
                 self.signal = False
     
+        print("Completed run")
     # IMPLEMENTATIONS FOR the FUNCTIONS above
         
     def synchronize_dnn(self):
