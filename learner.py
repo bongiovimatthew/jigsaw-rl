@@ -6,6 +6,7 @@ import dnn
 import logger
 import pdb
 from env import PuzzleEnvironment
+from PIL import Image
 
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution
@@ -114,30 +115,9 @@ class Queue:
 # Preprocessing of the raw frames from the game.
 
 def process_img(observation):
+    img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
+    img_final = np.reshape(img_final, (1, 84, 84))
 
-    # Input: the raw frame as a list with shape (210, 160, 3)
-    # https://gym.openai.com/envs/Breakout-v0 
-    input_img = np.array(observation)
-    
-    # Reshape input to meet with CNTK expectations.
-    img = np.reshape(input_img, (3, 342, 342))
-    
-    # Cropping the playing area. The shape is based on empirical decision.
-    # img_cropped = np.zeros((3, 185, 160))
-    # img_cropped[:,:,:] = img[:, 16:201,:]
-    
-    # Mapping from RGB to gray scale. (Shape remains unchanged.)
-    # Y = (2*R + 5*G + 1*B)/8
-    img_cropped_gray = np.zeros((1, img.shape[0], img.shape[1]))
-    img_cropped_gray = (2*img[0,:,:] + 5*img[1,:,:] + img[2,:,:])/8.0
-    
-    # Rescaling image to 1x84x84.
-    img_cropped_gray_resized = np.zeros((1,84,84))
-    img_cropped_gray_resized[0,:,:] = sc.imresize(img_cropped_gray, (1,84,84), interp='bilinear', mode=None)
-    
-    # Saving memory. Colors goes from 0 to 255.
-    img_final = np.uint8(img_cropped_gray_resized)
-    
     return img_final
 
 # Functions to avoid temporary coupling.
