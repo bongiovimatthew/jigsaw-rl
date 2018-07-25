@@ -52,12 +52,7 @@ class PuzzleEnvironment(Environment):
     # 6 - translate down 
     # 7 - translate left 
 
-<<<<<<< HEAD
-
     MAX_ACTIONS_NUM = 5
-=======
-    MAX_ACTIONS_NUM = 8
->>>>>>> 11efe6aad767ecfc915733852eb81d60f69fc84a
 
     def __init__(self):
         self.oldScore = 0
