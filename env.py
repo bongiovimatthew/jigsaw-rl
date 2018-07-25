@@ -271,7 +271,7 @@ class PuzzleEnvironment(Environment):
             score += lScore + rScore + uScore + dScore
 
             if len(self.guidArray[piece.coords_y][piece.coords_x]) > 1:
-                score -= PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
+                score = PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
 
 
         return score
