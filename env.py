@@ -55,7 +55,7 @@ class PuzzleEnvironment(Environment):
 
     def __init__(self):
         self.oldScore = 0
-        self.debugMode = True
+        self.debugMode = False
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
 
         # Generate the puzzle 
