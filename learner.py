@@ -180,6 +180,7 @@ class Agent:
         self.slidingWindowAverageScore = 0
         self.numStepsForRunningMetrics = 0
         self.slidingWindowScoresArray = []
+        self.numberOfTimesExecutedEachAction = [0 for i in range(self.env.action_space.n)]
     
     def get_net(self):
         return self.net
@@ -223,7 +224,7 @@ class Agent:
         finally:
             lock.release()
 
-    def update_and_get_metrics(self, info):
+    def update_and_get_metrics(self, info, action):
         rewards = info["rewards"]
         score = info["score"]
         self.numStepsForRunningMetrics += 1
@@ -243,6 +244,7 @@ class Agent:
 
         self.slidingWindowAverageScore = 0
         self.slidingWindowScoresArray.append(score)
+        self.numberOfTimesExecutedEachAction[action] += 1
 
         if len(self.slidingWindowScoresArray) > 50:
             self.slidingWindowScoresArray.pop(0)
@@ -255,6 +257,7 @@ class Agent:
         info["averageRewards"] = self.averageRewards
         info["averageScore"] = self.averageScore
         info["slidingWindowAverageScore"] = self.slidingWindowAverageScore
+        info["numberOfTimesExecutedEachAction"] = self.numberOfTimesExecutedEachAction
 
         return info
 
@@ -264,6 +267,7 @@ class Agent:
         self.zeroRewardCount = 0
         self.averageRewards = 0
         self.numStepsForRunningMetrics = 0
+        self.numberOfTimesExecutedEachAction = [0 for i in range(self.env.action_space.n)]
 
     def play_game_for_a_while(self):
     
@@ -274,7 +278,7 @@ class Agent:
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (1.0 - 0.1)*5/self.T_max*self.T) # first decreasing, then it is constant
+        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*2)/self.T_max) * self.T) # first decreasing, then it is constant
         
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
@@ -282,7 +286,7 @@ class Agent:
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
             self.s_t, info = env_step(self.env, self.queue, action)
 
-            info = self.update_and_get_metrics(info)
+            info = self.update_and_get_metrics(info, action)
 
             if self.debugMode and self.t % 50 == 0: 
                 logger.log_metrics(info, self.t, self.learner_id)
@@ -305,7 +309,8 @@ class Agent:
     def calculate_gradients(self):
         
         idx = self.queue.get_last_idx()
-        while idx > 0: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
+        final_index = idx - self.t_max
+        while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
             state = self.queue.get_state_at(idx)
             reward = self.queue.get_reward_at(idx)
             action = self.queue.get_action_at(idx)

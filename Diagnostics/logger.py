@@ -4,6 +4,7 @@ import json
 import time
 import numpy as np
 from scipy.misc import imsave
+from Environment.env import Actions
 
 class Logger: 
 
@@ -59,6 +60,16 @@ class Logger:
         file_name = Logger.path_metrics + "metrics_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:
             f.write("Step {0}: negativeRewardCount: {1}, zeroRewardCount: {2} positiveRewardCount: {3} averageRewards: {4}\r\n".format(iteration, info["negativeRewardCount"], info["zeroRewardCount"], info["positiveRewardCount"], info["averageRewards"]))
+
+        file_name = Logger.path_metrics + "moves_" + str(learner_id) + ".txt"
+        with open(file_name, "a+") as f:
+            stringToPrint = ""
+            for i in range(len(info["numberOfTimesExecutedEachAction"])):
+                actionName = Actions(i).name
+                stringToPrint += actionName + ": " + str(info["numberOfTimesExecutedEachAction"][i]) + " "
+
+            stringToPrint += "\r\n"
+            f.write(stringToPrint)
 
     def log_scores(iteration, learner_id, currentScore, oldScore, averageScore, slidingWindowAverageScore):
         file_name = Logger.path_scores + "score_" + str(learner_id) + ".txt"

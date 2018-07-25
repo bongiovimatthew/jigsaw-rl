@@ -72,7 +72,7 @@ class PuzzleFactory:
 		puzzle.piecesArray[piece1Coords[0]][piece1Coords[1]].setEdgeGeometry(p1EdgeDirection, p1EdgeShape)
 
 	def generatePuzzlePiecesGeometry(self, puzzle):
-		puzzle.piecesArray = [[PuzzlePiece() for x in range(puzzle.xNumPieces)] for y in range(puzzle.yNumPieces)]
+		puzzle.piecesArray = [[PuzzlePiece(y, x) for x in range(puzzle.xNumPieces)] for y in range(puzzle.yNumPieces)]
 
 		for x in range(puzzle.xNumPieces):
 			for y in range(puzzle.yNumPieces):
