@@ -25,6 +25,10 @@ You will need to install a handful of dependencies before running this project.
 
 	`pip install pillow `
 
+* __Pynput__: Used for controlling the human version of the puzzle game 
+
+	`pip install pynput`
+
 
 Once all the dependencies are installed, you can begin the learning agent by running: 
 
