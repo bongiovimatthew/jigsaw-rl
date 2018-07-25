@@ -3,9 +3,9 @@ import scipy.misc as sc
 import gym
 from gym import wrappers
 import dnn
-import logger
-import pdb
-from env import PuzzleEnvironment
+
+#from Diagnostics.logger import logger
+from Environment.env import PuzzleEnvironment
 
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution

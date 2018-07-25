@@ -1,7 +1,8 @@
 from multiprocessing import Lock, Pool
 import argparse
 import learner as lrn
-import logger
+
+from Diagnostics.logger import Logger as logger
 
 # Read the parameters to initialize the algorithm.
 parser = argparse.ArgumentParser(description='A3C algorithm')
