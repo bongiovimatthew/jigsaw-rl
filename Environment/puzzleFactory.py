@@ -9,7 +9,7 @@ from Environment.edge import EdgeShape
 from Environment.puzzle import Puzzle 
 
 class PuzzleFactory:
-	NUMBER_OF_PIECES_TO_SCALE_BY = 3
+	NUMBER_OF_PIECES_TO_SCALE_BY = 2
 
 	def __init__(self):
 		return 

@@ -3,9 +3,8 @@ import scipy.misc as sc
 import gym
 from gym import wrappers
 import dnn
-
-#from Diagnostics.logger import logger
 from Environment.env import PuzzleEnvironment
+from PIL import Image
 
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution
@@ -35,7 +34,10 @@ def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num
     agent.run(learner_id)
         
 def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
-    return Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
+    agent = Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
+    logger.load_model(agent.get_net())
+
+    return agent
     
 def create_agent_for_evaluation():
     
@@ -114,30 +116,9 @@ class Queue:
 # Preprocessing of the raw frames from the game.
 
 def process_img(observation):
+    img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
+    img_final = np.reshape(img_final, (1, 84, 84))
 
-    # Input: the raw frame as a list with shape (210, 160, 3)
-    # https://gym.openai.com/envs/Breakout-v0 
-    input_img = np.array(observation)
-    
-    # Reshape input to meet with CNTK expectations.
-    img = np.reshape(input_img, (3, 342, 342))
-    
-    # Cropping the playing area. The shape is based on empirical decision.
-    # img_cropped = np.zeros((3, 185, 160))
-    # img_cropped[:,:,:] = img[:, 16:201,:]
-    
-    # Mapping from RGB to gray scale. (Shape remains unchanged.)
-    # Y = (2*R + 5*G + 1*B)/8
-    img_cropped_gray = np.zeros((1, img.shape[0], img.shape[1]))
-    img_cropped_gray = (2*img[0,:,:] + 5*img[1,:,:] + img[2,:,:])/8.0
-    
-    # Rescaling image to 1x84x84.
-    img_cropped_gray_resized = np.zeros((1,84,84))
-    img_cropped_gray_resized[0,:,:] = sc.imresize(img_cropped_gray, (1,84,84), interp='bilinear', mode=None)
-    
-    # Saving memory. Colors goes from 0 to 255.
-    img_final = np.uint8(img_cropped_gray_resized)
-    
     return img_final
 
 # Functions to avoid temporary coupling.
@@ -148,12 +129,15 @@ def env_reset(env, queue):
     return queue.get_recent_state() # should return None
     
 def env_step(env, queue, action):
-    obs, rw, done, _ = env.step(action)
+    obs, rw, done, info = env.step(action)
     # pdb.set_trace()
     # if (rw > 0):
     #     print("Action:{0}, rewards:{1}".format(action, rw))
+
+    # Add rewards to info
+    info["rewards"] = rw
     queue.add(process_img(obs), rw, action, done)
-    return queue.get_recent_state()
+    return queue.get_recent_state(), info
 
 
 class Agent:
@@ -186,6 +170,15 @@ class Agent:
         self.diff = []
         self.epsilon = 1.0
         self.debugMode = True 
+
+        self.negativeRewardCount = 0
+        self.zeroRewardCount = 0
+        self.positiveRewardCount = 0
+        self.averageRewards = 0
+        self.averageScore = 0
+        self.slidingWindowAverageScore = 0
+        self.numStepsForRunningMetrics = 0
+        self.slidingWindowScoresArray = []
     
     def get_net(self):
         return self.net
@@ -225,7 +218,49 @@ class Agent:
             self.net.synchronize_net(shared) # the shared parameters are copied into 'net'
         finally:
             lock.release()
-        
+
+    def update_and_get_metrics(self, info):
+        rewards = info["rewards"]
+        score = info["score"]
+        self.numStepsForRunningMetrics += 1
+
+        if rewards < 0:
+            self.negativeRewardCount += 1
+
+        elif rewards == 0:
+            self.zeroRewardCount += 1
+
+        elif rewards > 0:
+            self.positiveRewardCount += 1
+
+
+        self.averageRewards = ((self.averageRewards * (self.t - 1)) + rewards) / self.t
+        self.averageScore = ((self.averageScore * (self.t - 1)) + score) / self.t
+
+        self.slidingWindowAverageScore = 0
+        self.slidingWindowScoresArray.append(score)
+
+        if len(self.slidingWindowScoresArray) > 50:
+            self.slidingWindowScoresArray.pop(0)
+
+        self.slidingWindowAverageScore = sum(self.slidingWindowScoresArray) / len(self.slidingWindowScoresArray)
+
+        info["negativeRewardCount"] = self.negativeRewardCount
+        info["zeroRewardCount"] = self.zeroRewardCount
+        info["positiveRewardCount"] = self.positiveRewardCount
+        info["averageRewards"] = self.averageRewards
+        info["averageScore"] = self.averageScore
+        info["slidingWindowAverageScore"] = self.slidingWindowAverageScore
+
+        return info
+
+    def reset_running_metrics(self):
+        self.negativeRewardCount = 0
+        self.positiveRewardCount = 0
+        self.zeroRewardCount = 0
+        self.averageRewards = 0
+        self.numStepsForRunningMetrics = 0
+
     def play_game_for_a_while(self):
     
         if self.is_terminal:
@@ -241,10 +276,14 @@ class Agent:
             self.t += 1
             self.T += 1
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
-            self.s_t = env_step(self.env, self.queue, action)
+            self.s_t, info = env_step(self.env, self.queue, action)
+
+            info = self.update_and_get_metrics(info)
 
             if self.debugMode and self.t % 50 == 0: 
-                logger.log_state_image(self.s_t)
+                logger.log_metrics(info, self.t, self.learner_id)
+                logger.log_state_image(self.s_t, self.t, self.learner_id)
+                self.reset_running_metrics()
 
             self.is_terminal = self.queue.get_is_last_terminal()
             if self.T % self.C == 0: # log loss when evaluation happens
@@ -300,7 +339,7 @@ class Agent:
             rewards = []
             while not (finished or cntr == self.game_length):
                 action = dnn.action(self.net, state)
-                state = env_step(self.env, self.queue, action)
+                state, info = env_step(self.env, self.queue, action)
                 rewards.append(self.queue.get_recent_reward())
                 
                 finished = self.queue.get_is_last_terminal()
@@ -321,7 +360,7 @@ class Agent:
             img.show()
             env.render()
             action = dnn.action(self.net, state)
-            state = env_step(env, self.queue, action)
+            state, info = env_step(env, self.queue, action)
             rewards.append(self.queue.get_recent_reward())
                 
             finished = self.queue.get_is_last_terminal()

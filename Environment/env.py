@@ -5,8 +5,6 @@ from Environment.direction import Direction
 from Environment.edge import EdgeShape 
 from Environment.puzzleFactory import PuzzleFactory
 
-#from . Diagnostics import logger
-
 ### Interface
 class Environment(object):
 
@@ -37,6 +35,7 @@ class Actions(Enum):
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 4
+    INCORRECT_OVERLAY_SCORE = -4
     CORRECT_GEOMMETRY_SCORE = 1
     INCORRECT_GEOMMETRY_SCORE = -2
     NOT_CONNECTED_SCORE = -1
@@ -156,15 +155,15 @@ class PuzzleEnvironment(Environment):
         currentScore = self.getScoreOfCurrentState()
         done = self.isMaxReward(currentScore) or (self.stepCount > 9990)
 
-        reward = currentScore - self.oldScore
         tempOldScore = self.oldScore
         self.oldScore = currentScore
+
+        reward = currentScore - tempOldScore
         if self.isMaxReward(currentScore):
             reward *= 100
 
-        if self.stepCount % 1000 == 0:
-            logger.log_scores(self.stepCount, currentScore, tempOldScore)
-        
+        info = {'score':currentScore, 'oldScore': tempOldScore}
+
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
             print("Peforming Action: {0}".format(Actions(action)))
@@ -174,7 +173,7 @@ class PuzzleEnvironment(Environment):
             img = Image.fromarray(self.render(), 'RGB')
             img.show()            
 
-        return (self._convert_state(action), reward, done, None)
+        return (self._convert_state(action), reward, done, info)
         
     def render(self, mode=None):
         boardCopy = self.puzzle.puzzleBoard.copy()
@@ -194,11 +193,13 @@ class PuzzleEnvironment(Environment):
                 # Add a green bar on the current piece 
                 boardCopy[ baseY : baseY + yHeight, baseX : baseX + 5] = [0, 255, 0]                
             count += 1
-            
+            if (self.debugMode):
+                print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
+
         return boardCopy
 
     def isMaxReward(self, reward):
-        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()):
+        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray() * 4):
             return True
         return False
 
@@ -255,5 +256,9 @@ class PuzzleEnvironment(Environment):
             dScore = self.getScoreOfAPieceInASingleDirection(piece, Direction.DOWN, piece.coords_x, piece.coords_y + 1)
             count += 1
             score += lScore + rScore + uScore + dScore
+
+            if len(self.guidArray[piece.coords_y][piece.coords_x]) > 1:
+                score = PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
+
 
         return score
