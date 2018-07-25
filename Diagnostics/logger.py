@@ -54,7 +54,7 @@ class Logger:
         imsave(file_path, grayScaleImg)
 
     def log_metrics(info, iteration, learner_id):
-        log_scores(iteration, learner_id, info['score'], info['oldScore'], info['averageScore'], info['slidingWindowAverageScore'])
+        Logger.log_scores(iteration, learner_id, info['score'], info['oldScore'], info['averageScore'], info['slidingWindowAverageScore'])
 
         file_name = Logger.path_metrics + "metrics_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:
