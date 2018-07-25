@@ -52,8 +52,12 @@ class PuzzleEnvironment(Environment):
     # 6 - translate down 
     # 7 - translate left 
 
+<<<<<<< HEAD
 
     MAX_ACTIONS_NUM = 5
+=======
+    MAX_ACTIONS_NUM = 8
+>>>>>>> 11efe6aad767ecfc915733852eb81d60f69fc84a
 
     def __init__(self):
         self.oldScore = 0
@@ -136,7 +140,6 @@ class PuzzleEnvironment(Environment):
                     return
 
     def _convert_state(self, action):
-
         if action == Actions.ACTION_CYCLE.value: 
             self.currentPieceIndex = (self.currentPieceIndex + 1) % len(self.pieceState)
 
@@ -167,7 +170,7 @@ class PuzzleEnvironment(Environment):
         if self.isMaxReward(currentScore):
             reward *= 100
 
-        info = {'score':currentScore, 'oldScore': tempOldScore}
+        info = {'score':currentScore, 'oldScore': tempOldScore, 'action': action, 'step': self.stepCount}
 
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
@@ -199,7 +202,12 @@ class PuzzleEnvironment(Environment):
 
             if self.currentPieceIndex == count: 
                 # Add a green bar on the current piece 
-                boardCopy[ baseY : baseY + yHeight, baseX : baseX + 5] = [0, 255, 0]                
+                greenSquareW = 5
+                greenSquareH = 5
+                boardCopy[ baseY : baseY + greenSquareH, baseX : baseX + greenSquareW] = [0, 255, 0]                
+                boardCopy[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX : baseX + greenSquareW] = [0, 255, 0]                
+                boardCopy[ baseY : baseY + greenSquareH, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
+                boardCopy[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
             count += 1
             if (self.debugMode):
                 print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
