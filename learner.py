@@ -37,7 +37,7 @@ def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num
         
 def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
     agent = Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
-    logger.load_model(agent.get_net())
+    # logger.load_model(agent.get_net())
 
     return agent
     
@@ -192,6 +192,7 @@ class Agent:
         print(self.T_max)
         while self.T < self.T_max:
 
+
             self.synchronize_dnn()
             
             self.play_game_for_a_while()
@@ -205,6 +206,8 @@ class Agent:
             self.sync_update() # Syncron update instead of asyncron!
             print(self.T)
             
+            if (self.T%100 == 0): 
+                self.save_model_snapshot()
             if self.signal:
                 self.evaluate_during_training()
                 self.signal = False
@@ -366,6 +369,12 @@ class Agent:
             total_rw += x
         print (total_rw)
 
+    def save_model_snapshot(self):
+        lock.acquire()
+        try:
+            self.net.save_model(logger.path_model_pi,logger.path_model_v)
+        finally:
+            lock.release()
     def save_model(self, shared_params, path_model_pi, path_model_v):
         self.net.synchronize_net(shared_params) # copy the parameters into the recently created agent's netork
         self.net.save_model(path_model_pi, path_model_v)
