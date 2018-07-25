@@ -32,11 +32,11 @@ def create_folders(atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
     with open(path_meta, "w") as f:
         f.write(json.dumps(metadata))
 
-def log_state_image(boardData):
+def log_state_image(boardData, learner_id):
     #pngfile = "testImage.png"
     #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    file_path = path_state_images + "stateImage_" + timestr + ".png"
+    file_path = path_state_images + "stateImage_" + str(learner_id) + "_" + timestr + ".png"
 
     input_img = np.array(boardData)
     

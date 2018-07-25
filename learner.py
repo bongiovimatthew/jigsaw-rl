@@ -224,7 +224,7 @@ class Agent:
             self.s_t = env_step(self.env, self.queue, action)
 
             if self.debugMode and self.t % 50 == 0: 
-                logger.log_state_image(self.s_t)
+                logger.log_state_image(self.s_t, self.learner_id)
 
             self.is_terminal = self.queue.get_is_last_terminal()
             if self.T % self.C == 0: # log loss when evaluation happens
