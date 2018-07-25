@@ -36,7 +36,10 @@ def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num
     agent.run(learner_id)
         
 def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
-    return Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
+    agent = Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
+    logger.load_model(agent.get_net())
+
+    return agent
     
 def create_agent_for_evaluation():
     

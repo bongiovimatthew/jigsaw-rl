@@ -7,11 +7,12 @@ import numpy as np
 from scipy.misc import imsave
 
 root = 'files'
+modelsRoot = 'models'
 path_rewards = 'files/rewards/'
 path_losses = 'files/losses/'
 path_meta = 'files/metadata.json'
-path_model_pi = 'files/model_pi.model'
-path_model_v = 'files/model_v.model'
+path_model_pi = 'models/model_pi.model'
+path_model_v = 'models/model_v.model'
 path_scores = 'files/scores/'
 path_state_images = 'files/state_images/'
 
@@ -21,6 +22,9 @@ def create_folders(atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
         # print ('The folder named files will be deleted!')
         # input ('Press Enter to continue.')
         shutil.rmtree(root)
+
+    if not os.path.exists(modelsRoot):
+        os.makedirs(modelsRoot)
         
     # Create the new folders.
     os.makedirs(path_rewards)
