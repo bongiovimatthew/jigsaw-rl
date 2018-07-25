@@ -36,7 +36,7 @@ class Actions(Enum):
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 4
-    INCORRECT_OVERLAY_SCORE = -2
+    INCORRECT_OVERLAY_SCORE = -4
     CORRECT_GEOMMETRY_SCORE = 1
     INCORRECT_GEOMMETRY_SCORE = -2
     NOT_CONNECTED_SCORE = -1
@@ -154,20 +154,21 @@ class PuzzleEnvironment(Environment):
     def step(self, action):
         self.stepCount += 1
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore) or (self.stepCount > 9990)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 1000)
 
-        reward = currentScore - self.oldScore
         tempOldScore = self.oldScore
         self.oldScore = currentScore
+
+        reward = currentScore - tempOldScore
         if self.isMaxReward(currentScore):
             reward *= 100
         # elif 
 
-        # info = {'prob':self.P[self.s][action][0][0]}
+        info = {'score':currentScore, 'oldScore': tempOldScore}
         # self.s = self.P[self.s][action][0][1]
 
-        if self.stepCount % 100 == 0:
-            logger.log_scores(self.stepCount, currentScore, tempOldScore)
+        # if self.stepCount % 100 == 0:
+        #     logger.log_scores(self.stepCount, currentScore, tempOldScore)
         
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
@@ -178,7 +179,7 @@ class PuzzleEnvironment(Environment):
             img = Image.fromarray(self.render(), 'RGB')
             img.show()            
 
-        return (self._convert_state(action), reward, done, None)
+        return (self._convert_state(action), reward, done, info)
         
     def render(self, mode=None):
         boardCopy = self.puzzle.puzzleBoard.copy()
