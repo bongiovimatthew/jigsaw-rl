@@ -195,6 +195,7 @@ class Agent:
         
         self.learner_id = learner_id
         
+        print(self.T_max)
         while self.T < self.T_max:
 
             self.synchronize_dnn()
@@ -208,11 +209,13 @@ class Agent:
             self.calculate_gradients()
             
             self.sync_update() # Syncron update instead of asyncron!
+            print(self.T)
             
             if self.signal:
                 self.evaluate_during_training()
                 self.signal = False
-    
+
+
         print("Completed run")
     # IMPLEMENTATIONS FOR the FUNCTIONS above
         
@@ -314,6 +317,8 @@ class Agent:
         cntr = 0
         rewards = []
         while not (finished or cntr == self.game_length):
+            img = Image.fromarray(env.render(), 'RGB')
+            img.show()
             env.render()
             action = dnn.action(self.net, state)
             state = env_step(env, self.queue, action)

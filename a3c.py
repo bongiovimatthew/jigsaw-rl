@@ -14,11 +14,11 @@ parser.add_argument('--t-max', type=int, default='5', metavar='N',
         help='update frequency (default:5)')
 parser.add_argument('--game-length', type=int, default='10000', metavar='N',
         help='assumed maximal length of an episode (deafult:10000)')
-parser.add_argument('--T-max', type=int, default=120, metavar='N',
+parser.add_argument('--T-max', type=int, default=120000, metavar='N',
         help='the length of the training (default:120)')
-parser.add_argument('--C', type=int, default=25, metavar='N',
+parser.add_argument('--C', type=int, default=50000, metavar='N',
         help='the frequency of evaluation during training (default:25)')
-parser.add_argument('--eval-num', type=int, default=2, metavar='N',
+parser.add_argument('--eval-num', type=int, default=0, metavar='N',
         help='the number of evaluations in an evaluation session (default:10)')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='F',
         help='the discounting factor (default:0.99)')

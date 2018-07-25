@@ -152,7 +152,7 @@ class PuzzleEnvironment(Environment):
     def step(self, action):
         self.stepCount += 1
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore) or (self.stepCount > 9998)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 9990)
 
         reward = currentScore - self.oldScore
         tempOldScore = self.oldScore
@@ -169,9 +169,13 @@ class PuzzleEnvironment(Environment):
         
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
-            if (done):
-                print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
             print("Peforming Action: {0}".format(Actions(action)))
+
+        if (done):
+            print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
+            img = Image.fromarray(self.render(), 'RGB')
+            img.show()            
+
         return (self._convert_state(action), reward, done, None)
         
     def render(self, mode=None):
@@ -214,7 +218,7 @@ class PuzzleEnvironment(Environment):
             if adjacentCoords_x < 0 or adjacentCoords_y < 0 or adjacentCoords_x >= len(self.guidArray[0]) or adjacentCoords_y >= len(self.guidArray):
                 # print("Coords of adjacent")
                 # print(adjacentCoords_x, adjacentCoords_y)
-                score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
+                score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
             else:
                 adjacentPieceIdLength = len(self.guidArray[adjacentCoords_y][adjacentCoords_x])
                 # print("AdjpieceID")
@@ -222,7 +226,7 @@ class PuzzleEnvironment(Environment):
                 if (adjacentPieceIdLength != 0):
                     score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE 
                 else:
-                    score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
+                    score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
 
         # Account for IN and OUT
         else:
