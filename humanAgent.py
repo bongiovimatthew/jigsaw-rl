@@ -83,6 +83,17 @@ class HumanAgent:
         self.s_t, reward, done, info = self.env.step(action)
         #info = self.update_and_get_metrics(info)
 
+        file_name = "gameOutput.txt"
+        with open(file_name, "a+") as f:
+            f.write("------------------------------------\r\n")
+            f.write("Step: {0}\r\n".format(info["step"]))
+            f.write("Action: {0}\r\n".format(Actions(info["action"])))
+            f.write("Reward: {0}\r\n".format(reward))
+            f.write("Score: {0}\r\n".format(info["score"]))
+            f.write("------------------------------------\r\n")
+            f.write("\r\n")
+            f.write("\r\n")
+
         imgData = self.env.render()
 
         #thread = Thread(target = self.displayUpdatedBoard(imgData), args = (10, ))

@@ -164,7 +164,7 @@ class PuzzleEnvironment(Environment):
         if self.isMaxReward(currentScore):
             reward *= 100
 
-        info = {'score':currentScore, 'oldScore': tempOldScore}
+        info = {'score':currentScore, 'oldScore': tempOldScore, 'action': action, 'step': self.stepCount}
 
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
