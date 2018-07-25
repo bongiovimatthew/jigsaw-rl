@@ -51,8 +51,7 @@ class PuzzleEnvironment(Environment):
     # 6 - translate down 
     # 7 - translate left 
 
-
-    MAX_ACTIONS_NUM = 4
+    MAX_ACTIONS_NUM = 8
 
     def __init__(self):
         self.oldScore = 0
@@ -135,9 +134,8 @@ class PuzzleEnvironment(Environment):
                     return
 
     def _convert_state(self, action):
-
         if action == Actions.ACTION_CYCLE.value: 
-            self.currentPieceIndex = (self.currentPieceIndex + 1) % (len(self.pieceState) - 1)
+            self.currentPieceIndex = (self.currentPieceIndex + 1) % (len(self.pieceState))
 
         if action >= Actions.ACTION_ROT90_1.value and action <= Actions.ACTION_ROT90_3.value:
             currentPiece = self.pieceState[self.currentPieceIndex]
@@ -147,7 +145,7 @@ class PuzzleEnvironment(Environment):
         if action >= Actions.ACTION_TRANS_UP.value and action <= Actions.ACTION_TRANS_LEFT.value:
             currentPiece = self.pieceState[self.currentPieceIndex]
             directions = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
-            direction = directions[action - 4]
+            direction = directions[action - 1]
             self._translate_piece(currentPiece.id, direction)
 
         return self.render()
@@ -195,7 +193,12 @@ class PuzzleEnvironment(Environment):
 
             if self.currentPieceIndex == count: 
                 # Add a green bar on the current piece 
-                boardCopy[ baseY : baseY + yHeight, baseX : baseX + 5] = [0, 255, 0]                
+                greenSquareW = 5
+                greenSquareH = 5
+                boardCopy[ baseY : baseY + greenSquareH, baseX : baseX + greenSquareW] = [0, 255, 0]                
+                boardCopy[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX : baseX + greenSquareW] = [0, 255, 0]                
+                boardCopy[ baseY : baseY + greenSquareH, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
+                boardCopy[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
             count += 1
             if (self.debugMode):
                 print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
