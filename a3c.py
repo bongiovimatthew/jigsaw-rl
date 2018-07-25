@@ -1,7 +1,7 @@
 from multiprocessing import Lock, Pool
 import argparse
 import learner as lrn
-
+import pdb
 from Diagnostics.logger import Logger as logger
 
 # Read the parameters to initialize the algorithm.
@@ -46,6 +46,7 @@ if not args.test_mode:
         
         n = args.num_cores
         l = Lock()
+
         sh = lrn.create_shared(args.atari_env) # list with two lists inside
                                                # contains the parameters as numpy arrays
         
@@ -53,7 +54,7 @@ if not args.test_mode:
         idcs = [0] * n
         for p in range(0, n):
             idcs[p] = p
-            
+  
         pool.map(executable, idcs)
             
         pool.close()

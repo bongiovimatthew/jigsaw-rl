@@ -4,6 +4,7 @@ import json
 import time
 import numpy as np
 from scipy.misc import imsave
+from Environment.env import Actions
 
 class Logger: 
 
@@ -19,14 +20,20 @@ class Logger:
     path_metrics = 'files/metrics/'
 
     def create_folders(atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
-        if os.path.exists(Logger.root):
+        if not os.path.exists(Logger.root):
             # Delete if exists.
             # print ('The folder named files will be deleted!')
             # input ('Press Enter to continue.')
+            os.makedirs(Logger.root)
+        else:
             shutil.rmtree(Logger.root)
+            os.makedirs(Logger.root)     
 
-        if not os.path.exists(Logger.modelsRoot):
-            os.makedirs(Logger.modelsRoot)
+        # except:
+        #     pdb.set_trace()
+        #     time.sleep(1)
+        #     os.makedirs(Logger.root)        
+        print("calling create folder")
             
         # Create the new folders.
         os.makedirs(Logger.path_rewards)
@@ -39,11 +46,11 @@ class Logger:
         with open(Logger.path_meta, "w") as f:
             f.write(json.dumps(metadata))
 
-    def log_state_image(boardData, steps, learner_id):
+    def log_state_image(boardData, steps, learner_id,action):
         #pngfile = "testImage.png"
         #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
         timestr = time.strftime("%Y%m%d-%H%M%S")
-        file_path = Logger.path_state_images + "stateImage_" + str(learner_id) + "_" + str(steps) + "_" + timestr + ".png"
+        file_path = Logger.path_state_images + "stateImage_" + str(learner_id) + "_"+ str(steps) + "_" + timestr + "_action_" + str(action) + ".png"
 
         input_img = np.array(boardData)
         
@@ -59,6 +66,16 @@ class Logger:
         file_name = Logger.path_metrics + "metrics_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:
             f.write("Step {0}: negativeRewardCount: {1}, zeroRewardCount: {2} positiveRewardCount: {3} averageRewards: {4}\r\n".format(iteration, info["negativeRewardCount"], info["zeroRewardCount"], info["positiveRewardCount"], info["averageRewards"]))
+
+        file_name = Logger.path_metrics + "moves_" + str(learner_id) + ".txt"
+        with open(file_name, "a+") as f:
+            stringToPrint = ""
+            for i in range(len(info["numberOfTimesExecutedEachAction"])):
+                actionName = Actions(i).name
+                stringToPrint += actionName + ": " + str(info["numberOfTimesExecutedEachAction"][i]) + " "
+
+            stringToPrint += "\r\n"
+            f.write(stringToPrint)
 
     def log_scores(iteration, learner_id, currentScore, oldScore, averageScore, slidingWindowAverageScore):
         file_name = Logger.path_scores + "score_" + str(learner_id) + ".txt"

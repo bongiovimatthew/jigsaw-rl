@@ -10,10 +10,12 @@ from PIL import Image
 class PuzzlePiece:
 	NIB_PERCENT = 20 / 100
 
-	def __init__(self):
+	def __init__(self, correct_coords_y, correct_coords_x):
 		self.imgData = None
 		self.coords_x = None
 		self.coords_y = None
+		self.correct_coords_x = correct_coords_x
+		self.correct_coords_y = correct_coords_y
 		self.edgeGeometry = 0 # L, D, R, U (2 bits per direction totals 1 byte)
 		self.id = uuid.uuid4()
 		self.correctEdgeIds = []
