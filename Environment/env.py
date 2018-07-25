@@ -4,6 +4,7 @@ from enum import Enum
 from Environment.direction import Direction 
 from Environment.edge import EdgeShape 
 from Environment.puzzleFactory import PuzzleFactory
+from PIL import Image
 
 ### Interface
 class Environment(object):
