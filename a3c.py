@@ -1,7 +1,7 @@
 from multiprocessing import Lock, Pool
 import argparse
 import learner as lrn
-
+import pdb
 from Diagnostics.logger import Logger as logger
 
 # Read the parameters to initialize the algorithm.
@@ -39,21 +39,22 @@ if not args.test_mode:
     
     print ('Training mode.')
     
-    logger.create_folders(args.atari_env, args.num_cores, args.t_max, args.game_length, args.T_max, args.C, args.gamma, args.lr)
-    
+        
     # start the processes
     if __name__ == '__main__':
         
         n = args.num_cores
         l = Lock()
+
         sh = lrn.create_shared(args.atari_env) # list with two lists inside
                                                # contains the parameters as numpy arrays
         
         pool = Pool(n, initializer = lrn.init_lock_shared, initargs = (l,sh,))
+        logger.create_folders(l,args.atari_env, args.num_cores, args.t_max, args.game_length, args.T_max, args.C, args.gamma, args.lr)
         idcs = [0] * n
         for p in range(0, n):
             idcs[p] = p
-            
+  
         pool.map(executable, idcs)
             
         pool.close()

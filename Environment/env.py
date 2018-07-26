@@ -5,7 +5,7 @@ from Environment.direction import Direction
 from Environment.edge import EdgeShape 
 from Environment.puzzleFactory import PuzzleFactory
 from PIL import Image
-
+from celery.contrib import rdb
 ### Interface
 class Environment(object):
 

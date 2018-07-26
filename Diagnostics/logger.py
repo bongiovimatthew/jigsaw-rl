@@ -19,15 +19,22 @@ class Logger:
     path_state_images = 'files/state_images/'
     path_metrics = 'files/metrics/'
 
-    def create_folders(atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
-        if os.path.exists(Logger.root):
-            # Delete if exists.
-            # print ('The folder named files will be deleted!')
-            # input ('Press Enter to continue.')
-            shutil.rmtree(Logger.root)
+    def create_folders(lock, atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
+        lock.acquire()
+        try:
+            if not os.path.exists(Logger.root):
+                # Delete if exists.
+                # print ('The folder named files will be deleted!')
+                # input ('Press Enter to continue.')
+                os.makedirs(Logger.root)
+            else:
+                shutil.rmtree(Logger.root)
+                os.makedirs(Logger.root)     
 
-        if not os.path.exists(Logger.modelsRoot):
-            os.makedirs(Logger.modelsRoot)
+        except:
+            time.sleep(1)
+            os.makedirs(Logger.root)        
+        print("calling create folder")
             
         # Create the new folders.
         os.makedirs(Logger.path_rewards)
@@ -39,12 +46,12 @@ class Logger:
         metadata = [time.strftime("%d/%m/%y"), atari_name, 'cores '+str(cores), 'tmax '+str(tmax), 'gl '+str(game_length), 'Tmax '+str(Tmax), 'C '+str(C), 'gamma '+str(gamma), 'lr '+str(lr)]
         with open(Logger.path_meta, "w") as f:
             f.write(json.dumps(metadata))
-
-    def log_state_image(boardData, steps, learner_id):
+        lock.release()
+    def log_state_image(boardData, steps, learner_id,action):
         #pngfile = "testImage.png"
         #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
         timestr = time.strftime("%Y%m%d-%H%M%S")
-        file_path = Logger.path_state_images + "stateImage_" + str(learner_id) + "_" + str(steps) + "_" + timestr + ".png"
+        file_path = Logger.path_state_images + "stateImage_" + str(learner_id) + "_"+ str(steps) + "_" + timestr + "_action_" + str(action) + ".png"
 
         input_img = np.array(boardData)
         

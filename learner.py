@@ -6,7 +6,7 @@ import dnn
 from Environment.env import PuzzleEnvironment
 from PIL import Image
 from Diagnostics.logger import Logger as logger
-
+from celery.contrib import rdb
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution
 lock = 0
@@ -130,6 +130,7 @@ def env_reset(env, queue):
     return queue.get_recent_state() # should return None
     
 def env_step(env, queue, action):
+
     obs, rw, done, info = env.step(action)
     # pdb.set_trace()
     # if (rw > 0):
@@ -150,7 +151,6 @@ class Agent:
         self.t_max = t_max
         
         self.game_length = game_length
-        
         self.T = 0
         self.T_max = T_max
         
@@ -286,14 +286,18 @@ class Agent:
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
             self.T += 1
+            # img = Image.fromarray(self.s_t, 'RGB')
+            # img.save('files/image_agent_%d.jpg'%(self.learner_id)) 
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
+
             self.s_t, info = env_step(self.env, self.queue, action)
+
 
             info = self.update_and_get_metrics(info, action)
 
-            if self.debugMode and self.t % 50 == 0: 
+            if self.debugMode and self.t < 40 : 
                 logger.log_metrics(info, self.t, self.learner_id)
-                logger.log_state_image(self.s_t, self.t, self.learner_id)
+                logger.log_state_image(self.s_t, self.t, self.learner_id,action)
                 self.reset_running_metrics()
 
             self.is_terminal = self.queue.get_is_last_terminal()
@@ -310,7 +314,7 @@ class Agent:
             self.R = self.net.state_value(self.s_t)
         
     def calculate_gradients(self):
-        
+
         idx = self.queue.get_last_idx()
         final_index = idx - self.t_max
         while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
