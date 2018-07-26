@@ -248,7 +248,7 @@ class DeepQAgent(object):
         self._explorer = explorer
         self._minibatch_size = minibatch_size
         self._history = History(input_shape)
-        self._memory = ReplayMemory(memory_size, input_shape[1:], 1)
+        self._memory = ReplayMemory(memory_size, input_shape[1:], 4)
         self._num_actions_taken = 0
 
         # Metrics accumulator
@@ -317,7 +317,6 @@ class DeepQAgent(object):
         # If policy requires agent to explore, sample random action
         if self._explorer.is_exploring(self._num_actions_taken):
             action = self._explorer(self.nb_actions)
-            # print("Exploration: ", action)
         else:
             # Use the network to output the best action
             env_with_history = self._history.value
@@ -328,9 +327,6 @@ class DeepQAgent(object):
 
             self._episode_q_means.append(np.mean(q_values))
             self._episode_q_stddev.append(np.std(q_values))
-
-            print("Q")
-            print(q_values)
 
             # Return the value maximizing the expected reward
             action = q_values.argmax()
@@ -377,7 +373,6 @@ class DeepQAgent(object):
             if (agent_step % self._train_interval) == 0:
                 pre_states, actions, post_states, rewards, terminals = self._memory.minibatch(self._minibatch_size)
 
-                # print("prestatepre_states.shape)
                 self._trainer.train_minibatch(
                     self._trainer.loss_function.argument_map(
                         pre_states=pre_states,
