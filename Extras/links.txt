@@ -3,7 +3,7 @@ https://arxiv.org/pdf/1602.01783v1.pdf
 https://github.com/tensorpack/tensorpack/blob/master/examples/A3C-Gym/train-atari.py
 https://github.com/cgnicholls/reinforcement-learning/tree/master/a3c
 https://github.com/adamtiger/A3C
-
+https://github.com/Microsoft/CNTK/blob/master/Examples/ReinforcementLearning/DeepQNeuralNetwork.py
 
 pip install gym
 pip install cntk
