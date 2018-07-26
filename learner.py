@@ -36,7 +36,7 @@ def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num
         
 def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
     agent = Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
-    # logger.load_model(agent.get_net())
+    logger.load_model(agent.get_net())
 
     return agent
     
@@ -117,8 +117,8 @@ class Queue:
 # Preprocessing of the raw frames from the game.
 
 def process_img(observation):
-    img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
-    img_final = np.reshape(img_final, (1, 84, 84))
+    img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((168,168), Image.ANTIALIAS))
+    img_final = np.reshape(img_final, (1, 168, 168))
 
     return img_final
 
@@ -132,6 +132,7 @@ def env_reset(env, queue):
 def env_step(env, queue, action):
 
     obs, rw, done, info = env.step(action)
+    # rw = np.clip(rw, -2, 2)
     # pdb.set_trace()
     # if (rw > 0):
     #     print("Action:{0}, rewards:{1}".format(action, rw))
@@ -161,7 +162,7 @@ class Agent:
         self.is_terminal = False
         
         self.env = PuzzleEnvironment()
-        self.queue = Queue(game_length, 84) 
+        self.queue = Queue(game_length, 168) 
         self.net = dnn.DeepNet(self.env.action_space.n, lr)
         self.s_t = env_reset(self.env, self.queue)
         
@@ -195,7 +196,7 @@ class Agent:
         while self.T < self.T_max:
 
 
-            self.synchronize_dnn()
+            # self.synchronize_dnn()
             
             self.play_game_for_a_while()
             
@@ -205,7 +206,7 @@ class Agent:
             # Here: The parameters are updated and the differences are added to the shared NN's.
             self.calculate_gradients()
             
-            self.sync_update() # Syncron update instead of asyncron!
+            # self.sync_update() # Syncron update instead of asyncron!
             print(self.T)
             
             if (self.T%100 == 0): 
@@ -281,7 +282,7 @@ class Agent:
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
+        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*40)/self.T_max) * self.T) # first decreasing, then it is constant
         
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
@@ -295,7 +296,7 @@ class Agent:
 
             info = self.update_and_get_metrics(info, action)
 
-            if self.debugMode and self.t < 40 : 
+            if self.debugMode and (self.t % 50) == 0: 
                 logger.log_metrics(info, self.t, self.learner_id)
                 logger.log_state_image(self.s_t, self.t, self.learner_id,action)
                 self.reset_running_metrics()
@@ -322,7 +323,10 @@ class Agent:
             reward = self.queue.get_reward_at(idx)
             action = self.queue.get_action_at(idx)
             self.R = reward + self.gamma * self.R
-            self.net.train_net(state, action, self.R, False)
+
+            print("action:{2}, reward:{0}, self.R:{1}".format(reward, self.R, action))
+            # print("action:{0}, Reward:{1}".format(action, self.R))
+            self.net.train_net(state, action, np.float32(self.R), False)
             
             idx = idx-1
         
@@ -332,6 +336,10 @@ class Agent:
         action = self.queue.get_action_at(idx)
             
         self.R = reward + self.gamma * self.R
+
+        # print("action:{0}, Reward:{1}".format(action, self.R))
+
+        # aa
         self.diff = self.net.train_net(state, action, np.float32(self.R), True)
             
         if self.signal:

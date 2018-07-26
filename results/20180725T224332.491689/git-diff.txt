@@ -1,0 +1,185 @@
+diff --cc dnn.py
+index 7520e78,d89af52..0000000
+--- a/dnn.py
++++ b/dnn.py
+@@@ -1,9 -1,16 +1,17 @@@
+  import numpy as np
+  import cntk
+  from cntk.device import try_set_default_device, cpu
+- from cntk.layers import Convolution2D, Dense, Sequential, BatchNormalization
++ from cntk.layers import Convolution2D, Dense, Sequential, BatchNormalization, MaxPooling
+  from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitType
+- from celery.contrib import rdb
++ import pdb
++ from PIL import Image
++ from IPython.display import SVG, display
++ 
++ def display_model(model):
+ -    svg = cntk.logging.graph.plot(model, "tmp.svg")
+ -    display(SVG(filename="tmp.svg"))
+++    return
+++    # svg = cntk.logging.graph.plot(model, "tmp.svg")
+++    # display(SVG(filename="tmp.svg"))
++ 
+  # Set CPU as device for the neural network.
+  try_set_default_device(cpu())
+  
+@@@ -52,17 -72,40 +73,40 @@@ class DeepNet
+          loss_on_v = cntk.squared_error(self.R, self.v)
+          
+          pi_a_s = cntk.log(cntk.times_transpose(self.pi, self.action))
+--        loss_on_pi = cntk.times(pi_a_s, cntk.minus(self.R, self.v_calc))
+++        loss_on_pi = cntk.times(cntk.variables.Constant(-1) * pi_a_s, cntk.minus(self.R, self.v_calc))
+          
+          # Create the trainiers.
+-         trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
+-         trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
+ -        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, l2_regularization_weight=0.01)])
+ -        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, l2_regularization_weight=0.01)])
+++        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)])
+++        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)])
+          
+-         self.trainer_pi = trainer_pi
++         self.trainer_pi = trainer_pi 
+          self.trainer_v = trainer_v
++ 
++     def combineImage(self, layer, layer_output):
++         # return
++         # print(layer_output.shape)
++         # print(layer.shape)
++ 
++         # np.swapaxes(layer_output, 0, 1)
++         # np.swapaxes(layer_output, 1, 2)
++ 
++         layer_output = layer_output[0]
++         imageArray = np.zeros((layer_output.shape[1], layer_output.shape[2]))
++ 
++         for layer_index in range(layer_output.shape[0]):
++             imageArray += layer_output[layer_index]
++ 
++         imageArray = np.uint8(imageArray / layer_output.shape[0])
++ 
++         # print(imageArray)
++         imToShow = Image.fromarray(imageArray, 'L')
++         imToShow.show()
++ 
++ 
++         l
+      
+      def train_net(self, state, action, R, calc_diff):
+-         
++         self.num_steps += 1
+          diff = None
+          
+          if calc_diff:
+@@@ -79,12 -122,21 +123,23 @@@
+          action_as_array[int(action)] = 1
+          
+          v_calc = self.state_value(state)
+-         print("v_calc:",v_calc)
+++        # print("v_calc:",v_calc)
+ +        # rdb.set_trace()
+          float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
+          
++         # print(R)
+ -        print("v_calc:{0} float32_R:{1}".format(v_calc, float32_R))
+++        # print("v_calc:{0} float32_R:{1}".format(v_calc, float32_R))
++ 
+          self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
+          self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
++             # net.pi.
++ 
++         # if self.debugMode and 0 == (self.num_steps % 50):
++         # conv1_v = cntk.combine([self.pi.find_by_name('conv2_v').owner])
++         # print(conv1_v)
++         #     conv1_v = cntk.combine([self.pi.find_by_name('conv1_v').owner])
++         #     conv2_v = cntk.combine([self.pi.find_by_name('conv2_v').owner])
++         #     self.combineImage(conv2_v, conv2_v.eval(state))
+          
+          if calc_diff:
+              # Calculate the differences between the updated and the original params.
+diff --cc models/model_pi.model
+index 53d0721,06b1cc1..0000000
+Binary files differ
+diff --cc models/model_v.model
+index 17f81fc,01564d7..0000000
+Binary files differ
+diff --git a/Environment/env.py b/Environment/env.py
+index 0370af6..bce7e68 100644
+--- a/Environment/env.py
++++ b/Environment/env.py
+@@ -176,6 +176,8 @@ class PuzzleEnvironment(Environment):
+             # img = Image.fromarray(self.render(), 'RGB')
+             # img.show()
+    
++        # if (reward <= 0):
++        #     reward = 0
+ 
+         # if (reward > 0):
+         #     reward = 1
+@@ -187,7 +189,10 @@ class PuzzleEnvironment(Environment):
+         # reward /= 50 
+ 
+         if (action == Actions.ACTION_CYCLE.value):
+-            reward = -1000
++            reward = 0
++
++        reward = reward + 5
++
+ 
+         # reward /= 10
+ 
+@@ -220,7 +225,10 @@ class PuzzleEnvironment(Environment):
+             if (self.debugMode):
+                 print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
+ 
+-        return boardCopy
++
++        img_final = np.array(Image.fromarray(boardCopy, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
++        img_final = np.reshape(img_final, (1, 84, 84))
++        return img_final
+ 
+     def isMaxReward(self, reward):
+         if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + PuzzleEnvironment.CORRECT_PLACEMENT_SCORE * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()): 
+diff --git a/dqn.py b/dqn.py
+index 3a8b7f6..97d4979 100644
+--- a/dqn.py
++++ b/dqn.py
+@@ -248,7 +248,7 @@ class DeepQAgent(object):
+         self._explorer = explorer
+         self._minibatch_size = minibatch_size
+         self._history = History(input_shape)
+-        self._memory = ReplayMemory(memory_size, input_shape[1:], 4)
++        self._memory = ReplayMemory(memory_size, input_shape[1:], 1)
+         self._num_actions_taken = 0
+ 
+         # Metrics accumulator
+@@ -373,6 +373,7 @@ class DeepQAgent(object):
+             if (agent_step % self._train_interval) == 0:
+                 pre_states, actions, post_states, rewards, terminals = self._memory.minibatch(self._minibatch_size)
+ 
++                # print("prestatepre_states.shape)
+                 self._trainer.train_minibatch(
+                     self._trainer.loss_function.argument_map(
+                         pre_states=pre_states,
+diff --git a/learner.py b/learner.py
+index 86d6b56..0dbba9c 100644
+--- a/learner.py
++++ b/learner.py
+@@ -132,6 +132,7 @@ def env_reset(env, queue):
+ def env_step(env, queue, action):
+ 
+     obs, rw, done, info = env.step(action)
++    rw = np.clip(rw, -1, 1)
+     # pdb.set_trace()
+     # if (rw > 0):
+     #     print("Action:{0}, rewards:{1}".format(action, rw))
+@@ -295,7 +296,7 @@ class Agent:
+ 
+             info = self.update_and_get_metrics(info, action)
+ 
+-            if self.debugMode and self.t < 40 : 
++            if self.debugMode and (self.t % 50) == 0: 
+                 logger.log_metrics(info, self.t, self.learner_id)
+                 logger.log_state_image(self.s_t, self.t, self.learner_id,action)
+                 self.reset_running_metrics()

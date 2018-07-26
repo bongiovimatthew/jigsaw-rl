@@ -1,0 +1,742 @@
+commit 1ceb1edbb55e024d812f00a0ef5e9ff516634c29
+Merge: 44c9892 e317355
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 19:36:58 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 44c9892a493718b78bb514e33956bdbd83a5a0e2
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 19:33:44 2018 -0700
+
+    adding basic dqn and link
+
+commit e317355fff0dde31ee5ce1fe268e35e15f26307c
+Merge: 5ad8df6 aaca318
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 18:18:51 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 5ad8df67d522b7b98fabd8e0599f49e174683dc6
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 18:18:47 2018 -0700
+
+    added a logic for creating folder for logger
+
+commit aaca318e905fa54d660f15c9df881543ae8fe44e
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 17:02:40 2018 -0700
+
+    added graph of nn
+
+commit 456b3b266c31dfd31cc834eafe7c7ab736b404f5
+Merge: 4bbf188 9413ce4
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 16:50:06 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 4bbf1883118f6bc3f61689ce09556955d548e5c8
+Merge: aee864c 3e0fc1d
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 16:49:56 2018 -0700
+
+    added the action to the saved image
+
+commit 9413ce4791c80bb2a0567d90309bdc832bbcbddd
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 15:51:11 2018 -0700
+
+    Fix learners average rewards
+
+commit 3e0fc1d0f134b5cbd4891c1ef261f6587f23b548
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 14:53:24 2018 -0700
+
+    Fix merge conflict
+
+commit 4dac5788c664da49bdcf9eca153c91e090551dd4
+Merge: 0d50c0d 11efe6a
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 14:48:16 2018 -0700
+
+    Merge
+
+commit 0d50c0d9c361a71093294795a89f20ef51c4ef01
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 14:47:04 2018 -0700
+
+    Fix bugs found in learning, change episilon and add a bit more logging
+
+commit 11efe6aad767ecfc915733852eb81d60f69fc84a
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 14:45:31 2018 -0700
+
+    Update human game
+
+commit aee864c4c00fcd4df5ae254a757bcb365718cc71
+Merge: 069abf4 b2a066f
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 14:23:56 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 069abf462707773c0472224da4ff4077f963ea9b
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 14:23:48 2018 -0700
+
+    added the celery for remote debugging
+
+commit b2a066f50c22d95bdfd21c9ab8237362dd9ca216
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 14:22:06 2018 -0700
+
+    Add human agent for playing
+
+commit dd4161c98991c19ac5115d9989b7d6c284cb572d
+Merge: dd0255d c1c0ff7
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 11:51:02 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit dd0255dcaa88ce6d919ca33105c01778f38ce432
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 11:50:50 2018 -0700
+
+    fix scoring timing
+
+commit c1c0ff7c432d7d09af8fece2fb60ee6a37726b12
+Merge: 348c8b3 08718f5
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Wed Jul 25 11:47:48 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 348c8b329fe1ec9b5f51e0c5a03ebf75ed02d33c
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Wed Jul 25 11:47:47 2018 -0700
+
+    Add image render library
+
+commit 2a9a6d3af7e9a56abc4a0119d8e4dd6bd09801f9
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 11:47:03 2018 -0700
+
+    Remove rotations from action space
+
+commit 08718f55f7c549a693fb6298fe376144c970e952
+Merge: b94e607 64b40b9
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 11:37:27 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit b94e60765fb24bf36ff9ee2b9a4ff03e9bed702e
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 11:36:48 2018 -0700
+
+    Update environment to disallow pieces on top
+
+commit 64b40b9de572f5364abf58732ab1cc7e298d315a
+Merge: c2f0868 2081da9
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 11:02:13 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 2081da95cfcd07ee1e688971ff4edee3daed474b
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 11:01:48 2018 -0700
+
+    Doc update
+
+commit c2f0868fdfdb3185c320fc92a3aadeda1715334a
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 11:01:35 2018 -0700
+
+    Fix negative scoring
+
+commit ec3e41be8fe20d2d18279059e2028752b7363d61
+Merge: c0f1db7 4737608
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 11:01:00 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit c0f1db73fcde37d266f7e184351017b3670cefbd
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 11:00:20 2018 -0700
+
+    Update readme
+
+commit 4737608c15993a255cddc2de71ad3ab9319a972c
+Merge: 6baab48 39c7d5b
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 10:58:24 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 39c7d5b9519459dd6766b413ccf86c87a43a2aa0
+Merge: 1d9b147 e68ce3e
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 10:56:13 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 1d9b14790f7ef9a78719922d870fb016c1cc2c1a
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 10:56:12 2018 -0700
+
+    Fix logger typo
+
+commit 6baab486f8a7336df6f460d137dcc0e106287971
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 10:54:52 2018 -0700
+
+    added models and files to gitignore
+
+commit 91d0bf496f3cd7070f6bf172f06a784093164bfe
+Merge: 5826d1d 84a75b2
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 10:54:19 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 5826d1d85787e1420eee39325c9668b3cf2f843e
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 10:54:11 2018 -0700
+
+    Fix logger
+
+commit e68ce3ec2109bcec0ba8fcfc9d41e8b85ea990cf
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Wed Jul 25 10:54:01 2018 -0700
+
+    Reduce max moves per game to 500
+
+commit 84a75b2d4ccc7460538edfe658b9bc8b0a542c42
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 10:52:00 2018 -0700
+
+    reduce incorrect overlay score more
+
+commit d3925a6df16f9adbebd70525f08502021f565a29
+Merge: a2bfa38 27517d1
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 10:46:06 2018 -0700
+
+    Merge
+
+commit a2bfa38c1c2df7b59dbe46eb4e61482254a85710
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Wed Jul 25 10:43:51 2018 -0700
+
+    Refactor
+
+commit f62d9532d30604407f8f3c6b26178a6d4a00605b
+Merge: 9cfb030 27517d1
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 10:30:49 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 9cfb030f7852eacdff47b91727e8a9eb09de3d36
+Author: Mahdi Hajiaghayi <mahajiag@microsoft.com>
+Date:   Wed Jul 25 10:30:39 2018 -0700
+
+    added periodically saving snapshot of the model
+
+commit 27517d1409bdb9794606479f02db68b83a3c7a51
+Merge: 7ce5c7a 4962114
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 10:21:50 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 7ce5c7aef08924d535669c6681b6b7139c9bc2d8
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 10:21:20 2018 -0700
+
+    Updated metrics text file
+
+commit 49621142f24f089e839375f4fe4af1effe14c68b
+Merge: edf0fb5 f2de83d
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Wed Jul 25 10:16:06 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit edf0fb5989f965c98fa0f2f766a23488f6c17054
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Wed Jul 25 10:16:00 2018 -0700
+
+    Fix stepcount back to 9990
+
+commit f2de83da1d28a49159c09609d6d2dfe5607e8fae
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 10:15:22 2018 -0700
+
+    Fix up negative scoring for overlays
+
+commit d83db1a643a0f553175d85c05a26459532b2dc77
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 10:10:47 2018 -0700
+
+    Fix the running metrics
+
+commit b96c6beed9ecfd1ca7ddec8eb0ccdabccec8f7eb
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 10:07:09 2018 -0700
+
+    Fixed logger model load in the case where model doesnt exist
+
+commit 73e68e9521ff52ecf5553d66ae8363d6ee46b402
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Wed Jul 25 01:24:48 2018 -0700
+
+    Add more metrics
+
+commit 0d38ce15e276a758c2e9a6b0a1dacd3e1691169f
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 23:32:23 2018 -0700
+
+    Load model from different placeg
+
+commit dc52a6c3f0ec5a4d8b23545b484762066629c41a
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 23:22:33 2018 -0700
+
+    Add negative scoring for the overlay
+
+commit 306ba2b86378cd78f6b429514013ca79354b1c7b
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 22:19:47 2018 -0700
+
+    Add in the learner id to the logging function
+
+commit bf63340ad162a6573c7f9f6b34dcfe444d7b25e7
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 21:35:53 2018 -0700
+
+    fix max rewards function
+
+commit 244ded676dda22a4f09b16c99ccf3ae821294cb5
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 21:29:40 2018 -0700
+
+    Actually reduce puzzle size
+
+commit b831f4534dfe48ce5e4510cba69bc1b4524a230c
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 21:29:01 2018 -0700
+
+    Make puzzle smaller and fix image render bug
+
+commit 1724df4e5ec1efd1e7f28015a839c4ceecde2e8c
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 21:15:59 2018 -0700
+
+    Fix learners grayscale conversion
+
+commit efc1ebf2bc1bba0708ca6fa51e2b07ab640ceacc
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 20:55:01 2018 -0700
+
+    Add testing for process image
+
+commit 0f4e472f637595a6b7ba382e98637b5e3540515d
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 20:51:53 2018 -0700
+
+    Debugging image processing
+
+commit 01be74c58fcdb3d7eead90a4e6c3f0d4c74480bc
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Tue Jul 24 20:29:25 2018 -0700
+
+    Fix logger and default for T_max
+
+commit 987c3c534cca49f4a82fae34d48dfa471614dc63
+Merge: 4f7c4a6 8b283ff
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 20:11:11 2018 -0700
+
+    merge
+
+commit 4f7c4a6586fb416924fd3d4e46e3d9f37f2362a7
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 20:10:27 2018 -0700
+
+    Add image output
+
+commit 8b283ffb6adaee136ac9fbf01b0cb271e5141ba5
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 20:08:30 2018 -0700
+
+    Added print and show on done case
+
+commit 957b24a80235a46d6d9451ab2db072586fd9c015
+Merge: ca32ba7 fd85879
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 19:51:49 2018 -0700
+
+    Merge conflict fix
+
+commit ca32ba74dead0e35f3abe41f01c9c6da0f6b8d4e
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 19:49:39 2018 -0700
+
+    Fixed the parameters for learning
+
+commit fd85879b494e7035132c07a5b4f14da6d150efb5
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 19:38:09 2018 -0700
+
+    Metrics to add
+
+commit 0965d7dab6e468db031a77214aaf3f59063bb812
+Merge: 14b4263 c619db6
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 18:39:42 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 14b4263dd5b436cb88e81a1ea08692b0141006bc
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 18:39:40 2018 -0700
+
+    Added more links
+
+commit c619db6d43184a3aa0af16fd975b5d347f1d75ee
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 18:29:55 2018 -0700
+
+    Fix dimensions
+
+commit 75b502c94457f384cd45b6ef6b3d23dc9efa3853
+Merge: f68e5d7 474b431
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 18:21:08 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit f68e5d72063ed6504ba67710e96fc0f0954ceb53
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 18:20:58 2018 -0700
+
+    Adding base cntk code, doesnt work just yet....  or does it
+
+commit 474b431a4bc0d8081be97d6d58f9b05da7aea946
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 18:07:32 2018 -0700
+
+    Move metrics manager around
+
+commit 8491e64f584801ba7e8a01907f1851e838be2fc9
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 15:35:09 2018 -0700
+
+    more links!
+
+commit e3282948fa1870df7e2b491d666c36ceed83ef42
+Merge: e63a9cd 566f9db
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 15:20:08 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit e63a9cd01adf0bb394d10e1ab3009e858443fbc2
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 15:19:59 2018 -0700
+
+    changing params for image
+
+commit 566f9db449d790220f854fab677c4386b43d0dc6
+Merge: 693a0e4 d868c5a
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 15:15:27 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 693a0e46e6fbdb0f3831abc7e477cc5287de515f
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 15:15:22 2018 -0700
+
+    Adjust images, and add metrics output
+
+commit d868c5aae7ae7734dacf26749fedfd816c29dd40
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 14:10:39 2018 -0700
+
+    added another A3C example
+
+commit e19f2200510b1b96d146abe5fe466a4a79030e29
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 12:59:17 2018 -0700
+
+    added sample atari a3c
+
+commit 9736ff39cb76e48001972d7faa374f96bc9c9952
+Merge: 88b39c3 efcf37f
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 11:59:06 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit 88b39c34d7d6ea5d4c89682b5be2995d645e9a24
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 11:58:58 2018 -0700
+
+    Add A3c paper
+
+commit efcf37f8bc72ba4588c44b5226344a514092ec57
+Merge: abf0903 1958c99
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 11:29:11 2018 -0700
+
+    Merge branch 'master' of https://github.com/bongiovimatthew/jigsaw-rl
+
+commit abf09032978790e8f87a0dfe5a40bf43f023b1db
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Tue Jul 24 11:29:09 2018 -0700
+
+    Adding comments
+
+commit 1958c990ff52641a59b51c60bb5e377cdab80da8
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Tue Jul 24 11:28:07 2018 -0700
+
+    Changed scoring a bit more
+
+commit a50084a0762c184225ccac8937ea1655067cf4a4
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 21:17:48 2018 -0700
+
+    The learner has had its first shot, it has A LOT to learn
+
+commit 47ec17aacb08ebea1bf2bcdc47bcd05a88b474f5
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 21:01:20 2018 -0700
+
+    Adding learner stuff
+
+commit bb5723f421a44ac3f58873f86f435c1c3f32ff6b
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 20:46:31 2018 -0700
+
+    Tests for score
+
+commit 8c5d80b1ea181675866beb334dbb5f81d2ecfd99
+Merge: 034411d ccf9b92
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 20:36:50 2018 -0700
+
+    Merge
+
+commit 034411da0a0f0f5ee85580f3411a5a9f15e39497
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 20:35:56 2018 -0700
+
+    Add step function stuff
+
+commit ccf9b92b9f5875cc322795616b5287755066f7b5
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 20:19:09 2018 -0700
+
+    Fixed the rotation logic, scoring logic
+
+commit 7a480505c4f767139afc54193b58c7f41a052e1b
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 18:47:29 2018 -0700
+
+    Add more tests for state
+
+commit 0eb1fa7826e4b7ad6fefbc427c69992e4f802376
+Merge: a74ee9e caf8b6f
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 18:05:04 2018 -0700
+
+    Merge
+
+commit caf8b6fdbb2b5b6d8bc8e94fa638d1cc8b0f23c3
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 18:03:56 2018 -0700
+
+    Added some done/reward info
+
+commit a74ee9e05cefdd7c6d85660eb7fe77a54962fd8b
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 18:03:46 2018 -0700
+
+    Add stuff
+
+commit 0e5776902fe9631f74fdb9ee96e6eb7be3527cb8
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 17:56:58 2018 -0700
+
+    Add action space
+
+commit 6ea5d2a35ab8650b25f872fa58c504be137de29e
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 17:49:10 2018 -0700
+
+    adding qlearning agent code
+
+commit 1052caf20faf2f49aad512792af23bc60a292049
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 17:42:47 2018 -0700
+
+    Add learner agents
+
+commit 7cab444124cc33512e53fa416b6bd45091e34c86
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 17:34:22 2018 -0700
+
+    Fixed puzzle piece rotation logic
+
+commit 17f27178f937e784f465a07ed3d3007cba61630a
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 16:57:02 2018 -0700
+
+    Adding more tests
+
+commit 1b8e690f7eaa60bde339f26f9fba95befe5ea67a
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 16:09:11 2018 -0700
+
+    Fix puzzle piece placement
+
+commit 0e004b9d1ab53b3032fafec87351c56e79254f27
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 14:46:52 2018 -0700
+
+    Playing with image embed
+
+commit a2c63c004dddd0a240ae93b36c52100e1fc17a31
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 13:57:07 2018 -0700
+
+    Add env tests
+
+commit 5397538d669772705a3a4bf44386ced05b41e742
+Merge: 58f44f5 484e556
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 13:19:57 2018 -0700
+
+    Merge refactor with new score logic
+
+commit 58f44f55e792fb8ec02db9f469a4e93d4f2bcbc7
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 13:13:01 2018 -0700
+
+    Refactor
+
+commit 484e55681e6eccb547545a423cbee38ce5dc1046
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 13:07:15 2018 -0700
+
+    Added the correctEdgeId Array logic
+
+commit 72036759f46045c3fc6174f28ca9a134954da761
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 12:59:07 2018 -0700
+
+    added more helper functions
+
+commit 872678b46f5bced026d6d9937221c5638566daff
+Author: Manish Gupta <manishkg97@gmail.com>
+Date:   Mon Jul 23 12:54:30 2018 -0700
+
+    Added scoring code
+
+commit 78a16dafaa70e14f51138b6127f47d43df2a44df
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 12:19:49 2018 -0700
+
+    Add outline of scoring
+
+commit f838fe02c651dbfe4d9b9594021b7686289e4881
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 11:21:42 2018 -0700
+
+    Fix init stuff
+
+commit 83241b06236862e1f233abbade866f712871fe97
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Mon Jul 23 11:18:07 2018 -0700
+
+    Begin adding state
+
+commit c92ed9803a8cedc895352d6d15fb86fae29e5eaa
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Fri Jul 20 02:39:52 2018 -0700
+
+    Created puzzle board, seems to work!
+
+commit f2edcacd27671522923deda7a5b2987edba40ee4
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Fri Jul 20 01:19:17 2018 -0700
+
+    Split displaying puzzle pieces to another function
+
+commit 3c1071465fd6b0a89b77924a2d28c3c30aa2c1a9
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Fri Jul 20 01:12:20 2018 -0700
+
+    Fixed the positioning of the puzzle piece generation
+
+commit 01bc2c2c2d3ce4a74568fde202a485bfe93660ce
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Fri Jul 20 00:06:29 2018 -0700
+
+    cleaned code a bit
+
+commit 50ec66f640a5f92ea9145a60bcb872d68926ffc8
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Fri Jul 20 00:00:34 2018 -0700
+
+    Fixed the puzzle generation, only thing remaining is the positioning of the edge
+
+commit 77f03d058981c692b0e0e9f0d604bfdbb514e845
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Thu Jul 19 21:41:08 2018 -0700
+
+    got the pieces to show up! slightly off in nib creation
+
+commit 15423c52fbd373d84c3100e4ece81ec758c08a6c
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Thu Jul 19 21:23:39 2018 -0700
+
+    Got the nibs working, the main thing has some issues
+
+commit 6a5195dc8bbb84d9ed5b04f7976d597d9ea2bc38
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Thu Jul 19 20:20:13 2018 -0700
+
+    Adding outer nib works!
+
+commit 7d7d2794d7116024b188fbf6edb73ce8336d7724
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Thu Jul 19 19:22:34 2018 -0700
+
+    The image slicing works, need to finish nib logic!
+
+commit 1a0c1140781def116ac208aa259b6f4729afc3d5
+Author: Manish Gupta <manigu@microsoft.com>
+Date:   Thu Jul 19 17:57:41 2018 -0700
+
+    Got it to run wihtout errors
+
+commit f252f1f71acb76ef49b87dac5931972c382277c4
+Author: Matthew Bongiovi <bongiovimatthew@gmail.com>
+Date:   Thu Jul 19 08:32:02 2018 -0700
+
+    Initialization code
+
+commit b36e40b7ae4a58463ed7fbd8812d3545b1fed412
+Author: Matt Bongiovi <31052050+bongiovimatthew@users.noreply.github.com>
+Date:   Thu Jul 19 08:30:23 2018 -0700
+
+    Initial commit

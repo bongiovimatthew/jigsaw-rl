@@ -56,7 +56,7 @@ class Logger:
         input_img = np.array(boardData)
         
         # Reshape input to meet with CNTK expectations.
-        grayScaleImg = np.reshape(input_img, (84, 84))
+        grayScaleImg = np.reshape(input_img, (168, 168))
 
         print(grayScaleImg.shape)
         imsave(file_path, grayScaleImg)
@@ -103,4 +103,5 @@ class Logger:
         
     def load_model(net):
         if os.path.exists(Logger.path_model_pi) and os.path.exists(Logger.path_model_v):
+            print("USING OLD MODEL")
             net.load_model(Logger.path_model_pi, Logger.path_model_v)
