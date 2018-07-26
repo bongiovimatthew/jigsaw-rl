@@ -3,7 +3,7 @@ import cntk
 from cntk.device import try_set_default_device, cpu
 from cntk.layers import Convolution2D, Dense, Sequential, BatchNormalization
 from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitType
-
+from celery.contrib import rdb
 # Set CPU as device for the neural network.
 try_set_default_device(cpu())
 
@@ -79,6 +79,8 @@ class DeepNet:
         action_as_array[int(action)] = 1
         
         v_calc = self.state_value(state)
+        print("v_calc:",v_calc)
+        # rdb.set_trace()
         float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
         
         self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
@@ -96,6 +98,7 @@ class DeepNet:
         return diff
         
     def state_value(self, state):
+        print("v.val:",self.v.eval(state))
         return self.v.eval({self.stacked_frames: [state]})
     
     def pi_probabilities(self, state):

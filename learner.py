@@ -295,7 +295,7 @@ class Agent:
 
             info = self.update_and_get_metrics(info, action)
 
-            if self.debugMode and self.t < 10 : 
+            if self.debugMode and self.t < 40 : 
                 logger.log_metrics(info, self.t, self.learner_id)
                 logger.log_state_image(self.s_t, self.t, self.learner_id,action)
                 self.reset_running_metrics()
@@ -314,7 +314,7 @@ class Agent:
             self.R = self.net.state_value(self.s_t)
         
     def calculate_gradients(self):
-        
+
         idx = self.queue.get_last_idx()
         final_index = idx - self.t_max
         while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary

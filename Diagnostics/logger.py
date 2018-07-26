@@ -19,20 +19,21 @@ class Logger:
     path_state_images = 'files/state_images/'
     path_metrics = 'files/metrics/'
 
-    def create_folders(atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
-        if not os.path.exists(Logger.root):
-            # Delete if exists.
-            # print ('The folder named files will be deleted!')
-            # input ('Press Enter to continue.')
-            os.makedirs(Logger.root)
-        else:
-            shutil.rmtree(Logger.root)
-            os.makedirs(Logger.root)     
+    def create_folders(lock, atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
+        lock.acquire()
+        try:
+            if not os.path.exists(Logger.root):
+                # Delete if exists.
+                # print ('The folder named files will be deleted!')
+                # input ('Press Enter to continue.')
+                os.makedirs(Logger.root)
+            else:
+                shutil.rmtree(Logger.root)
+                os.makedirs(Logger.root)     
 
-        # except:
-        #     pdb.set_trace()
-        #     time.sleep(1)
-        #     os.makedirs(Logger.root)        
+        except:
+            time.sleep(1)
+            os.makedirs(Logger.root)        
         print("calling create folder")
             
         # Create the new folders.
@@ -45,7 +46,7 @@ class Logger:
         metadata = [time.strftime("%d/%m/%y"), atari_name, 'cores '+str(cores), 'tmax '+str(tmax), 'gl '+str(game_length), 'Tmax '+str(Tmax), 'C '+str(C), 'gamma '+str(gamma), 'lr '+str(lr)]
         with open(Logger.path_meta, "w") as f:
             f.write(json.dumps(metadata))
-
+        lock.release()
     def log_state_image(boardData, steps, learner_id,action):
         #pngfile = "testImage.png"
         #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
