@@ -1,9 +1,9 @@
 from pynput.keyboard import Key, Listener
-from Environment.env import PuzzleEnvironment
 from enum import Enum
-
 import PIL as pl
 from PIL import ImageTk, Image
+
+from Environment.env import PuzzleEnvironment
 
 from threading import Thread
 from time import sleep

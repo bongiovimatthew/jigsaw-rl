@@ -1,12 +1,11 @@
 import numpy as np
-import scipy.misc as sc
-import gym
-from gym import wrappers
-import dnn
+
+from A3C.dnn import dnn
 from Environment.env import PuzzleEnvironment
-from PIL import Image
 from Diagnostics.logger import Logger as logger
-from celery.contrib import rdb
+
+from PIL import Image
+
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution
 lock = 0
@@ -113,9 +112,7 @@ class Queue:
     def get_action_at(self, idx):
         return self.actions[idx]
 
-
 # Preprocessing of the raw frames from the game.
-
 def process_img(observation):
     img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
     img_final = np.reshape(img_final, (1, 84, 84))
@@ -398,4 +395,3 @@ class Agent:
     def save_model(self, shared_params, path_model_pi, path_model_v):
         self.net.synchronize_net(shared_params) # copy the parameters into the recently created agent's netork
         self.net.save_model(path_model_pi, path_model_v)
-        

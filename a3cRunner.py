@@ -1,7 +1,7 @@
 from multiprocessing import Lock, Pool
 import argparse
-import learner as lrn
-import pdb
+
+from A3C.learner import learner as lrn
 from Diagnostics.logger import Logger as logger
 
 # Read the parameters to initialize the algorithm.
