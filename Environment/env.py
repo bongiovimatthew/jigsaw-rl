@@ -57,7 +57,7 @@ class PuzzleEnvironment(Environment):
 
     def __init__(self):
         self.oldScore = 0
-        self.debugMode = False
+        self.debugMode = True
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
 
         # Generate the puzzle 
@@ -72,6 +72,7 @@ class PuzzleEnvironment(Environment):
         self.setupEnvironment()
 
     def reset(self):
+        print("RESETTING")
         self.setupEnvironment()
         return self.render()
 
@@ -82,11 +83,16 @@ class PuzzleEnvironment(Environment):
         self.currentPieceIndex = 0
         count = 0 
         for piece in self.pieceState: 
-            print("piece.coords_x: {0}, piece.coords_y: {1}", piece.coords_x, piece.coords_y)
+            # print("piece.coords_x: {0}, piece.coords_y: {1}", piece.coords_x, piece.coords_y)
             if (piece.coords_y == 2) and piece.coords_x == 3:
                 self.currentPieceIndex = count
                 print("HERERWKJ", count)
-                break
+                # break
+
+
+            if (self.debugMode):
+                print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
+
             count += 1
 
         self.oldScore = self.getScoreOfCurrentState()
@@ -108,6 +114,10 @@ class PuzzleEnvironment(Environment):
         # Update guidArray
         maxX = len(self.guidArray) - 1
         maxY = maxX 
+
+        # for x in range(len(self.guidArray)):
+        #     for y in range(len(self.guidArray)):
+        #         print(" piece.coords_x:{1}, piece.coords_y:{2} guidArray:{0}".format(self.guidArray[y][x], x, y))
 
         for x in range(len(self.guidArray)):
             for y in range(len(self.guidArray)):
@@ -142,6 +152,14 @@ class PuzzleEnvironment(Environment):
                             if piece.id == pieceId: 
                                 piece.coords_x = newX
                                 piece.coords_y = newY
+
+                        print("SUCCESS MOVE, pieceId:{0}, newY:{1}, newX:{2} maxX:{3} direction:{4} x:{5} y:{6} guidArr:{7}".format(pieceId, newY, newX, maxX, direction, x, y, self.guidArray[newY][newX]))
+
+                    else:
+                        print("BLOCKED MOVE, pieceId:{0}, newY:{1}, newX:{2} maxX:{3} direction:{4} x:{5} y:{6} guidArr:{7}".format(pieceId, newY, newX, maxX, direction, x, y, self.guidArray[newY][newX]))
+                    
+
+
                     return
 
     def _convert_state(self, action):
@@ -163,7 +181,6 @@ class PuzzleEnvironment(Environment):
 
     def step(self, action):
         self.stepCount += 1
-
         next_state = self._convert_state(action)
         # currentScore = (self.puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY) * 2 - self.getScoreOfCurrentState()
         currentScore = self.getScoreOfCurrentState()
@@ -180,10 +197,10 @@ class PuzzleEnvironment(Environment):
 
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
-            print("Peforming Action: {0}".format(Actions(action)))
+            print("Performing Action: {0}, currentPieceIndex: {1}".format(Actions(action), self.currentPieceIndex))
 
         if (done):
-            print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
+            print("COMPLETED EPISODE!, reward:{0} currentScore:{1}\n\n\n\n\n\n".format(reward, currentScore))
             # img = Image.fromarray(self.render(), 'RGB')
             # img.show()
    
@@ -225,6 +242,7 @@ class PuzzleEnvironment(Environment):
             boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
 
             if self.currentPieceIndex == count: 
+                print("CURRENTPIECeINDEX: {0}", self.currentPieceIndex)
                 # Add a green bar on the current piece 
                 greenSquareW = 5
                 greenSquareH = 5
@@ -233,8 +251,6 @@ class PuzzleEnvironment(Environment):
                 boardCopy[ baseY : baseY + greenSquareH, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
                 boardCopy[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
             count += 1
-            if (self.debugMode):
-                print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
 
 
         # img_final = np.array(Image.fromarray(boardCopy, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))

@@ -7,6 +7,7 @@ from Environment.env import PuzzleEnvironment
 from PIL import Image
 from Diagnostics.logger import Logger as logger
 from celery.contrib import rdb
+import traceback
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution
 lock = 0
@@ -82,6 +83,13 @@ class Queue:
     def add(self, observation, reward, action, done):
         self.last_idx += 1
         self.observations[self.last_idx, :, :] = observation[0,:,:]
+
+        # print("0: ", self.observations[0].shape)
+        # print("1: ", self.observations[1].shape)
+
+        # print("ODDD SHAPEE YO ", observation.shape, "reward: ", reward, "last_idx: ", self.last_idx)
+        # for line in traceback.format_stack():
+        #     print(line.strip())
         # if reward > 1.0:
         #     reward = 1.0 # reward clipping
         self.rewards[self.last_idx] = reward
@@ -97,9 +105,9 @@ class Queue:
     def get_state_at(self, idx):
         # if idx > 2:
         #     return np.float32(self.observations[idx-3:idx+1,:,:])
-        
+        # print("get_state_at: ", ((self.observations[idx,:,:])).shape, " idx: ", idx)
         if idx >= 0:
-            return np.float32(self.observations[idx:idx+1,:,:])
+            return np.float32([self.observations[idx,:,:]])
 
 
         return None
@@ -120,6 +128,7 @@ def process_img(observation):
     img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((168,168), Image.ANTIALIAS))
     img_final = np.reshape(img_final, (1, 168, 168))
 
+    print("observation.shape: {0} img_final.shape:{1}".format(observation.shape, img_final.shape))
     return img_final
 
 # Functions to avoid temporary coupling.
@@ -131,7 +140,7 @@ def env_reset(env, queue):
     
 def env_step(env, queue, action):
 
-    obs, rw, done, info = env.step(action)
+    obs, rw, done, info = env.step(4)
     # rw = np.clip(rw, -2, 2)
     # pdb.set_trace()
     # if (rw > 0):
@@ -282,7 +291,7 @@ class Agent:
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*40)/self.T_max) * self.T) # first decreasing, then it is constant
+        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*8)/self.T_max) * self.T) # first decreasing, then it is constant
         
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
@@ -306,7 +315,10 @@ class Agent:
                 self.signal = True
             if self.T % 5000 == 0:
                 print('Actual iter. num.: ' + str(self.T))
-        
+
+
+        print("Play game for a while completed")
+                
     def set_R(self):
         if self.is_terminal:
             self.R = self.net.state_value(self.s_t)
@@ -317,17 +329,17 @@ class Agent:
     def calculate_gradients(self):
 
         idx = self.queue.get_last_idx()
-        final_index = idx - self.t_max
+        final_index = max(idx - self.t_max, 0)
         while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
+            # print("final_index: ", final_index, "idx: ", idx)
             state = self.queue.get_state_at(idx)
             reward = self.queue.get_reward_at(idx)
             action = self.queue.get_action_at(idx)
             self.R = reward + self.gamma * self.R
 
-            print("action:{2}, reward:{0}, self.R:{1}".format(reward, self.R, action))
+            print("action:{2}, reward:{0}, self.R:{1} state.shape:{3}".format(reward, self.R, action, state.shape))
             # print("action:{0}, Reward:{1}".format(action, self.R))
             self.net.train_net(state, action, np.float32(self.R), False)
-            
             idx = idx-1
         
         # At the last training step the differences should be saved

@@ -183,25 +183,27 @@ class PuzzleFactory:
 			initialPieceGuidArray.append([])
 			for j in range(sideDimension):
 				initialPieceGuidArray[i].append([])
+		print(len(initialPieceGuidArray))
 		 
 		for piece in listOfPiecesAvailable:
 			# piece.rotate()
 
 			done = False 
 			while not done: 
-				print(piece.correct_coords_x)
-				print(piece.correct_coords_y)
-				print("Len: ", len(initialPieceGuidArray))
+				# print(piece.correct_coords_x)
+				# print(piece.correct_coords_y)
+				# print("Len: ", len(initialPieceGuidArray))
 				piece.coords_x = piece.correct_coords_x # random.randint(0, sideDimension - 1)
 				piece.coords_y = piece.correct_coords_y # random.randint(0, sideDimension - 1)
+
+				if (piece.coords_x == 2) and (piece.coords_y == 2):
+					piece.coords_x = 3 # random.randint(0, sideDimension - 1)
+					# piece.coords_y = 4 # random.randint(0, sideDimension - 1)
 
 				if len(initialPieceGuidArray[piece.coords_y][piece.coords_x]) == 0:
 					initialPieceGuidArray[piece.coords_y][piece.coords_x].append(piece.id) 
 					done = True 
 
-				if (piece.coords_x == 2) and (piece.coords_y == 2):
-					piece.coords_x = 3 # random.randint(0, sideDimension - 1)
-					# piece.coords_y = 4 # random.randint(0, sideDimension - 1)
 
 				# listOfPiecesAvailable[-1].coords_x = 4
 				# listOfPiecesAvailable[-1].coords_y = 4
