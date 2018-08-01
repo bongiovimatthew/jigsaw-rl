@@ -140,7 +140,7 @@ def env_reset(env, queue):
     
 def env_step(env, queue, action):
 
-    obs, rw, done, info = env.step(4)
+    obs, rw, done, info = env.step(action)
     # rw = np.clip(rw, -2, 2)
     # pdb.set_trace()
     # if (rw > 0):
@@ -291,7 +291,7 @@ class Agent:
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*8)/self.T_max) * self.T) # first decreasing, then it is constant
+        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*2)/self.T_max) * self.T) # first decreasing, then it is constant
         
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1

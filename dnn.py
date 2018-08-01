@@ -73,7 +73,7 @@ class DeepNet:
         loss_on_v = cntk.squared_error(self.R, self.v)
         
         pi_a_s = cntk.log(cntk.times_transpose(self.pi, self.action))
-        loss_on_pi = cntk.times(cntk.variables.Constant(-1) * pi_a_s, cntk.minus(self.R, self.v_calc))
+        loss_on_pi = cntk.variables.Constant(-1) * (cntk.plus(cntk.times(pi_a_s, cntk.minus(self.R, self.v_calc)), 0.01 * cntk.times_transpose(self.pi, cntk.log(self.pi))))
         
         # Create the trainiers.
         trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)])
