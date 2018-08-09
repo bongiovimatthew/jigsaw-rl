@@ -191,7 +191,10 @@ class PuzzleEnvironment(Environment):
 
         reward = currentScore - tempOldScore
         if self.isMaxReward(currentScore):
-            reward *= 100
+            # reward *= 100
+            reward = 1
+        else:
+            reward = 0
 
         info = {'score':currentScore, 'oldScore': tempOldScore, 'action': action, 'step': self.stepCount}
 
@@ -224,6 +227,7 @@ class PuzzleEnvironment(Environment):
 
         # reward /= 10
 
+        reward = np.clip(reward, -2, 2)
         reward = np.float32(reward)
         return (next_state, reward, done, info)
         

@@ -3,6 +3,7 @@ import cntk
 from cntk.device import try_set_default_device, cpu
 from cntk.layers import Convolution2D, Dense, Sequential, BatchNormalization, MaxPooling
 from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitType
+from cntk.logging.progress_print import TensorBoardProgressWriter
 import pdb
 from PIL import Image
 from IPython.display import SVG, display
@@ -36,18 +37,18 @@ class DeepNet:
         self.v_calc = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
         
         # Creating the value approximator extension.
-        conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.sigmoid, name='conv1_v')
-        conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.sigmoid, name='conv2_v')
+        conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu, name='conv1_v')
+        conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu, name='conv2_v')
         # pooling_v = MaxPooling((4,4), 4, name='pooling_v')
-        dense_v = Dense(256, activation=cntk.sigmoid, name='dense_v')
+        dense_v = Dense(256, activation=cntk.relu, name='dense_v')
         # cntk.debugging.set_computation_network_trace_level(1)
-        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.sigmoid, name='outdense_v')])
+        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.relu, name='outdense_v')])
         
         # Creating the policy approximator extension.
-        conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.sigmoid, name='conv1_pi')
-        conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.sigmoid, name='conv2_pi')
+        conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu, name='conv1_pi')
+        conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu, name='conv2_pi')
         # pooling_pi = MaxPooling((4,4), 4, name='pooling_pi')
-        dense_pi = Dense(256, activation=cntk.sigmoid, name='dense_pi')
+        dense_pi = Dense(256, activation=cntk.relu, name='dense_pi')
         pi = Sequential([conv1_pi, conv2_pi, dense_pi, Dense(self.num_actions, activation=cntk.softmax, name='outdense_pi')])
         # pdb.set_trace()
         self.pi = pi(self.stacked_frames)
@@ -55,7 +56,6 @@ class DeepNet:
         self.v = v(self.stacked_frames)
         self.pms_v = self.v.parameters
         
-
         display_model(pi)
         display_model(v)
         cntk.debugging.debug_model(v)
@@ -75,9 +75,14 @@ class DeepNet:
         pi_a_s = cntk.log(cntk.times_transpose(self.pi, self.action))
         loss_on_pi = cntk.variables.Constant(-1) * (cntk.plus(cntk.times(pi_a_s, cntk.minus(self.R, self.v_calc)), 0.01 * cntk.times_transpose(self.pi, cntk.log(self.pi))))
         
+        self.tensorboard_v_writer = TensorBoardProgressWriter(freq=10, log_dir="tensorboard_v_logs", model=self.v)
+        self.tensorboard_pi_writer = TensorBoardProgressWriter(freq=10, log_dir="tensorboard_pi_logs", model=self.pi)
+
+        # tensorboard --logdir=log  http://localhost:6006/ 
+
         # Create the trainiers.
-        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)])
-        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)])
+        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_v_writer)
+        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_pi_writer)
         
         self.trainer_pi = trainer_pi 
         self.trainer_v = trainer_v
@@ -128,11 +133,11 @@ class DeepNet:
         float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
         
         # print(R)
-        # print("v_calc:{0} float32_R:{1}".format(v_calc, float32_R))
 
-        self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
-        self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
+        trained_pi = self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
+        trained_v = self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
             # net.pi.
+        print("v_calc:{0} float32_R:{1} action:{2} trained_pi:{3} trained_v:{4}".format(v_calc, float32_R, action, trained_pi, trained_v))
 
         # if self.debugMode and 0 == (self.num_steps % 50):
         # conv1_v = cntk.combine([self.pi.find_by_name('conv2_v').owner])
