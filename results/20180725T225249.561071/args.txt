@@ -1,1 +1,0 @@
-{"processes": 1, "env": "BreakoutNoFrameskip-v4", "seed": 0, "outdir": "results", "t_max": 5, "beta": 0.01, "profile": false, "steps": 80000000, "max_episode_len": 4500, "lr": 0.0007, "eval_interval": 1000000, "eval_n_runs": 10, "weight_decay": 0.0, "use_lstm": false, "demo": false, "load": "", "logging_level": 20, "render": false, "monitor": false}
