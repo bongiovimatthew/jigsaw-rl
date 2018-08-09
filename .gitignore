@@ -5,6 +5,7 @@ __pycache__/
 
 # Files directry 
 files/
+gameOutput.txt
 
 # C extensions
 *.so
