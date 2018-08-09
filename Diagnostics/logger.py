@@ -56,7 +56,8 @@ class Logger:
         input_img = np.array(boardData)
         
         # Reshape input to meet with CNTK expectations.
-        grayScaleImg = np.reshape(input_img, (84, 84))
+        grayScaleImg = np.reshape(input_img, (168, 168))
+        #grayScaleImg = np.reshape(input_img, (84, 84))
 
         print(grayScaleImg.shape)
         imsave(file_path, grayScaleImg)

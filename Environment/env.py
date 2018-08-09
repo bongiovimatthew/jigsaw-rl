@@ -176,7 +176,6 @@ class PuzzleEnvironment(Environment):
 
         reward = currentScore - tempOldScore
         if self.isMaxReward(currentScore):
-            # reward *= 100
             reward = 1
         else:
             reward = 0
@@ -190,11 +189,6 @@ class PuzzleEnvironment(Environment):
         if (done):
             print("COMPLETED EPISODE!, reward:{0} currentScore:{1}\n\n\n\n\n\n".format(reward, currentScore))
 
-        if (action == Actions.ACTION_CYCLE.value):
-            reward = -1            
-
-        reward = np.clip(reward, -2, 2)
-        reward = np.float32(reward)
         return (next_state, reward, done, info)
         
     def render(self, mode=None):
@@ -212,7 +206,7 @@ class PuzzleEnvironment(Environment):
             boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
 
             if self.currentPieceIndex == count: 
-                print("CURRENTPIECeINDEX: {0}", self.currentPieceIndex)
+                print("CURRENTPIECE_INDEX: {0}", self.currentPieceIndex)
                 # Add a green bar on the current piece 
                 greenSquareW = 5
                 greenSquareH = 5

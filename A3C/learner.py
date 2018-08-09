@@ -55,8 +55,8 @@ class Learner:
 
     # Preprocessing of the raw frames from the game.
     def process_img(observation):
-        img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
-        img_final = np.reshape(img_final, (1, 84, 84))
+        img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((168,168), Image.ANTIALIAS))
+        img_final = np.reshape(img_final, (1, 168, 168))
 
         return img_final
 
@@ -70,10 +70,6 @@ class Learner:
     def env_step(env, queue, action):
 
         obs, rw, done, info = env.step(action)
-        # pdb.set_trace()
-        # if (rw > 0):
-        #     print("Action:{0}, rewards:{1}".format(action, rw))
-
         # Add rewards to info
         info["rewards"] = rw
         queue.add(Learner.process_img(obs), rw, action, done)
@@ -166,7 +162,7 @@ class Agent:
         self.is_terminal = False
         
         self.env = PuzzleEnvironment()
-        self.queue = Queue(game_length, 84) 
+        self.queue = Queue(game_length, 168) 
         self.net = DeepNet(self.env.action_space.n, lr)
         self.s_t = Learner.env_reset(self.env, self.queue)
         

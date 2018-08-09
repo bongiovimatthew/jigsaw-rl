@@ -13,14 +13,18 @@ class DeepNet:
 
         self.num_actions = num_actions
         self.lr = lr
+        self.debugMode = True
         
         self.build_model()
         self.build_trainer()
         
     def build_model(self):
         
+        cntk.debugging.set_checked_mode(True)
+
         # Defining the input variables for training and evaluation.
-        self.stacked_frames = cntk.input_variable((1, 84, 84), dtype=np.float32)
+        self.stacked_frames = cntk.input_variable((1, 168, 168), dtype=np.float32)
+        #self.stacked_frames = cntk.input_variable((1, 84, 84), dtype=np.float32)
         self.action = cntk.input_variable(self.num_actions)
         self.R = cntk.input_variable(1, dtype=np.float32)
         self.v_calc = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
@@ -62,7 +66,8 @@ class DeepNet:
         self.tensorboard_v_writer = TensorBoardProgressWriter(freq=10, log_dir="tensorboard_v_logs", model=self.v)
         self.tensorboard_pi_writer = TensorBoardProgressWriter(freq=10, log_dir="tensorboard_pi_logs", model=self.pi)
 
-        # tensorboard --logdir=log  http://localhost:6006/ 
+        # tensorboard --logdir=tensorboard_pi_logs  http://localhost:6006/ 
+        # tensorboard --logdir=tensorboard_v_logs  http://localhost:6006/ 
 
         # Create the trainiers.
         self.trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_v_writer)
