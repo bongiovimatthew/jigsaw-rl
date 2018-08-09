@@ -16,7 +16,6 @@ class DeepNet:
         
         self.build_model()
         self.build_trainer()
-
         
     def build_model(self):
         
@@ -43,8 +42,6 @@ class DeepNet:
         self.v = v(self.stacked_frames)
         self.pms_v = self.v.parameters
         
-        display_model(pi)
-        display_model(v)
         cntk.debugging.debug_model(v)
         # action_as_array   
 
@@ -68,8 +65,8 @@ class DeepNet:
         # tensorboard --logdir=log  http://localhost:6006/ 
 
         # Create the trainiers.
-        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_v_writer)
-        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_pi_writer)
+        self.trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_v_writer)
+        self.trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_pi_writer)
     
     def train_net(self, states, actions, Rs, calc_diff):
         diff = None
@@ -115,7 +112,6 @@ class DeepNet:
         return diff
         
     def state_value(self, state):
-        print("v.val:",self.v.eval(state))
         return self.v.eval({self.stacked_frames: [state]})
     
     def pi_probabilities(self, state):
