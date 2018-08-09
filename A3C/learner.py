@@ -1,11 +1,6 @@
 import numpy as np
-<<<<<<< HEAD:learner.py
-import scipy.misc as sc
-import dnn
-=======
 
 from A3C.dnn import dnn
->>>>>>> master:A3C/learner.py
 from Environment.env import PuzzleEnvironment
 from Diagnostics.logger import Logger as logger
 
