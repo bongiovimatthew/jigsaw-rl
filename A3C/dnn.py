@@ -70,7 +70,6 @@ class DeepNet:
         self.trainer_v = trainer_v
 
     def train_net(self, states, actions, Rs, calc_diff):
-        self.num_steps += 1
         diff = None
         
         if calc_diff:

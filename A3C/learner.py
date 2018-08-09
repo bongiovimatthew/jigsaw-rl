@@ -192,18 +192,15 @@ class Agent:
         print(self.T_max)
         while self.T < self.T_max:
 
-
-            self.synchronize_dnn()
-            
-            self.play_game_for_a_while()
-            
+            self.synchronize_dnn()            
+            self.play_game_for_a_while()            
             self.set_R()
             
             # According to the article the gradients should be calculated.
             # Here: The parameters are updated and the differences are added to the shared NN's.
             self.calculate_gradients()
             
-            self.sync_update() # Syncron update instead of asyncron!
+            #self.sync_update() # Syncron update instead of asyncron!
             print(self.T)
             
             if (self.T%100 == 0): 
@@ -328,7 +325,6 @@ class Agent:
             self.R = (reward + self.gamma * self.R)
             Rs.append(self.R)
 
-            print("action:{2}, reward:{0}, self.R:{1}".format(reward, self.R, action))
             idx = idx-1        
 
             # print("action:{0}, Reward:{1}".format(action, self.R))
