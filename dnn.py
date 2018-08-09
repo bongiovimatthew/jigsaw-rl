@@ -105,7 +105,7 @@ class DeepNet:
 
         l
     
-    def train_net(self, state, action, R, calc_diff):
+    def train_net(self, states, actions, Rs, calc_diff):
         self.num_steps += 1
         diff = None
         
@@ -118,20 +118,26 @@ class DeepNet:
             for x in self.pms_v:
                 self.update_v.append(x.value)
         
-        # Training part
-        action_as_array = np.zeros(self.num_actions, dtype=np.float32)
-        action_as_array[int(action)] = 1
+        actions_1hot = []
+
+        for action in actions:
+            # Training part
+            action_as_array = np.zeros(self.num_actions, dtype=np.float32)
+            action_as_array[int(action)] = 1
+            actions_1hot.append(action_as_array)
         
-        v_calc = self.state_value(state)
+        v_calcs = []
+        for state in states:
+            v_calcs.append(self.state_value(state))
         # print("v_calc:",v_calc)
         # rdb.set_trace()
-        float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
+        float32_Rs = np.float32(Rs) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
         
         # print(R)
         # print("v_calc:{0} float32_R:{1}".format(v_calc, float32_R))
 
-        self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
-        self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
+        self.trainer_pi.train_minibatch({self.stacked_frames: states, self.action: actions_1hot, self.R: float32_Rs, self.v_calc: v_calcs})
+        self.trainer_v.train_minibatch({self.stacked_frames: states, self.R: float32_Rs})
             # net.pi.
 
         # if self.debugMode and 0 == (self.num_steps % 50):

@@ -1,7 +1,5 @@
 import numpy as np
 import scipy.misc as sc
-import gym
-from gym import wrappers
 import dnn
 from Environment.env import PuzzleEnvironment
 from PIL import Image
@@ -318,29 +316,23 @@ class Agent:
 
         idx = self.queue.get_last_idx()
         final_index = idx - self.t_max
-        while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
-            state = self.queue.get_state_at(idx)
-            reward = self.queue.get_reward_at(idx)
-            action = self.queue.get_action_at(idx)
-            self.R = reward + self.gamma * self.R
+        states = []
+        rewards = []
+        actions = []
+        Rs = []
+        while idx >= final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
+            states.append(self.queue.get_state_at(idx))
+            reward = (self.queue.get_reward_at(idx))
+            actions.append(self.queue.get_action_at(idx))
+
+            self.R = (reward + self.gamma * self.R)
+            Rs.append(self.R)
 
             print("action:{2}, reward:{0}, self.R:{1}".format(reward, self.R, action))
+            idx = idx-1        
+
             # print("action:{0}, Reward:{1}".format(action, self.R))
-            self.net.train_net(state, action, np.float32(self.R), False)
-            
-            idx = idx-1
-        
-        # At the last training step the differences should be saved
-        state = self.queue.get_state_at(idx)
-        reward = self.queue.get_reward_at(idx)
-        action = self.queue.get_action_at(idx)
-            
-        self.R = reward + self.gamma * self.R
-
-        # print("action:{0}, Reward:{1}".format(action, self.R))
-
-        # aa
-        self.diff = self.net.train_net(state, action, np.float32(self.R), True)
+        self.diff = self.net.train_net(states, actions, Rs, False)
             
         if self.signal:
             logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)
