@@ -1,55 +1,83 @@
 import numpy as np
 
-from A3C.dnn import dnn
+from A3C.dnn import DeepNet, DnnAgent
 from Environment.env import PuzzleEnvironment
 from Diagnostics.logger import Logger as logger
 
 from PIL import Image
 
-# In case of Pool the Lock object can not be passed in the initialization argument.
-# This is the solution
-lock = 0
-shared = 0
-def init_lock_shared(l, sh):
-    global lock
-    global shared
-    lock = l
-    shared = sh
+class Learner:
+    # In case of Pool the Lock object can not be passed in the initialization argument.
+    # This is the solution
+    lock = 0
+    shared = 0
+    def init_lock_shared(l, sh):
+        global lock
+        global shared
+        lock = l
+        shared = sh
 
-# Easier to call these functions from other modules.
-def create_shared(env_name):
-    temp_env = PuzzleEnvironment()
-    # temp_env = gym.make(env_name)
-    num_actions = temp_env.action_space.n
-    net = dnn.DeepNet(num_actions, 0)
-    # temp_env.close()
-    
-    prms_pi = net.get_parameters_pi()
-    prms_v = net.get_parameters_v()
-    
-    return [prms_pi, prms_v]
-
-def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
-    agent = create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
-    agent.run(learner_id)
+    # Easier to call these functions from other modules.
+    def create_shared(env_name):
+        temp_env = PuzzleEnvironment()
+        # temp_env = gym.make(env_name)
+        num_actions = temp_env.action_space.n
+        net = DeepNet(num_actions, 0)
+        # temp_env.close()
         
-def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
-    agent = Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
-    # logger.load_model(agent.get_net())
+        prms_pi = net.get_parameters_pi()
+        prms_v = net.get_parameters_v()
+        
+        print("Returning from create shared")
+        return [prms_pi, prms_v]
 
-    return agent
-    
-def create_agent_for_evaluation():
-    
-    # read the json with data (environemnt name and dnn model)
-    
-    # meta_data = logger.read_metadata()
-    # env_name = meta_data[1]
-    
-    agent = Agent("puzzle", 50000, 50000, 0, 0, 0, 0, 0) 
-    logger.load_model(agent.get_net())
-    
-    return agent
+    def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
+        agent = create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
+        agent.run(learner_id)
+            
+    def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
+        agent = Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
+        # logger.load_model(agent.get_net())
+
+        return agent
+        
+    def create_agent_for_evaluation():
+        
+        # read the json with data (environemnt name and dnn model)
+        
+        # meta_data = logger.read_metadata()
+        # env_name = meta_data[1]
+        
+        agent = Agent("puzzle", 50000, 50000, 0, 0, 0, 0, 0) 
+        logger.load_model(agent.get_net())
+        
+        return agent
+
+    # Preprocessing of the raw frames from the game.
+    def process_img(observation):
+        img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
+        img_final = np.reshape(img_final, (1, 84, 84))
+
+        return img_final
+
+    # Functions to avoid temporary coupling.
+    def env_reset(env, queue):
+        queue.queue_reset()
+        obs = env.reset()
+        queue.add(process_img(obs), 0, 0, False)
+        return queue.get_recent_state() # should return None
+        
+    def env_step(env, queue, action):
+
+        obs, rw, done, info = env.step(action)
+        # pdb.set_trace()
+        # if (rw > 0):
+        #     print("Action:{0}, rewards:{1}".format(action, rw))
+
+        # Add rewards to info
+        info["rewards"] = rw
+        queue.add(process_img(obs), rw, action, done)
+        return queue.get_recent_state(), info
 
 # During a game attempt, a sequence of observation are generated.
 # The last four always forms the state. Rewards and actions also saved.
@@ -112,33 +140,6 @@ class Queue:
     def get_action_at(self, idx):
         return self.actions[idx]
 
-# Preprocessing of the raw frames from the game.
-def process_img(observation):
-    img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
-    img_final = np.reshape(img_final, (1, 84, 84))
-
-    return img_final
-
-# Functions to avoid temporary coupling.
-def env_reset(env, queue):
-    queue.queue_reset()
-    obs = env.reset()
-    queue.add(process_img(obs), 0, 0, False)
-    return queue.get_recent_state() # should return None
-    
-def env_step(env, queue, action):
-
-    obs, rw, done, info = env.step(action)
-    # pdb.set_trace()
-    # if (rw > 0):
-    #     print("Action:{0}, rewards:{1}".format(action, rw))
-
-    # Add rewards to info
-    info["rewards"] = rw
-    queue.add(process_img(obs), rw, action, done)
-    return queue.get_recent_state(), info
-
-
 class Agent:
     
     def __init__(self, env_name, t_max, game_length, T_max, C, eval_num, gamma, lr):
@@ -159,7 +160,7 @@ class Agent:
         
         self.env = PuzzleEnvironment()
         self.queue = Queue(game_length, 84) 
-        self.net = dnn.DeepNet(self.env.action_space.n, lr)
+        self.net = DeepNet(self.env.action_space.n, lr)
         self.s_t = env_reset(self.env, self.queue)
         
         self.R = 0
@@ -185,7 +186,7 @@ class Agent:
     
     # For details: https://arxiv.org/abs/1602.01783
     def run(self, learner_id):
-        
+        print("Running")
         self.learner_id = learner_id
         
         print(self.T_max)
@@ -285,7 +286,7 @@ class Agent:
             self.T += 1
             # img = Image.fromarray(self.s_t, 'RGB')
             # img.save('files/image_agent_%d.jpg'%(self.learner_id)) 
-            action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
+            action = DnnAgent.action_with_exploration(self.net, self.s_t, self.epsilon)
 
             self.s_t, info = env_step(self.env, self.queue, action)
 
@@ -351,7 +352,7 @@ class Agent:
             cntr = 0
             rewards = []
             while not (finished or cntr == self.game_length):
-                action = dnn.action(self.net, state)
+                action = DnnAgent.action(self.net, state)
                 state, info = env_step(self.env, self.queue, action)
                 rewards.append(self.queue.get_recent_reward())
                 
@@ -372,7 +373,7 @@ class Agent:
             img = Image.fromarray(env.render(), 'RGB')
             img.show()
             env.render()
-            action = dnn.action(self.net, state)
+            action = DnnAgent.action(self.net, state)
             state, info = env_step(env, self.queue, action)
             rewards.append(self.queue.get_recent_reward())
                 

@@ -1,7 +1,7 @@
 from multiprocessing import Lock, Pool
 import argparse
 
-from A3C.learner import learner as lrn
+from A3C.learner import Learner as lrn
 from Diagnostics.logger import Logger as logger
 
 # Read the parameters to initialize the algorithm.
@@ -30,38 +30,33 @@ parser.add_argument('--test-mode', action='store_true',
 
 args = parser.parse_args()
 
-# IF TRAIN mode -> train the learners
-
 def executable(process_id):
     lrn.execute_agent(process_id, args.atari_env, args.t_max, args.game_length, args.T_max, args.C, args.eval_num, args.gamma, args.lr)
 
 if not args.test_mode:
     
     print ('Training mode.')
-    
-        
-    # start the processes
-    if __name__ == '__main__':
-        
-        n = args.num_cores
-        l = Lock()
+    n = args.num_cores
+    l = Lock()
 
-        sh = lrn.create_shared(args.atari_env) # list with two lists inside
-                                               # contains the parameters as numpy arrays
+    print ("Create Shared Learner")
+    sh = lrn.create_shared(args.atari_env) # list with two lists inside
+                                           # contains the parameters as numpy arrays
+    
+    pool = Pool(n, initializer = lrn.init_lock_shared, initargs = (l,sh,))
+    logger.create_folders(l,args.atari_env, args.num_cores, args.t_max, args.game_length, args.T_max, args.C, args.gamma, args.lr)
+    idcs = [0] * n
+    for p in range(0, n):
+        idcs[p] = p
+
+    pool.map(executable, idcs)
         
-        pool = Pool(n, initializer = lrn.init_lock_shared, initargs = (l,sh,))
-        logger.create_folders(l,args.atari_env, args.num_cores, args.t_max, args.game_length, args.T_max, args.C, args.gamma, args.lr)
-        idcs = [0] * n
-        for p in range(0, n):
-            idcs[p] = p
-  
-        pool.map(executable, idcs)
-            
-        pool.close()
-        pool.join()
-        
-        for_saving = lrn.create_agent(args.atari_env, args.t_max, args.game_length, args.T_max, args.C, args.eval_num, args.gamma, args.lr)
-        logger.save_model(for_saving, sh)
+    pool.close()
+    pool.join()
+    
+    print("Creating Agent")
+    for_saving = lrn.create_agent(args.atari_env, args.t_max, args.game_length, args.T_max, args.C, args.eval_num, args.gamma, args.lr)
+    logger.save_model(for_saving, sh)
          
 # IF EVALUATION mode -> evaluate a test run (rewards, video)
 else:
