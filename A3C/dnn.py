@@ -56,15 +56,15 @@ class DeepNet:
         loss_on_pi = cntk.times(pi_a_s, cntk.minus(self.R, self.v_calc))
 
         # Add tensorboard visualization 
-        #tensorboard_writer_v = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.v)
-        #tensorboard_writer_pi = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.pi)
+        tensorboard_writer_v = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.v)
+        tensorboard_writer_pi = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.pi)
         
         # Create the trainiers.
-        #trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_v)
-        #trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_pi)
+        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_v)
+        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_pi)
         
-        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
-        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
+        #trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
+        #trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
         
         self.trainer_pi = trainer_pi
         self.trainer_v = trainer_v
