@@ -47,7 +47,7 @@ class PuzzleEnvironment(Environment):
 
     def __init__(self):
         self.oldScore = 0
-        self.debugMode = True
+        self.debugMode = False
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
 
         # Generate the puzzle 
@@ -62,7 +62,6 @@ class PuzzleEnvironment(Environment):
         self.setupEnvironment()
 
     def reset(self):
-        print("RESETTING")
         self.setupEnvironment()
         return self.render()
 
@@ -139,13 +138,13 @@ class PuzzleEnvironment(Environment):
                                 piece.coords_x = newX
                                 piece.coords_y = newY
 
-                        print("SUCCESS MOVE, pieceId:{0}, newY:{1}, newX:{2} maxX:{3} direction:{4} x:{5} y:{6} guidArr:{7}".format(pieceId, newY, newX, maxX, direction, x, y, self.guidArray[newY][newX]))
+                        if (self.debugMode):
+                            print("SUCCESS MOVE, pieceId:{0}, newY:{1}, newX:{2} maxX:{3} direction:{4} x:{5} y:{6} guidArr:{7}".format(pieceId, newY, newX, maxX, direction, x, y, self.guidArray[newY][newX]))
 
                     else:
-                        print("BLOCKED MOVE, pieceId:{0}, newY:{1}, newX:{2} maxX:{3} direction:{4} x:{5} y:{6} guidArr:{7}".format(pieceId, newY, newX, maxX, direction, x, y, self.guidArray[newY][newX]))
+                        if (self.debugMode):
+                            print("BLOCKED MOVE, pieceId:{0}, newY:{1}, newX:{2} maxX:{3} direction:{4} x:{5} y:{6} guidArr:{7}".format(pieceId, newY, newX, maxX, direction, x, y, self.guidArray[newY][newX]))
                     
-
-
                     return
 
     def _convert_state(self, action):
@@ -206,7 +205,8 @@ class PuzzleEnvironment(Environment):
             boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
 
             if self.currentPieceIndex == count: 
-                print("CURRENTPIECE_INDEX: {0}", self.currentPieceIndex)
+                if (self.debugMode):
+                    print("CURRENTPIECE_INDEX: {0}", self.currentPieceIndex)
                 # Add a green bar on the current piece 
                 greenSquareW = 5
                 greenSquareH = 5

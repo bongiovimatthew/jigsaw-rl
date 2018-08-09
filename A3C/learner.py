@@ -27,8 +27,6 @@ class Learner:
         
         prms_pi = net.get_parameters_pi()
         prms_v = net.get_parameters_v()
-        
-        print("Returning from create shared")
         return [prms_pi, prms_v]
 
     def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
@@ -105,15 +103,6 @@ class Queue:
     def add(self, observation, reward, action, done):
         self.last_idx += 1
         self.observations[self.last_idx, :, :] = observation[0,:,:]
-
-        # print("0: ", self.observations[0].shape)
-        # print("1: ", self.observations[1].shape)
-
-        # print("ODDD SHAPEE YO ", observation.shape, "reward: ", reward, "last_idx: ", self.last_idx)
-        # for line in traceback.format_stack():
-        #     print(line.strip())
-        # if reward > 1.0:
-        #     reward = 1.0 # reward clipping
         self.rewards[self.last_idx] = reward
         self.actions[self.last_idx] = action
         
@@ -125,9 +114,6 @@ class Queue:
         return None
         
     def get_state_at(self, idx):
-        # if idx > 2:
-        #     return np.float32(self.observations[idx-3:idx+1,:,:])
-        # print("get_state_at: ", ((self.observations[idx,:,:])).shape, " idx: ", idx)
         if idx >= 0:
             return np.float32([self.observations[idx,:,:]])
 
@@ -189,10 +175,8 @@ class Agent:
     
     # For details: https://arxiv.org/abs/1602.01783
     def run(self, learner_id):
-        print("Running")
         self.learner_id = learner_id
         
-        print(self.T_max)
         while self.T < self.T_max:
 
             self.synchronize_dnn()            
@@ -204,17 +188,12 @@ class Agent:
             self.calculate_gradients()
             
             #self.sync_update() # Syncron update instead of asyncron!
-            print(self.T)
             
             if (self.T%100 == 0): 
                 self.save_model_snapshot()
             if self.signal:
                 self.evaluate_during_training()
                 self.signal = False
-
-
-        print("Completed run")
-    # IMPLEMENTATIONS FOR the FUNCTIONS above
         
     def synchronize_dnn(self):
         lock.acquire()
@@ -303,9 +282,6 @@ class Agent:
                 self.signal = True
             if self.T % 5000 == 0:
                 print('Actual iter. num.: ' + str(self.T))
-
-
-        print("Play game for a while completed")
                 
     def set_R(self):
         if self.is_terminal:
@@ -332,7 +308,6 @@ class Agent:
 
             idx = idx-1        
 
-            # print("action:{0}, Reward:{1}".format(action, self.R))
         self.diff = self.net.train_net(states, actions, Rs, False)
             
         if self.signal:

@@ -34,7 +34,6 @@ class Logger:
         except:
             time.sleep(1)
             os.makedirs(Logger.root)        
-        print("calling create folder")
             
         # Create the new folders.
         os.makedirs(Logger.path_rewards)
@@ -59,7 +58,6 @@ class Logger:
         grayScaleImg = np.reshape(input_img, (168, 168))
         #grayScaleImg = np.reshape(input_img, (84, 84))
 
-        print(grayScaleImg.shape)
         imsave(file_path, grayScaleImg)
 
     def log_metrics(info, iteration, learner_id):

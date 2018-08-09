@@ -38,8 +38,6 @@ if not args.test_mode:
     print ('Training mode.')
     n = args.num_cores
     l = Lock()
-
-    print ("Create Shared Learner")
     sh = lrn.create_shared(args.atari_env) # list with two lists inside
                                            # contains the parameters as numpy arrays
     
@@ -56,7 +54,6 @@ if not args.test_mode:
         pool.close()
         pool.join()
         
-        print("Creating Agent")
         for_saving = lrn.create_agent(args.atari_env, args.t_max, args.game_length, args.T_max, args.C, args.eval_num, args.gamma, args.lr)
         logger.save_model(for_saving, sh)
          

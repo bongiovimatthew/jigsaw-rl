@@ -183,7 +183,6 @@ class PuzzleFactory:
 			initialPieceGuidArray.append([])
 			for j in range(sideDimension):
 				initialPieceGuidArray[i].append([])
-		print(len(initialPieceGuidArray))
 		 
 		for piece in listOfPiecesAvailable:
 			# piece.rotate()
