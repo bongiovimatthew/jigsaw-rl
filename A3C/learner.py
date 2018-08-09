@@ -199,18 +199,15 @@ class Agent:
         print(self.T_max)
         while self.T < self.T_max:
 
-
-            self.synchronize_dnn()
-            
-            self.play_game_for_a_while()
-            
+            self.synchronize_dnn()            
+            self.play_game_for_a_while()            
             self.set_R()
             
             # According to the article the gradients should be calculated.
             # Here: The parameters are updated and the differences are added to the shared NN's.
             self.calculate_gradients()
             
-            self.sync_update() # Syncron update instead of asyncron!
+            #self.sync_update() # Syncron update instead of asyncron!
             print(self.T)
             
             if (self.T%100 == 0): 
@@ -324,23 +321,23 @@ class Agent:
     def calculate_gradients(self):
 
         idx = self.queue.get_last_idx()
-        final_index = max(idx - self.t_max, 0)
-        while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
-            state = self.queue.get_state_at(idx)
-            reward = self.queue.get_reward_at(idx)
-            action = self.queue.get_action_at(idx)
-            self.R = reward + self.gamma * self.R
-            self.net.train_net(state, action, self.R, False)
+        final_index = idx - self.t_max
+        states = []
+        rewards = []
+        actions = []
+        Rs = []
+        while idx >= final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
+            states.append(self.queue.get_state_at(idx))
+            reward = (self.queue.get_reward_at(idx))
+            actions.append(self.queue.get_action_at(idx))
 
-            idx = idx-1
-        
-        # At the last training step the differences should be saved
-        state = self.queue.get_state_at(idx)
-        reward = self.queue.get_reward_at(idx)
-        action = self.queue.get_action_at(idx)
-            
-        self.R = reward + self.gamma * self.R
-        self.diff = self.net.train_net(state, action, np.float32(self.R), True)
+            self.R = (reward + self.gamma * self.R)
+            Rs.append(self.R)
+
+            idx = idx-1        
+
+            # print("action:{0}, Reward:{1}".format(action, self.R))
+        self.diff = self.net.train_net(states, actions, Rs, False)
             
         if self.signal:
             logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)

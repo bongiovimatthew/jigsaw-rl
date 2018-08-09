@@ -71,8 +71,7 @@ class DeepNet:
         trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_v_writer)
         trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_pi_writer)
     
-    def train_net(self, state, action, R, calc_diff):
-        
+    def train_net(self, states, actions, Rs, calc_diff):
         diff = None
         
         if calc_diff:
@@ -84,21 +83,29 @@ class DeepNet:
             for x in self.pms_v:
                 self.update_v.append(x.value)
         
-        # Training part
-        action_as_array = np.zeros(self.num_actions, dtype=np.float32)
-        action_as_array[int(action)] = 1
+        actions_1hot = []
+
+        for action in actions:
+            # Training part
+            action_as_array = np.zeros(self.num_actions, dtype=np.float32)
+            action_as_array[int(action)] = 1
+            actions_1hot.append(action_as_array)
         
-        v_calc = self.state_value(state)
-        print("v_calc:",v_calc)
-        float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
-        
-        trained_pi = self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
-        trained_v = self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
-        print("v_calc:{0} float32_R:{1} action:{2} trained_pi:{3} trained_v:{4}".format(v_calc, float32_R, action, trained_pi, trained_v))
+        v_calcs = []
+        for state in states:
+            v_calcs.append(self.state_value(state))
+
+        float32_Rs = np.float32(Rs) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
+
+        trained_pi = self.trainer_pi.train_minibatch({self.stacked_frames: states, self.action: actions_1hot, self.R: float32_Rs, self.v_calc: v_calcs})
+        trained_v = self.trainer_v.train_minibatch({self.stacked_frames: states, self.R: float32_Rs})
+
+        print("v_calc:{0} float32_R:{1} action:{2} trained_pi:{3} trained_v:{4}".format(v_calcs[0], float32_Rs[0], actions[0], trained_pi, trained_v))
         
         if calc_diff:
             # Calculate the differences between the updated and the original params.
             for idx in range(len(self.pms_pi)):
+                self.tb_pi.write_value(self.pms_pi[idx].uid + "/mean",  reduce_mean(self.pms_pi[idx]).eval(), idx)
                 self.update_pi[idx] = self.pms_pi[idx].value - self.update_pi[idx]
             for idx in range(len(self.pms_v)):
                 self.update_v[idx] = self.pms_v[idx].value - self.update_v[idx]
