@@ -59,6 +59,9 @@ class DeepNet:
         tensorboard_writer_v = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.v)
         tensorboard_writer_pi = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.pi)
         
+        self.tb_v = tensorboard_writer_v
+        self.tb_pi = tensorboard_writer_pi
+
         # Create the trainiers.
         trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_v)
         trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_pi)
@@ -101,6 +104,7 @@ class DeepNet:
         if calc_diff:
             # Calculate the differences between the updated and the original params.
             for idx in range(len(self.pms_pi)):
+                self.tb_pi.write_value(self.pms_pi[idx].uid + "/mean",  reduce_mean(self.pms_pi[idx]).eval(), idx)
                 self.update_pi[idx] = self.pms_pi[idx].value - self.update_pi[idx]
             for idx in range(len(self.pms_v)):
                 self.update_v[idx] = self.pms_v[idx].value - self.update_v[idx]
