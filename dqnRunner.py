@@ -1,6 +1,7 @@
 from Environment.env import PuzzleEnvironment
 from QLearning.dqn import DeepQAgent
 from PIL import Image
+from argparse import ArgumentParser
 
 def as_ale_input(environment):
     """Convert the Atari environment RGB output (210, 160, 3) to an ALE one (84, 84).

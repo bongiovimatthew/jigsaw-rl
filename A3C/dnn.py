@@ -3,19 +3,20 @@ import cntk
 from cntk.device import try_set_default_device, cpu
 from cntk.layers import Convolution2D, Dense, Sequential, BatchNormalization
 from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitType
+from cntk.logging import TensorBoardProgressWriter
 from celery.contrib import rdb
-
-# Set CPU as device for the neural network.
-try_set_default_device(cpu())
+import random as r
 
 class DeepNet:
     
     def __init__(self, num_actions, lr):
+
         self.num_actions = num_actions
         self.lr = lr
         
         self.build_model()
         self.build_trainer()
+
         
     def build_model(self):
         
@@ -43,7 +44,7 @@ class DeepNet:
         self.pms_v = self.v.parameters
         
     def build_trainer(self):
-        
+                
         # Set the learning rate, and the momentum parameters for the Adam optimizer.
         lr = learning_rate_schedule(self.lr, UnitType.minibatch)
         beta1 = momentum_schedule(0.9)
@@ -51,7 +52,6 @@ class DeepNet:
         
         # Calculate the losses.
         loss_on_v = cntk.squared_error(self.R, self.v)
-        
         pi_a_s = cntk.log(cntk.times_transpose(self.pi, self.action))
         loss_on_pi = cntk.times(pi_a_s, cntk.minus(self.R, self.v_calc))
 
@@ -62,6 +62,9 @@ class DeepNet:
         # Create the trainiers.
         trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_v)
         trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_pi)
+        
+        #trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
+        #trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
         
         self.trainer_pi = trainer_pi
         self.trainer_v = trainer_v
@@ -151,48 +154,48 @@ class DeepNet:
     def save_model(self, file_name_pi, file_name_v):
         self.pi.save(file_name_pi)
         self.v.save(file_name_v)
+       
+class DnnAgent:
+    
+    def action(net, state): # Take into account None as input -> generate random actions
         
-# Functions to generate the next actions
-import random as r
-def action(net, state): # Take into account None as input -> generate random actions
-    
-    act = 0
-    n = net.get_num_actions()
-    if state is None:
-        act = r.randint(0, n-1) 
-    else:
-        # Decide to explore or not. (In order to avoid the moveless situations.)
-        explore = r.randint(0, 1000)
-        if explore < 0.05 * 1000:
-            act = r.randint(0, n-1)
+        act = 0
+        n = net.get_num_actions()
+        if state is None:
+            act = r.randint(0, n-1) 
         else:
-            prob_vec = net.pi_probabilities(state)[0] * 1000
-            candidate = r.randint(0, 1000)
+            # Decide to explore or not. (In order to avoid the moveless situations.)
+            explore = r.randint(0, 1000)
+            if explore < 0.05 * 1000:
+                act = r.randint(0, n-1)
+            else:
+                prob_vec = net.pi_probabilities(state)[0] * 1000
+                candidate = r.randint(0, 1000)
+            
+                for i in range(0, n):
+                    if prob_vec[i] >= candidate:
+                        act = i
         
-            for i in range(0, n):
-                if prob_vec[i] >= candidate:
-                    act = i
-    
-    return act
-    
-def action_with_exploration(net, state, epsilon): # Take into account None as input -> generate random actions
-                                                  # Epsilon-greedy is a right approach.
-    act = 0
-    n = net.get_num_actions()
-    if state is None:
-        act = r.randint(0, n-1) 
-    else:
-        # Decide to explore or not.
-        explore = r.randint(0, 1000)
-        if explore < epsilon * 1000:
-            act = r.randint(0, n-1)
+        return act
+        
+    def action_with_exploration(net, state, epsilon): # Take into account None as input -> generate random actions
+                                                      # Epsilon-greedy is a right approach.
+        act = 0
+        n = net.get_num_actions()
+        if state is None:
+            act = r.randint(0, n-1) 
         else:
-            prob_vec = net.pi_probabilities(state)[0] * 1000
+            # Decide to explore or not.
+            explore = r.randint(0, 1000)
+            if explore < epsilon * 1000:
+                act = r.randint(0, n-1)
+            else:
+                prob_vec = net.pi_probabilities(state)[0] * 1000
 
-            candidate = r.randint(0, 1000)
+                candidate = r.randint(0, 1000)
+            
+                for i in range(0, n):
+                    if prob_vec[i] >= candidate:
+                        act = i
         
-            for i in range(0, n):
-                if prob_vec[i] >= candidate:
-                    act = i
-    
-    return act
+        return act

@@ -1,5 +1,3 @@
-from argparse import ArgumentParser
-
 import numpy as np
 from cntk.core import Value
 from cntk.initializer import he_uniform
