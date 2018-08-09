@@ -11,18 +11,15 @@ class DeepNet:
     
     def __init__(self, num_actions, lr):
 
-        print ("init DeepNet")
         self.num_actions = num_actions
         self.lr = lr
         
         self.build_model()
         self.build_trainer()
 
-        print ("Done init")
         
     def build_model(self):
         
-        print ("Build Model")
         # Defining the input variables for training and evaluation.
         self.stacked_frames = cntk.input_variable((1, 84, 84), dtype=np.float32)
         self.action = cntk.input_variable(self.num_actions)
@@ -47,22 +44,16 @@ class DeepNet:
         self.pms_v = self.v.parameters
         
     def build_trainer(self):
-        print ("Build Trainer")
-        
+                
         # Set the learning rate, and the momentum parameters for the Adam optimizer.
         lr = learning_rate_schedule(self.lr, UnitType.minibatch)
-        
         beta1 = momentum_schedule(0.9)
-        
         beta2 = momentum_schedule(0.99)
         
         # Calculate the losses.
         loss_on_v = cntk.squared_error(self.R, self.v)
-
         pi_a_s = cntk.log(cntk.times_transpose(self.pi, self.action))
         loss_on_pi = cntk.times(pi_a_s, cntk.minus(self.R, self.v_calc))
-
-        print ("5")
 
         # Add tensorboard visualization 
         #tensorboard_writer_v = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.v)
@@ -73,17 +64,10 @@ class DeepNet:
         #trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_pi)
         
         trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
-        
-        print ("6")
-
         trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])
         
-        print ("7")
-
         self.trainer_pi = trainer_pi
         self.trainer_v = trainer_v
-
-        print ("Done build trainer")
     
     def train_net(self, state, action, R, calc_diff):
         

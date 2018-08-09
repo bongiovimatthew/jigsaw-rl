@@ -32,7 +32,7 @@ class Learner:
         return [prms_pi, prms_v]
 
     def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
-        agent = create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
+        agent = Learner.create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
         agent.run(learner_id)
             
     def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
@@ -64,7 +64,7 @@ class Learner:
     def env_reset(env, queue):
         queue.queue_reset()
         obs = env.reset()
-        queue.add(process_img(obs), 0, 0, False)
+        queue.add(Learner.process_img(obs), 0, 0, False)
         return queue.get_recent_state() # should return None
         
     def env_step(env, queue, action):
@@ -76,7 +76,7 @@ class Learner:
 
         # Add rewards to info
         info["rewards"] = rw
-        queue.add(process_img(obs), rw, action, done)
+        queue.add(Learner.process_img(obs), rw, action, done)
         return queue.get_recent_state(), info
 
 # During a game attempt, a sequence of observation are generated.
@@ -161,7 +161,7 @@ class Agent:
         self.env = PuzzleEnvironment()
         self.queue = Queue(game_length, 84) 
         self.net = DeepNet(self.env.action_space.n, lr)
-        self.s_t = env_reset(self.env, self.queue)
+        self.s_t = Learner.env_reset(self.env, self.queue)
         
         self.R = 0
         self.signal = False
@@ -273,7 +273,7 @@ class Agent:
     def play_game_for_a_while(self):
     
         if self.is_terminal:
-            self.s_t = env_reset(self.env, self.queue)
+            self.s_t = Learner.env_reset(self.env, self.queue)
             self.t = 0
             self.is_terminal = False
             
@@ -288,7 +288,7 @@ class Agent:
             # img.save('files/image_agent_%d.jpg'%(self.learner_id)) 
             action = DnnAgent.action_with_exploration(self.net, self.s_t, self.epsilon)
 
-            self.s_t, info = env_step(self.env, self.queue, action)
+            self.s_t, info = Learner.env_step(self.env, self.queue, action)
 
 
             info = self.update_and_get_metrics(info, action)
@@ -347,13 +347,13 @@ class Agent:
         print ('Evaluation at: ' + str(self.T))
         
         for rnd in range(self.eval_num): # Run more game epsiode to get more robust result for performance
-            state = env_reset(self.env, self.queue)
+            state = Learner.env_reset(self.env, self.queue)
             finished = False
             cntr = 0
             rewards = []
             while not (finished or cntr == self.game_length):
                 action = DnnAgent.action(self.net, state)
-                state, info = env_step(self.env, self.queue, action)
+                state, info = Learner.env_step(self.env, self.queue, action)
                 rewards.append(self.queue.get_recent_reward())
                 
                 finished = self.queue.get_is_last_terminal()
@@ -365,7 +365,7 @@ class Agent:
         
         print ('Start evaluating.')
         env = wrappers.Monitor(self.env, 'videos', force=True)
-        state = env_reset(env, self.queue)
+        state = Learner.env_reset(env, self.queue)
         finished = False
         cntr = 0
         rewards = []
@@ -374,7 +374,7 @@ class Agent:
             img.show()
             env.render()
             action = DnnAgent.action(self.net, state)
-            state, info = env_step(env, self.queue, action)
+            state, info = Learner.env_step(env, self.queue, action)
             rewards.append(self.queue.get_recent_reward())
                 
             finished = self.queue.get_is_last_terminal()
