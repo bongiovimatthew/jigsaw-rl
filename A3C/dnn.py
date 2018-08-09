@@ -84,9 +84,14 @@ class DeepNet:
             self.update_v = []
             for x in self.pms_v:
                 self.update_v.append(x.value)
+
+        # Used before we fixed the minibatch 
+        #action_as_array = np.zeros(self.num_actions, dtype=np.float32)
+        #action_as_array[int(action)] = 1
+        #v_calc = self.state_value(state)
+        #float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
         
         actions_1hot = []
-
         for action in actions:
             # Training part
             action_as_array = np.zeros(self.num_actions, dtype=np.float32)

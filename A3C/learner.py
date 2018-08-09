@@ -116,8 +116,6 @@ class Queue:
     def get_state_at(self, idx):
         if idx >= 0:
             return np.float32([self.observations[idx,:,:]])
-
-
         return None
     
     def get_reward_at(self, idx):
@@ -179,7 +177,7 @@ class Agent:
         
         while self.T < self.T_max:
 
-            self.synchronize_dnn()            
+            #self.synchronize_dnn()            
             self.play_game_for_a_while()            
             self.set_R()
             
@@ -293,19 +291,19 @@ class Agent:
     def calculate_gradients(self):
 
         idx = self.queue.get_last_idx()
-        final_index = idx - self.t_max
+        final_index = max(idx - self.t_max, 0)
         states = []
         rewards = []
         actions = []
         Rs = []
-        while idx >= final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
+
+        while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
             states.append(self.queue.get_state_at(idx))
             reward = (self.queue.get_reward_at(idx))
             actions.append(self.queue.get_action_at(idx))
 
             self.R = (reward + self.gamma * self.R)
             Rs.append(self.R)
-
             idx = idx-1        
 
         self.diff = self.net.train_net(states, actions, Rs, False)
