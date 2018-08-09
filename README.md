@@ -26,10 +26,9 @@ You will need to install a handful of dependencies before running this project.
 
     `pip install numpy `
 
-* __SciPy__: Used for 
+* __SciPy__: Used for saving images of puzzle state
 
     `pip install scipy `
-
 
 * __Pynput__: Used for controlling the human version of the puzzle game 
 
