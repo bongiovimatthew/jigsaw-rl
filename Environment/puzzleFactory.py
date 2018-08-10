@@ -175,6 +175,9 @@ class PuzzleFactory:
 	# Generates the randomly placed, randomly rotated pieces
 	#  Rotation based on image data (no geom) 
 	def placePiecesOnBoard(puzzle, listOfPiecesAvailable):		
+
+		fakePuzzle = True 
+
 		sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY
 
 		initialPieceGuidArray = []
@@ -185,21 +188,25 @@ class PuzzleFactory:
 				initialPieceGuidArray[i].append([])
 		 
 		for piece in listOfPiecesAvailable:
-			# piece.rotate()
+
+			if not fakePuzzle:
+				piece.rotate()
 
 			done = False 
 			while not done: 
-				piece.coords_x = piece.correct_coords_x # random.randint(0, sideDimension - 1)
-				piece.coords_y = piece.correct_coords_y # random.randint(0, sideDimension - 1)
+				
+				if fakePuzzle: 
+					piece.coords_x = piece.correct_coords_x 
+					piece.coords_y = piece.correct_coords_y 
 
-				#piece.coords_x = random.randint(0, sideDimension - 1)
-				#piece.coords_y = random.randint(0, sideDimension - 1)
-
-				if (piece.coords_x == 2) and (piece.coords_y == 2):
-					#piece.coords_x = 3 
-					piece.coords_y = 3
-				#	piece.coords_x = random.randint(3, sideDimension - 1)
-				#	piece.coords_y = random.randint(3, sideDimension - 1)
+					if (piece.coords_x == 2) and (piece.coords_y == 2):
+						#piece.coords_x = 3 
+						piece.coords_y = 3
+						#piece.coords_x = random.randint(3, sideDimension - 1)
+						#piece.coords_y = random.randint(3, sideDimension - 1)
+				else: 
+					piece.coords_x = random.randint(0, sideDimension - 1)
+					piece.coords_y = random.randint(0, sideDimension - 1)
 
 				if len(initialPieceGuidArray[piece.coords_y][piece.coords_x]) == 0:
 					initialPieceGuidArray[piece.coords_y][piece.coords_x].append(piece.id) 
