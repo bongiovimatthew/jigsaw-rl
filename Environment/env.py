@@ -168,7 +168,7 @@ class PuzzleEnvironment(Environment):
         self.stepCount += 1
         next_state = self._convert_state(action)
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore) or (self.stepCount > 500)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 50)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore
@@ -283,8 +283,8 @@ class PuzzleEnvironment(Environment):
             if len(self.guidArray[piece.coords_y][piece.coords_x]) > 1:
                 pieceScore += PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
 
-            if piece.coords_x == piece.correct_coords_x and piece.coords_y == piece.correct_coords_y:
-                pieceScore += PuzzleEnvironment.CORRECT_PLACEMENT_SCORE
+            # if piece.coords_x == piece.correct_coords_x and piece.coords_y == piece.correct_coords_y:
+            #     pieceScore += PuzzleEnvironment.CORRECT_PLACEMENT_SCORE
                 
             score += pieceScore
 

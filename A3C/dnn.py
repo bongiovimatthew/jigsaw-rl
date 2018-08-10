@@ -30,15 +30,15 @@ class DeepNet:
         self.v_calc = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
         
         # Creating the value approximator extension.
-        conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu, name='conv1_v')
-        conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu, name='conv2_v')
-        dense_v = Dense(256, activation=cntk.relu, name='dense_v')
-        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.relu, name='outdense_v')])
+        conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.sigmoid, name='conv1_v')
+        conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.sigmoid, name='conv2_v')
+        dense_v = Dense(256, activation=cntk.sigmoid, name='dense_v')
+        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.sigmoid, name='outdense_v')])
         
         # Creating the policy approximator extension.
-        conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu, name='conv1_pi')
-        conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu, name='conv2_pi')
-        dense_pi = Dense(256, activation=cntk.relu, name='dense_pi')
+        conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.sigmoid, name='conv1_pi')
+        conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.sigmoid, name='conv2_pi')
+        dense_pi = Dense(256, activation=cntk.sigmoid, name='dense_pi')
         pi = Sequential([conv1_pi, conv2_pi, dense_pi, Dense(self.num_actions, activation=cntk.softmax, name='outdense_pi')])
         
         self.pi = pi(self.stacked_frames)
@@ -182,7 +182,7 @@ class DnnAgent:
                 prob_vec = net.pi_probabilities(state)[0] * 1000
                 candidate = r.randint(0, 1000)
 
-                print("prob_vec: {0}" % prob_vec)
+                print("prob_vec: {0}".format(prob_vec))
             
                 for i in range(0, n):
                     if prob_vec[i] >= candidate:
@@ -197,17 +197,22 @@ class DnnAgent:
             act = r.randint(0, n-1) 
         else:
             # Decide to explore or not.
-            explore = r.randint(0, 1000)
-            if explore < epsilon * 1000:
+            explore = np.random.binomial(1, epsilon)
+
+            if explore:
                 act = r.randint(0, n-1)
             else:
-                prob_vec = net.pi_probabilities(state)[0] * 1000
+                prob_vec = net.pi_probabilities(state)[0]
+                maxProbability = prob_vec[0]
+                possibleActions = [0]
+                for i in range(1, n):
+                    if prob_vec[i] > maxProbability:
+                        maxProbability = prob_vec[i]
+                        possibleActions = [i]
+                    elif prob_vec[i] == maxProbability:
+                        possibleActions.append(i)
+                act = possibleActions[np.random.randint(0, len(possibleActions))]
 
-                print("prob_vec: {0}" % prob_vec)
-                candidate = r.randint(0, 1000)
-            
-                for i in range(0, n):
-                    if prob_vec[i] >= candidate:
-                        act = i
+                print("Exploited: :{0}, act: {1}".format(prob_vec, act))
         
         return act
