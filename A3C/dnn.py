@@ -9,11 +9,13 @@ import random as r
 
 class DeepNet:
     
-    def __init__(self, num_actions, lr):
+    def __init__(self, num_actions, lr, stateShape):
 
         self.num_actions = num_actions
         self.lr = lr
         self.debugMode = True
+        self.STATE_WIDTH = stateShape[0]
+        self.STATE_HEIGHT = stateShape[1]
         
         self.build_model()
         self.build_trainer()
@@ -23,7 +25,7 @@ class DeepNet:
         cntk.debugging.set_checked_mode(True)
 
         # Defining the input variables for training and evaluation.
-        self.stacked_frames = cntk.input_variable((1, 168, 168), dtype=np.float32)
+        self.stacked_frames = cntk.input_variable((1, self.STATE_WIDTH, self.STATE_HEIGHT), dtype=np.float32)
         #self.stacked_frames = cntk.input_variable((1, 84, 84), dtype=np.float32)
         self.action = cntk.input_variable(self.num_actions)
         self.R = cntk.input_variable(1, dtype=np.float32)

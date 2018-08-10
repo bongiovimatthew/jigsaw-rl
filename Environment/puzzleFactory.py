@@ -196,8 +196,10 @@ class PuzzleFactory:
 				#piece.coords_y = random.randint(0, sideDimension - 1)
 
 				if (piece.coords_x == 2) and (piece.coords_y == 2):
-					piece.coords_x = 3 # random.randint(0, sideDimension - 1)
-					# piece.coords_y = 4 # random.randint(0, sideDimension - 1)
+					#piece.coords_x = 3 
+					piece.coords_y = 3
+				#	piece.coords_x = random.randint(3, sideDimension - 1)
+				#	piece.coords_y = random.randint(3, sideDimension - 1)
 
 				if len(initialPieceGuidArray[piece.coords_y][piece.coords_x]) == 0:
 					initialPieceGuidArray[piece.coords_y][piece.coords_x].append(piece.id) 

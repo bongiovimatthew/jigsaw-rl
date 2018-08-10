@@ -21,7 +21,7 @@ parser.add_argument('--C', type=int, default=50000, metavar='N',
         help='the frequency of evaluation during training (default:25)')
 parser.add_argument('--eval-num', type=int, default=0, metavar='N',
         help='the number of evaluations in an evaluation session (default:10)')
-parser.add_argument('--gamma', type=float, default=0.99, metavar='F',
+parser.add_argument('--gamma', type=float, default=0.75, metavar='F',
         help='the discounting factor (default:0.99)')
 parser.add_argument('--lr', type=float, default=0.00025, metavar='F',
         help='the learning rate (default:0.00025)')

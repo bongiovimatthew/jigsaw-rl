@@ -11,6 +11,10 @@ class Learner:
     # This is the solution
     lock = 0
     shared = 0
+
+    STATE_WIDTH = 224 
+    STATE_HEIGHT = 224 
+
     def init_lock_shared(l, sh):
         global lock
         global shared
@@ -22,7 +26,7 @@ class Learner:
         temp_env = PuzzleEnvironment()
         # temp_env = gym.make(env_name)
         num_actions = temp_env.action_space.n
-        net = DeepNet(num_actions, 0)
+        net = DeepNet(num_actions, 0, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
         # temp_env.close()
         
         prms_pi = net.get_parameters_pi()
@@ -53,8 +57,8 @@ class Learner:
 
     # Preprocessing of the raw frames from the game.
     def process_img(observation):
-        img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((168,168), Image.ANTIALIAS))
-        img_final = np.reshape(img_final, (1, 168, 168))
+        img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((Learner.STATE_WIDTH,Learner.STATE_HEIGHT), Image.ANTIALIAS))
+        img_final = np.reshape(img_final, (1, Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
 
         return img_final
 
@@ -146,8 +150,8 @@ class Agent:
         self.is_terminal = False
         
         self.env = PuzzleEnvironment()
-        self.queue = Queue(game_length, 168) 
-        self.net = DeepNet(self.env.action_space.n, lr)
+        self.queue = Queue(game_length, Learner.STATE_HEIGHT) 
+        self.net = DeepNet(self.env.action_space.n, lr, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
         self.s_t = Learner.env_reset(self.env, self.queue)
         
         self.R = 0
@@ -250,6 +254,7 @@ class Agent:
     def play_game_for_a_while(self):
     
         if self.is_terminal:
+            logger.log_state_image(self.s_t, self.t, self.learner_id, -1, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
             self.s_t = Learner.env_reset(self.env, self.queue)
             self.t = 0
             self.is_terminal = False
@@ -272,7 +277,7 @@ class Agent:
 
             if self.debugMode and self.t < 40 : 
                 logger.log_metrics(info, self.t, self.learner_id)
-                logger.log_state_image(self.s_t, self.t, self.learner_id,action)
+                logger.log_state_image(self.s_t, self.t, self.learner_id, action, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
                 self.reset_running_metrics()
 
             self.is_terminal = self.queue.get_is_last_terminal()
