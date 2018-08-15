@@ -171,6 +171,8 @@ class Agent:
         self.stepsForAverageRewards = 0
         self.slidingWindowScoresArray = []
         self.numberOfTimesExecutedEachAction = [0 for i in range(self.env.action_space.n)]
+
+        self.CountOfGradients = 0
     
     def get_net(self):
         return self.net
@@ -261,7 +263,7 @@ class Agent:
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*2)/self.T_max) * self.T) # first decreasing, then it is constant
+        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1.5)/self.T_max) * self.T) # first decreasing, then it is constant
 
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
@@ -294,9 +296,13 @@ class Agent:
             self.R = self.net.state_value(self.s_t)
         
     def calculate_gradients(self):
+        self.CountOfGradients += 1 
 
         idx = self.queue.get_last_idx()
         final_index = max(idx - self.t_max, 0)
+        
+        #print("Count: {0}, Idx: {1}, final_idx: {2}".format(self.CountOfGradients, idx, final_index))
+
         states = []
         rewards = []
         actions = []

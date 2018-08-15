@@ -23,7 +23,7 @@ parser.add_argument('--eval-num', type=int, default=0, metavar='N',
         help='the number of evaluations in an evaluation session (default:10)')
 parser.add_argument('--gamma', type=float, default=0.75, metavar='F',
         help='the discounting factor (default:0.99)')
-parser.add_argument('--lr', type=float, default=0.00025, metavar='F',
+parser.add_argument('--lr', type=float, default=0.0002, metavar='F',
         help='the learning rate (default:0.00025)')
 parser.add_argument('--test-mode', action='store_true',
         help='training or evaluation')

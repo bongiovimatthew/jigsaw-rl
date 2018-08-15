@@ -176,7 +176,7 @@ class PuzzleFactory:
 	#  Rotation based on image data (no geom) 
 	def placePiecesOnBoard(puzzle, listOfPiecesAvailable):		
 
-		fakePuzzle = True 
+		fakePuzzle = False 
 
 		sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY
 
@@ -200,8 +200,8 @@ class PuzzleFactory:
 					piece.coords_y = piece.correct_coords_y 
 
 					if (piece.coords_x == 2) and (piece.coords_y == 2):
-						#piece.coords_x = 3 
-						piece.coords_y = 3
+						piece.coords_x = 3 
+						#piece.coords_y = 3
 						#piece.coords_x = random.randint(3, sideDimension - 1)
 						#piece.coords_y = random.randint(3, sideDimension - 1)
 				else: 

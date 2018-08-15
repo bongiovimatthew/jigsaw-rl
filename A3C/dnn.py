@@ -109,7 +109,7 @@ class DeepNet:
         trained_pi = self.trainer_pi.train_minibatch({self.stacked_frames: states, self.action: actions_1hot, self.R: float32_Rs, self.v_calc: v_calcs})
         trained_v = self.trainer_v.train_minibatch({self.stacked_frames: states, self.R: float32_Rs})
 
-        print("v_calc:{0} float32_R:{1} action:{2} trained_pi:{3} trained_v:{4}".format(v_calcs[0], float32_Rs[0], actions[0], trained_pi, trained_v))
+        #print("v_calc:{0} float32_R:{1} action:{2} trained_pi:{3} trained_v:{4}".format(v_calcs[0], float32_Rs[0], actions[0], trained_pi, trained_v))
         
         if calc_diff:
             # Calculate the differences between the updated and the original params.
@@ -184,7 +184,7 @@ class DnnAgent:
                 prob_vec = net.pi_probabilities(state)[0] * 1000
                 candidate = r.randint(0, 1000)
 
-                print("prob_vec: {0}".format(prob_vec))
+                #print("prob_vec: {0}".format(prob_vec))
             
                 for i in range(0, n):
                     if prob_vec[i] >= candidate:
@@ -203,6 +203,7 @@ class DnnAgent:
 
             if explore:
                 act = r.randint(0, n-1)
+                print("Exploring : act: {0}".format(act))
             else:
                 prob_vec = net.pi_probabilities(state)[0]
                 maxProbability = prob_vec[0]
@@ -215,6 +216,8 @@ class DnnAgent:
                         possibleActions.append(i)
                 act = possibleActions[np.random.randint(0, len(possibleActions))]
 
-                print("Exploited: :{0}, act: {1}".format(prob_vec, act))
-        
+
+                #print("Exploited: :{0}, act: {1}".format(prob_vec, act))
+                print("Exploiting : act: {0}".format(act))
+
         return act
