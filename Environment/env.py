@@ -69,16 +69,19 @@ class PuzzleEnvironment(Environment):
         # Contains the relative position of the piece IDs in the current state 
         self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState)
 
-        self.currentPieceIndex = 0
-        count = 0 
-        for piece in self.pieceState: 
-            if (piece.coords_y == 2) and piece.coords_x == 3:
-                self.currentPieceIndex = count
+        if PuzzleFactory.getUseScopedDown():
+            before, after = PuzzleFactory.getCoordsToSelect()
+            count = 0 
+            for piece in self.pieceState: 
+                if (piece.coords_y == after[1]) and piece.coords_x == after[0]:
+                    self.currentPieceIndex = count
 
-            if (self.debugMode):
-                print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
+                if (self.debugMode):
+                    print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
 
-            count += 1
+                count += 1
+        else: 
+            self.currentPieceIndex = 0
 
         self.oldScore = self.getScoreOfCurrentState()
         self.stepCount = 0

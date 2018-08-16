@@ -10,6 +10,7 @@ from Environment.puzzle import Puzzle
 
 class PuzzleFactory:
 	NUMBER_OF_PIECES_TO_SCALE_BY = 2
+	USE_SCOPED_DOWN = True
 
 	def __init__(self):
 		return 
@@ -88,14 +89,6 @@ class PuzzleFactory:
 				if (y > 0):
 					self.createEdge(puzzle, (y,x), (y-1,x), Direction.UP)
 
-				# print("y:{0}, x:{1}, direction:{2}, getEdgeGeometry:{3}".format(y, x, Direction.RIGHT, puzzle.piecesArray[y][x].getEdgeGeometry(Direction.RIGHT)))
-
-				# print("y:{0}, x:{1}, direction:{2}, getEdgeGeometry:{3}".format(y, x, Direction.DOWN, puzzle.piecesArray[y][x].getEdgeGeometry(Direction.DOWN)))
-
-				# print("y:{0}, x:{1}, direction:{2}, getEdgeGeometry:{3}".format(y, x, Direction.LEFT, puzzle.piecesArray[y][x].getEdgeGeometry(Direction.LEFT)))
-
-				# print("y:{0}, x:{1}, direction:{2}, getEdgeGeometry:{3}".format(y, x, Direction.UP, puzzle.piecesArray[y][x].getEdgeGeometry(Direction.UP)))
-
 	def addOuterNib(self, singlePieceImgData, xAxisLengthPostRotation, nibHeight):
 		# Use square nibs for now
 		nibWidth = nibHeight
@@ -172,11 +165,20 @@ class PuzzleFactory:
 
 		return listOfPiecesAvailable
 
+	def getUseScopedDown():
+		return PuzzleFactory.USE_SCOPED_DOWN
+
+	def getCoordsToSelect():
+		# (BeforeX, BeforeY), (AfterX, AfterY)
+
+		#piece.coords_x = random.randint(3, sideDimension - 1)
+		#piece.coords_y = random.randint(3, sideDimension - 1)
+		
+		return (2, 2), (3, 2)
+
 	# Generates the randomly placed, randomly rotated pieces
 	#  Rotation based on image data (no geom) 
 	def placePiecesOnBoard(puzzle, listOfPiecesAvailable):		
-
-		fakePuzzle = False 
 
 		sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY
 
@@ -189,21 +191,22 @@ class PuzzleFactory:
 		 
 		for piece in listOfPiecesAvailable:
 
-			if not fakePuzzle:
+			if not PuzzleFactory.USE_SCOPED_DOWN:
 				piece.rotate()
 
 			done = False 
 			while not done: 
 				
-				if fakePuzzle: 
+				if PuzzleFactory.USE_SCOPED_DOWN: 
 					piece.coords_x = piece.correct_coords_x 
 					piece.coords_y = piece.correct_coords_y 
 
-					if (piece.coords_x == 2) and (piece.coords_y == 2):
-						piece.coords_x = 3 
-						#piece.coords_y = 3
-						#piece.coords_x = random.randint(3, sideDimension - 1)
-						#piece.coords_y = random.randint(3, sideDimension - 1)
+					before, after = PuzzleFactory.getCoordsToSelect()
+
+					if (piece.coords_x == before[0]) and (piece.coords_y == before[1]):
+						piece.coords_x = after[0] 
+						piece.coords_y = after[1]
+
 				else: 
 					piece.coords_x = random.randint(0, sideDimension - 1)
 					piece.coords_y = random.randint(0, sideDimension - 1)
