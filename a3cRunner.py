@@ -7,8 +7,6 @@ from Diagnostics.logger import Logger as logger
 # Read the parameters to initialize the algorithm.
 parser = argparse.ArgumentParser(description='A3C algorithm')
 
-parser.add_argument('--atari-env', default='Breakout-v0', metavar='S',
-        help='the name of the Atari environment (default:Breakout-v0)')
 parser.add_argument('--num-cores', type=int, default=1, metavar='N',
         help='the number of cores should be exploited (default:2)')
 parser.add_argument('--t-max', type=int, default='5', metavar='N',
@@ -41,11 +39,11 @@ if not args.test_mode:
     if __name__ == '__main__':
         n = args.num_cores
         l = Lock()
-        sh = lrn.create_shared(args.atari_env) # list with two lists inside
+        sh = lrn.create_shared() # list with two lists inside
                                            # contains the parameters as numpy arrays
 
         pool = Pool(n, initializer = lrn.init_lock_shared, initargs = (l,sh,))
-        logger.create_folders(l,args.atari_env, args.num_cores, args.t_max, args.game_length, args.T_max, args.C, args.gamma, args.lr)
+        logger.create_folders(l, args.num_cores, args.t_max, args.game_length, args.T_max, args.C, args.gamma, args.lr)
         idcs = [0] * n
         for p in range(0, n):
             idcs[p] = p
@@ -55,7 +53,7 @@ if not args.test_mode:
         pool.close()
         pool.join()
         
-        for_saving = lrn.create_agent(args.atari_env, args.t_max, args.game_length, args.T_max, args.C, args.eval_num, args.gamma, args.lr)
+        for_saving = lrn.create_agent(args.t_max, args.game_length, args.T_max, args.C, args.eval_num, args.gamma, args.lr)
         logger.save_model(for_saving, sh)
          
 # IF EVALUATION mode -> evaluate a test run (rewards, video)
