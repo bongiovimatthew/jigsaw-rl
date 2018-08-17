@@ -1,6 +1,6 @@
 import numpy as np
 
-from A3C.dnn import DeepNet, DnnAgent
+from Brain.netFactory import NetFactory
 from Environment.env import PuzzleEnvironment
 from Diagnostics.logger import Logger as logger
 
@@ -24,13 +24,12 @@ class Learner:
     # Easier to call these functions from other modules.
     def create_shared(env_name):
         temp_env = PuzzleEnvironment()
-        # temp_env = gym.make(env_name)
-        num_actions = temp_env.action_space.n
-        net = DeepNet(num_actions, 0, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
-        # temp_env.close()
         
-        prms_pi = net.get_parameters_pi()
-        prms_v = net.get_parameters_v()
+        num_actions = temp_env.action_space.n
+        #net = DeepNet(num_actions, 0, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
+        
+        prms_pi = None #net.get_parameters_pi()
+        prms_v = None #net.get_parameters_v()
         return [prms_pi, prms_v]
 
     def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
@@ -39,7 +38,6 @@ class Learner:
             
     def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
         agent = Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
-        # logger.load_model(agent.get_net())
 
         return agent
         
@@ -151,7 +149,8 @@ class Agent:
         
         self.env = PuzzleEnvironment()
         self.queue = Queue(game_length, Learner.STATE_HEIGHT) 
-        self.net = DeepNet(self.env.action_space.n, lr, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
+        self.net = NetFactory.makeNet(self.env.action_space.n, lr, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
+        self.netAgent = NetFactory.makeNetAgent()
         self.s_t = Learner.env_reset(self.env, self.queue)
         
         self.R = 0
@@ -268,9 +267,8 @@ class Agent:
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
             self.T += 1
-            # img = Image.fromarray(self.s_t, 'RGB')
-            # img.save('files/image_agent_%d.jpg'%(self.learner_id)) 
-            action = DnnAgent.action_with_exploration(self.net, self.s_t, self.epsilon)
+            
+            action = self.netAgent.action_with_exploration(self.net, self.s_t, self.epsilon)
 
             self.s_t, info = Learner.env_step(self.env, self.queue, action)
 
@@ -339,7 +337,7 @@ class Agent:
             cntr = 0
             rewards = []
             while not (finished or cntr == self.game_length):
-                action = DnnAgent.action(self.net, state)
+                action = self.netAgent.action(self.net, state)
                 state, info = Learner.env_step(self.env, self.queue, action)
                 rewards.append(self.queue.get_recent_reward())
                 
@@ -360,7 +358,7 @@ class Agent:
             img = Image.fromarray(env.render(), 'RGB')
             img.show()
             env.render()
-            action = DnnAgent.action(self.net, state)
+            action = self.netAgent.action(self.net, state)
             state, info = Learner.env_step(env, self.queue, action)
             rewards.append(self.queue.get_recent_reward())
                 
