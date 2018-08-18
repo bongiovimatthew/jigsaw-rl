@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Conv2D, MaxPooling2D
 
 class KerasNet: 
 	
@@ -16,20 +16,20 @@ class KerasNet:
         
     def build_model(self):
         model = Sequential()
-		model.add(Dense(units=64, activation='relu', input_dim=100))
+
+        model.add(Conv2D(16, (8, 8), activation='sigmoid', strides=4, input_shape=(self.STATE_WIDTH, self.STATE_HEIGHT, 3)))
+        model.add(Conv2D(32, (4, 4), activation='sigmoid', strides=2))
+
+ 		model.add(Dense(units=64, activation='sigmoid', input_dim=100))
 		model.add(Dense(units=10, activation='softmax'))
 
-		model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
-		
 		return model
         
     def build_trainer(self):
-        return         
+        return model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
         
+    # Called
     def train_net(self, states, actions, Rs, calc_diff):
-        
-		
-        
 
         diff = None
         
@@ -59,8 +59,6 @@ class KerasNet:
         
         trained_pi = self.trainer_pi.train_minibatch({self.stacked_frames: states, self.action: actions_1hot, self.R: float32_Rs, self.v_calc: v_calcs})
         trained_v = self.trainer_v.train_minibatch({self.stacked_frames: states, self.R: float32_Rs})
-
-        #print("v_calc:{0} float32_R:{1} action:{2} trained_pi:{3} trained_v:{4}".format(v_calcs[0], float32_Rs[0], actions[0], trained_pi, trained_v))
         
         if calc_diff:
             # Calculate the differences between the updated and the original params.
@@ -74,46 +72,28 @@ class KerasNet:
         
         return diff
         
+    # Called
     def state_value(self, state):
         return self.v.eval({self.stacked_frames: [state]})
     
+    # Called by Agent
     def pi_probabilities(self, state):
         return self.pi.eval({self.stacked_frames: [state]})
     
+    # Called by Agent
     def get_num_actions(self):
         return self.num_actions
         
+    # Called for logging
     def get_last_avg_loss(self):
         return self.trainer_pi.previous_minibatch_loss_average + self.trainer_v.previous_minibatch_loss_average
-    
-    def synchronize_net(self, shared): 
-        for idx in range(0, len(self.pms_pi)):
-            self.pms_pi[idx].value = shared[0][idx]
-        for idx in range(0, len(self.pms_v)):
-            self.pms_v[idx].value = shared[1][idx]
-                    
-    def sync_update(self, shared, diff):
-        for idx in range(0, len(self.pms_pi)):
-            shared[0][idx] += diff[0][idx]
-        for idx in range(0, len(self.pms_v)):
-            shared[1][idx] += diff[1][idx]
-    
-    def get_parameters_pi(self):
-        pickle_prms_pi = []
-        for x in self.pms_pi:
-            pickle_prms_pi.append(x.value) # .value gives numpy arrays
-        return pickle_prms_pi
-        
-    def get_parameters_v(self):
-        pickle_prms_v = []
-        for x in self.pms_v:
-            pickle_prms_v.append(x.value) # .value gives numpy arrays
-        return pickle_prms_v              # to avoid: can't pickle SwigPyObject
-        
+            
+    # Called through logger 
     def load_model(self, file_name_pi, file_name_v):
         self.pi.restore(file_name_pi) # load(fn) does different things, it would
         self.v.restore(file_name_v)   # create a new function. It did not work.
         
+    # Called
     def save_model(self, file_name_pi, file_name_v):
         self.pi.save(file_name_pi)
         self.v.save(file_name_v)

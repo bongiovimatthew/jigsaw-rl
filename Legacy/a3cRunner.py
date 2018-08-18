@@ -7,8 +7,6 @@ from Diagnostics.logger import Logger as logger
 # Read the parameters to initialize the algorithm.
 parser = argparse.ArgumentParser(description='A3C algorithm')
 
-parser.add_argument('--atari-env', default='Breakout-v0', metavar='S',
-        help='the name of the Atari environment (default:Breakout-v0)')
 parser.add_argument('--num-cores', type=int, default=1, metavar='N',
         help='the number of cores should be exploited (default:2)')
 parser.add_argument('--t-max', type=int, default='5', metavar='N',

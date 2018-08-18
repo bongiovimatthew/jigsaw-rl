@@ -6,8 +6,9 @@ from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitT
 from cntk.logging import TensorBoardProgressWriter
 from celery.contrib import rdb
 import random as r
+from Brain.IBrain import IBrain
 
-class DeepNet:
+class DeepNetBrain(IBrain):
     
     def __init__(self, num_actions, lr, stateShape):
 
@@ -49,7 +50,6 @@ class DeepNet:
         self.pms_v = self.v.parameters
         
         cntk.debugging.debug_model(v)
-        # action_as_array   
 
     def build_trainer(self):
                 
@@ -75,7 +75,7 @@ class DeepNet:
         self.trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_v_writer)
         self.trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_pi_writer)
     
-    def train_net(self, states, actions, Rs, calc_diff):
+    def train(self, states, actions, Rs, calc_diff):
         diff = None
         
         if calc_diff:
@@ -86,12 +86,6 @@ class DeepNet:
             self.update_v = []
             for x in self.pms_v:
                 self.update_v.append(x.value)
-
-        # Used before we fixed the minibatch 
-        #action_as_array = np.zeros(self.num_actions, dtype=np.float32)
-        #action_as_array[int(action)] = 1
-        #v_calc = self.state_value(state)
-        #float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
         
         actions_1hot = []
         for action in actions:
@@ -129,6 +123,9 @@ class DeepNet:
     def pi_probabilities(self, state):
         return self.pi.eval({self.stacked_frames: [state]})
     
+    def action_probabilities(self, state):
+        return self.pi_probabilities(state)[0]
+        
     def get_num_actions(self):
         return self.num_actions
         
@@ -166,58 +163,3 @@ class DeepNet:
     def save_model(self, file_name_pi, file_name_v):
         self.pi.save(file_name_pi)
         self.v.save(file_name_v)
-       
-class DnnAgent:
-    
-    def action(net, state): # Take into account None as input -> generate random actions
-        
-        act = 0
-        n = net.get_num_actions()
-        if state is None:
-            act = r.randint(0, n-1) 
-        else:
-            # Decide to explore or not. (In order to avoid the moveless situations.)
-            explore = r.randint(0, 1000)
-            if explore < 0.05 * 1000:
-                act = r.randint(0, n-1)
-            else:
-                prob_vec = net.pi_probabilities(state)[0] * 1000
-                candidate = r.randint(0, 1000)
-
-                #print("prob_vec: {0}".format(prob_vec))
-            
-                for i in range(0, n):
-                    if prob_vec[i] >= candidate:
-                        act = i
-        
-        return act
-        
-    def action_with_exploration(net, state, epsilon): # Take into account None as input -> generate random actions
-        act = 0
-        n = net.get_num_actions()
-        if state is None:
-            act = r.randint(0, n-1) 
-        else:
-            # Decide to explore or not.
-            explore = np.random.binomial(1, epsilon)
-
-            if explore:
-                act = r.randint(0, n-1)
-                print("Exploring : act: {0}".format(act))
-            else:
-                prob_vec = net.pi_probabilities(state)[0]
-                maxProbability = prob_vec[0]
-                possibleActions = [0]
-                for i in range(1, n):
-                    if prob_vec[i] > maxProbability:
-                        maxProbability = prob_vec[i]
-                        possibleActions = [i]
-                    elif prob_vec[i] == maxProbability:
-                        possibleActions.append(i)
-                act = possibleActions[np.random.randint(0, len(possibleActions))]
-
-
-                #print("Exploited: :{0}, act: {1}".format(prob_vec, act))
-                print("Exploiting : act: {0}".format(act))
-
-        return act

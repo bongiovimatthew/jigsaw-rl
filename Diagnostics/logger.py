@@ -46,7 +46,7 @@ class Logger:
         with open(Logger.path_meta, "w") as f:
             f.write(json.dumps(metadata))
         lock.release()
-    def log_state_image(boardData, steps, learner_id,action, stateShape):
+    def log_state_image(boardData, steps, action, stateShape):
         #pngfile = "testImage.png"
         #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
         timestr = time.strftime("%Y%m%d-%H%M%S")
