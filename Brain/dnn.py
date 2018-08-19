@@ -7,6 +7,8 @@ from cntk.logging import TensorBoardProgressWriter
 from celery.contrib import rdb
 import random as r
 from Brain.IBrain import IBrain
+from PIL import Image
+from Diagnostics.logger import Logger as logger
 
 class DeepNetBrain(IBrain):
     
@@ -15,6 +17,7 @@ class DeepNetBrain(IBrain):
         self.num_actions = num_actions
         self.lr = lr
         self.debugMode = True
+        self.num_batches = 0
         self.STATE_WIDTH = stateShape[0]
         self.STATE_HEIGHT = stateShape[1]
         
@@ -35,14 +38,14 @@ class DeepNetBrain(IBrain):
         # Creating the value approximator extension.
         conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.sigmoid, name='conv1_v')
         conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.sigmoid, name='conv2_v')
-        dense_v = Dense(256, activation=cntk.sigmoid, name='dense_v')
-        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.sigmoid, name='outdense_v')])
+        dense_v = Dense(256, activation=cntk.sigmoid, name='dense_v', init = cntk.xavier())
+        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.sigmoid, name='outdense_v', init = cntk.xavier())])
         
         # Creating the policy approximator extension.
         conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.sigmoid, name='conv1_pi')
         conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.sigmoid, name='conv2_pi')
-        dense_pi = Dense(256, activation=cntk.sigmoid, name='dense_pi')
-        pi = Sequential([conv1_pi, conv2_pi, dense_pi, Dense(self.num_actions, activation=cntk.softmax, name='outdense_pi')])
+        dense_pi = Dense(256, activation=cntk.sigmoid, name='dense_pi', init = cntk.xavier())
+        pi = Sequential([conv1_v, conv2_v, dense_pi, Dense(self.num_actions, activation=cntk.softmax, name='outdense_pi', init = cntk.xavier())])
         
         self.pi = pi(self.stacked_frames)
         self.pms_pi = self.pi.parameters # List of cntk Parameter types (containes the function's parameters)
@@ -75,6 +78,76 @@ class DeepNetBrain(IBrain):
         self.trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_v_writer)
         self.trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample = 2, l2_regularization_weight=0.01)], self.tensorboard_pi_writer)
     
+    def printCNNFilter(self, layer, layerId):
+        numImagesXAxis = 4
+        numImagesYAxis = layer.W.shape[0] / numImagesXAxis
+        singleBoxWidth = layer.W.shape[2]
+        singleBoxHeight = layer.W.shape[3]
+
+        imageArrayHeight = int(singleBoxHeight * numImagesYAxis)
+        imageArrayWidth = int(singleBoxWidth * numImagesXAxis)
+
+        # layer_output = layer_output[0]
+        imageArray = np.zeros((imageArrayHeight, imageArrayWidth))
+
+        rowIndex = -1
+        colIndex = 0
+        
+        for layer_index in range(layer.W.shape[0]):
+
+            if 0 == (layer_index % numImagesXAxis):
+                rowIndex += 1
+                colIndex = 0
+
+            startingYIndex = rowIndex * singleBoxHeight
+            endingYIndex = startingYIndex + singleBoxHeight
+            
+            startingXIndex = colIndex * singleBoxWidth
+            endingXIndex = startingXIndex + singleBoxWidth
+
+            imageArray[startingYIndex : endingYIndex, startingXIndex : endingXIndex ] = (layer.W[layer_index].eval()[0][0] + 1) * 128
+            colIndex += 1
+
+
+        imageArray = np.uint8(imageArray / layer_output.shape[0])
+
+        imToShow = Image.fromarray(imageArray, 'L').resize((1024,1024))
+        logger.log_dnn_intermediate_image(imToShow, "filter_{0}".format(layerId))
+
+    def printCNNOutput(self, layer, layer_output, layerId):
+        numImagesXAxis = 4
+        numImagesYAxis = layer_output.shape[1] / numImagesXAxis
+        singleBoxWidth = layer_output.shape[2]
+        singleBoxHeight = layer_output.shape[3]
+
+        imageArrayHeight = int(singleBoxHeight * numImagesYAxis)
+        imageArrayWidth = int(singleBoxWidth * numImagesXAxis)
+        imageArray = np.zeros((imageArrayHeight, imageArrayWidth))
+
+        rowIndex = -1
+        colIndex = 0
+        
+        for layer_index in range(layer_output.shape[1]):
+
+            if 0 == (layer_index % numImagesXAxis):
+                rowIndex += 1
+                colIndex = 0
+
+            startingYIndex = rowIndex * singleBoxHeight
+            endingYIndex = startingYIndex + singleBoxHeight
+            
+            startingXIndex = colIndex * singleBoxWidth
+            endingXIndex = startingXIndex + singleBoxWidth
+            imageArray[startingYIndex : endingYIndex, startingXIndex : endingXIndex ] = (layer_output[0][layer_index] + 1) * 128
+            colIndex += 1
+
+
+        imageArray = np.uint8(imageArray / layer_output.shape[0])
+
+        imToShow = Image.fromarray(imageArray, 'L').resize((1024,1024))
+        logger.log_dnn_intermediate_image(imToShow, "layer_{0}".format(layerId))
+
+
     def train(self, states, actions, Rs, calc_diff):
         diff = None
         
@@ -102,6 +175,13 @@ class DeepNetBrain(IBrain):
 
         trained_pi = self.trainer_pi.train_minibatch({self.stacked_frames: states, self.action: actions_1hot, self.R: float32_Rs, self.v_calc: v_calcs})
         trained_v = self.trainer_v.train_minibatch({self.stacked_frames: states, self.R: float32_Rs})
+
+        self.num_batches += 1
+
+        if self.debugMode and 0 == (self.num_batches % 1):
+            conv1_v = cntk.combine([self.pi.find_by_name('conv1_v').owner])
+            conv2_v = cntk.combine([self.pi.find_by_name('conv2_v').owner])
+            self.printCNNOutput(conv2_v, conv2_v.eval(state), 2)
 
         #print("v_calc:{0} float32_R:{1} action:{2} trained_pi:{3} trained_v:{4}".format(v_calcs[0], float32_Rs[0], actions[0], trained_pi, trained_v))
         
