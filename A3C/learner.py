@@ -11,6 +11,10 @@ class Learner:
     # This is the solution
     lock = 0
     shared = 0
+
+    STATE_WIDTH = 224 
+    STATE_HEIGHT = 224 
+
     def init_lock_shared(l, sh):
         global lock
         global shared
@@ -22,13 +26,11 @@ class Learner:
         temp_env = PuzzleEnvironment()
         # temp_env = gym.make(env_name)
         num_actions = temp_env.action_space.n
-        net = DeepNet(num_actions, 0)
+        net = DeepNet(num_actions, 0, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
         # temp_env.close()
         
         prms_pi = net.get_parameters_pi()
         prms_v = net.get_parameters_v()
-        
-        print("Returning from create shared")
         return [prms_pi, prms_v]
 
     def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
@@ -55,8 +57,8 @@ class Learner:
 
     # Preprocessing of the raw frames from the game.
     def process_img(observation):
-        img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((84,84), Image.ANTIALIAS))
-        img_final = np.reshape(img_final, (1, 84, 84))
+        img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize((Learner.STATE_WIDTH,Learner.STATE_HEIGHT), Image.ANTIALIAS))
+        img_final = np.reshape(img_final, (1, Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
 
         return img_final
 
@@ -70,10 +72,6 @@ class Learner:
     def env_step(env, queue, action):
 
         obs, rw, done, info = env.step(action)
-        # pdb.set_trace()
-        # if (rw > 0):
-        #     print("Action:{0}, rewards:{1}".format(action, rw))
-
         # Add rewards to info
         info["rewards"] = rw
         queue.add(Learner.process_img(obs), rw, action, done)
@@ -109,8 +107,6 @@ class Queue:
     def add(self, observation, reward, action, done):
         self.last_idx += 1
         self.observations[self.last_idx, :, :] = observation[0,:,:]
-        # if reward > 1.0:
-        #     reward = 1.0 # reward clipping
         self.rewards[self.last_idx] = reward
         self.actions[self.last_idx] = action
         
@@ -122,13 +118,8 @@ class Queue:
         return None
         
     def get_state_at(self, idx):
-        # if idx > 2:
-        #     return np.float32(self.observations[idx-3:idx+1,:,:])
-        
         if idx >= 0:
-            return np.float32(self.observations[idx:idx+1,:,:])
-
-
+            return np.float32([self.observations[idx,:,:]])
         return None
     
     def get_reward_at(self, idx):
@@ -159,8 +150,8 @@ class Agent:
         self.is_terminal = False
         
         self.env = PuzzleEnvironment()
-        self.queue = Queue(game_length, 84) 
-        self.net = DeepNet(self.env.action_space.n, lr)
+        self.queue = Queue(game_length, Learner.STATE_HEIGHT) 
+        self.net = DeepNet(self.env.action_space.n, lr, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
         self.s_t = Learner.env_reset(self.env, self.queue)
         
         self.R = 0
@@ -180,41 +171,33 @@ class Agent:
         self.stepsForAverageRewards = 0
         self.slidingWindowScoresArray = []
         self.numberOfTimesExecutedEachAction = [0 for i in range(self.env.action_space.n)]
+
+        self.CountOfGradients = 0
     
     def get_net(self):
         return self.net
     
     # For details: https://arxiv.org/abs/1602.01783
     def run(self, learner_id):
-        print("Running")
         self.learner_id = learner_id
         
-        print(self.T_max)
         while self.T < self.T_max:
 
-
-            self.synchronize_dnn()
-            
-            self.play_game_for_a_while()
-            
+            #self.synchronize_dnn()            
+            self.play_game_for_a_while()            
             self.set_R()
             
             # According to the article the gradients should be calculated.
             # Here: The parameters are updated and the differences are added to the shared NN's.
             self.calculate_gradients()
             
-            self.sync_update() # Syncron update instead of asyncron!
-            print(self.T)
+            #self.sync_update() # Syncron update instead of asyncron!
             
             if (self.T%100 == 0): 
                 self.save_model_snapshot()
             if self.signal:
                 self.evaluate_during_training()
                 self.signal = False
-
-
-        print("Completed run")
-    # IMPLEMENTATIONS FOR the FUNCTIONS above
         
     def synchronize_dnn(self):
         lock.acquire()
@@ -273,14 +256,15 @@ class Agent:
     def play_game_for_a_while(self):
     
         if self.is_terminal:
+            logger.log_state_image(self.s_t, self.t, self.learner_id, -1, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
             self.s_t = Learner.env_reset(self.env, self.queue)
             self.t = 0
             self.is_terminal = False
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
-        
+        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1.5)/self.T_max) * self.T) # first decreasing, then it is constant
+
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
             self.T += 1
@@ -295,7 +279,7 @@ class Agent:
 
             if self.debugMode and self.t < 40 : 
                 logger.log_metrics(info, self.t, self.learner_id)
-                logger.log_state_image(self.s_t, self.t, self.learner_id,action)
+                logger.log_state_image(self.s_t, self.t, self.learner_id, action, (Learner.STATE_WIDTH, Learner.STATE_HEIGHT))
                 self.reset_running_metrics()
 
             self.is_terminal = self.queue.get_is_last_terminal()
@@ -303,7 +287,7 @@ class Agent:
                 self.signal = True
             if self.T % 5000 == 0:
                 print('Actual iter. num.: ' + str(self.T))
-        
+                
     def set_R(self):
         if self.is_terminal:
             self.R = self.net.state_value(self.s_t)
@@ -312,25 +296,28 @@ class Agent:
             self.R = self.net.state_value(self.s_t)
         
     def calculate_gradients(self):
+        self.CountOfGradients += 1 
 
         idx = self.queue.get_last_idx()
-        final_index = idx - self.t_max
-        while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
-            state = self.queue.get_state_at(idx)
-            reward = self.queue.get_reward_at(idx)
-            action = self.queue.get_action_at(idx)
-            self.R = reward + self.gamma * self.R
-            self.net.train_net(state, action, self.R, False)
-            
-            idx = idx-1
+        final_index = max(idx - self.t_max, 0)
         
-        # At the last training step the differences should be saved
-        state = self.queue.get_state_at(idx)
-        reward = self.queue.get_reward_at(idx)
-        action = self.queue.get_action_at(idx)
-            
-        self.R = reward + self.gamma * self.R
-        self.diff = self.net.train_net(state, action, np.float32(self.R), True)
+        #print("Count: {0}, Idx: {1}, final_idx: {2}".format(self.CountOfGradients, idx, final_index))
+
+        states = []
+        rewards = []
+        actions = []
+        Rs = []
+
+        while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
+            states.append(self.queue.get_state_at(idx))
+            reward = (self.queue.get_reward_at(idx))
+            actions.append(self.queue.get_action_at(idx))
+
+            self.R = (reward + self.gamma * self.R)
+            Rs.append(self.R)
+            idx = idx-1        
+
+        self.diff = self.net.train_net(states, actions, Rs, False)
             
         if self.signal:
             logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)

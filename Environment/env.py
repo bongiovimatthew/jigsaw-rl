@@ -43,16 +43,6 @@ class PuzzleEnvironment(Environment):
     NOT_CONNECTED_SCORE = -1
     CORRECT_PLACEMENT_SCORE = 100
 
-    # actions: 
-    # 0 - cycle selected piece 
-    # 1 - rotate 90 counterclockwise once 
-    # 2 - rot90 cc twice 
-    # 3 - rot90 cc three times 
-    # 4 - translate up 
-    # 5 - translate right 
-    # 6 - translate down 
-    # 7 - translate left 
-
     MAX_ACTIONS_NUM = 5
 
     def __init__(self):
@@ -79,7 +69,20 @@ class PuzzleEnvironment(Environment):
         # Contains the relative position of the piece IDs in the current state 
         self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState)
 
-        self.currentPieceIndex = 0
+        if PuzzleFactory.getUseScopedDown():
+            before, after = PuzzleFactory.getCoordsToSelect()
+            count = 0 
+            for piece in self.pieceState: 
+                if (piece.coords_y == after[1]) and piece.coords_x == after[0]:
+                    self.currentPieceIndex = count
+
+                if (self.debugMode):
+                    print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
+
+                count += 1
+        else: 
+            self.currentPieceIndex = 0
+
         self.oldScore = self.getScoreOfCurrentState()
         self.stepCount = 0
 
@@ -99,6 +102,10 @@ class PuzzleEnvironment(Environment):
         # Update guidArray
         maxX = len(self.guidArray) - 1
         maxY = maxX 
+
+        # for x in range(len(self.guidArray)):
+        #     for y in range(len(self.guidArray)):
+        #         print(" piece.coords_x:{1}, piece.coords_y:{2} guidArray:{0}".format(self.guidArray[y][x], x, y))
 
         for x in range(len(self.guidArray)):
             for y in range(len(self.guidArray)):
@@ -133,6 +140,14 @@ class PuzzleEnvironment(Environment):
                             if piece.id == pieceId: 
                                 piece.coords_x = newX
                                 piece.coords_y = newY
+
+                        if (self.debugMode):
+                            print("SUCCESS MOVE, pieceId:{0}, newY:{1}, newX:{2} maxX:{3} direction:{4} x:{5} y:{6} guidArr:{7}".format(pieceId, newY, newX, maxX, direction, x, y, self.guidArray[newY][newX]))
+
+                    else:
+                        if (self.debugMode):
+                            print("BLOCKED MOVE, pieceId:{0}, newY:{1}, newX:{2} maxX:{3} direction:{4} x:{5} y:{6} guidArr:{7}".format(pieceId, newY, newX, maxX, direction, x, y, self.guidArray[newY][newX]))
+                    
                     return
 
     def _convert_state(self, action):
@@ -154,31 +169,27 @@ class PuzzleEnvironment(Environment):
 
     def step(self, action):
         self.stepCount += 1
-
         next_state = self._convert_state(action)
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore) or (self.stepCount > 500)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 50)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore
 
         reward = currentScore - tempOldScore
         if self.isMaxReward(currentScore):
-            reward *= 100
+            reward = 1
+        else:
+            reward = 0
 
         info = {'score':currentScore, 'oldScore': tempOldScore, 'action': action, 'step': self.stepCount}
 
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
-            print("Peforming Action: {0}".format(Actions(action)))
+            print("Performing Action: {0}, currentPieceIndex: {1}".format(Actions(action), self.currentPieceIndex))
 
         if (done):
-            print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
-            img = Image.fromarray(self.render(), 'RGB')
-            img.show()
-
-        if (action == Actions.ACTION_CYCLE.value):
-            reward = -1            
+            print("COMPLETED EPISODE!, reward:{0} currentScore:{1}\n\n\n\n\n\n".format(reward, currentScore))
 
         return (next_state, reward, done, info)
         
@@ -197,6 +208,8 @@ class PuzzleEnvironment(Environment):
             boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
 
             if self.currentPieceIndex == count: 
+                if (self.debugMode):
+                    print("CURRENTPIECE_INDEX: {0}", self.currentPieceIndex)
                 # Add a green bar on the current piece 
                 greenSquareW = 5
                 greenSquareH = 5
@@ -205,13 +218,12 @@ class PuzzleEnvironment(Environment):
                 boardCopy[ baseY : baseY + greenSquareH, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
                 boardCopy[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
             count += 1
-            if (self.debugMode):
-                print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
 
         return boardCopy
 
     def isMaxReward(self, reward):
-        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + PuzzleEnvironment.CORRECT_PLACEMENT_SCORE * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()): 
+        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + 0 * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()): 
+        #if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + PuzzleEnvironment.CORRECT_PLACEMENT_SCORE * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()): 
             return True
         return False
 
@@ -274,8 +286,8 @@ class PuzzleEnvironment(Environment):
             if len(self.guidArray[piece.coords_y][piece.coords_x]) > 1:
                 pieceScore += PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
 
-            if piece.coords_x == piece.correct_coords_x and piece.coords_y == piece.correct_coords_y:
-                pieceScore += PuzzleEnvironment.CORRECT_PLACEMENT_SCORE
+            # if piece.coords_x == piece.correct_coords_x and piece.coords_y == piece.correct_coords_y:
+            #     pieceScore += PuzzleEnvironment.CORRECT_PLACEMENT_SCORE
                 
             score += pieceScore
 

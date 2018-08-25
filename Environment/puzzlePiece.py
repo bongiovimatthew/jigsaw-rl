@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 class PuzzlePiece:
-	NIB_PERCENT = 20 / 100
+	NIB_PERCENT = 30 / 100
 
 	def __init__(self, correct_coords_y, correct_coords_x):
 		self.imgData = None

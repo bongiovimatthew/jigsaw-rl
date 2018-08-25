@@ -80,6 +80,7 @@ class HumanAgent:
 
         action = self.getActionFromUserInput(key)
 
+        print("Action:  {0}", action)
         self.s_t, reward, done, info = self.env.step(action)
         #info = self.update_and_get_metrics(info)
 
@@ -95,6 +96,9 @@ class HumanAgent:
             f.write("\r\n")
 
         imgData = self.env.render()
+
+        if (done):
+            imgData = self.env.reset()
 
         #thread = Thread(target = self.displayUpdatedBoard(imgData), args = (10, ))
         #thread.start()
