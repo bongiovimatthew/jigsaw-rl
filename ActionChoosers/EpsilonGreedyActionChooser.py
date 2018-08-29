@@ -6,6 +6,7 @@ class EpsilonGreedyActionChooser(IActionChooser):
 
     def __init__(self, brain):
         self.Brain = brain
+        self.debugMode = True
 
     def get_brain(self):
         return self.Brain
@@ -35,6 +36,9 @@ class EpsilonGreedyActionChooser(IActionChooser):
     def exploit(self, state):
         n = self.Brain.get_num_actions()
         prob_vec = self.Brain.action_probabilities(state)
+        if self.debugMode:
+            print("Probability vector: ", prob_vec)
+
         maxProbability = prob_vec[0]
         possibleActions = [0]
         for i in range(1, n):
