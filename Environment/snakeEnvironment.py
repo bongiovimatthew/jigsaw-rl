@@ -25,8 +25,8 @@ class Apple:
         counter = 0
         touchesSnake = True 
         while counter < 1000000 and touchesSnake:
-            self.x = randint(2, 9) * 44
-            self.y = randint(2, 9) * 44
+            self.x = randint(1, 17) * 44
+            self.y = randint(1, 12) * 44
             touchesSnake = False
 
             for i in range(0, player.length):
