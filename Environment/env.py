@@ -1,4 +1,4 @@
-### Interface
+# Interface
 class Environment(object):
 
     def reset(self):
@@ -10,11 +10,9 @@ class Environment(object):
     def step(self):
         raise NotImplementedError('Inheriting classes must override step')
 
+
 class ActionSpace(object):
-    
+
     def __init__(self, actions):
         self.actions = actions
         self.n = len(actions)
-
-
-

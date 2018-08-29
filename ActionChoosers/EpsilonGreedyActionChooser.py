@@ -2,6 +2,7 @@ from ActionChoosers.IActionChooser import IActionChooser
 import numpy as np
 import random as r
 
+
 class EpsilonGreedyActionChooser(IActionChooser):
 
     def __init__(self, brain):
@@ -12,14 +13,14 @@ class EpsilonGreedyActionChooser(IActionChooser):
 
     def action(self, state, epsilon):
         act = 0
-        
+
         n = self.Brain.get_num_actions()
-        
+
         if state is None:
             act = r.randint(0, n - 1)
         else:
             # Decide to explore or not.
-            explore = False 
+            explore = False
             if epsilon != -1:
                 explore = np.random.binomial(1, epsilon)
 

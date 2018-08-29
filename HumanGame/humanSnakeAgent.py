@@ -7,13 +7,14 @@ from Environment.snakeEnvironment import SnakeEnvironment
 
 
 class Actions(Enum):
-    ACTION_NOOP = 0 
+    ACTION_NOOP = 0
     ACTION_UP = 1
     ACTION_RIGHT = 2
     ACTION_DOWN = 3
     ACTION_LEFT = 4
 
-class HumanSnakeAgent: 
+
+class HumanSnakeAgent:
     def __init__(self):
         self.env = SnakeEnvironment()
         self.s_t = self.env.reset()
@@ -36,7 +37,7 @@ class HumanSnakeAgent:
 
     def on_press(self, key):
         #print('{0} pressed'.format(key))
-        return 
+        return
 
     def on_release(self, key):
         if key == Key.esc:
@@ -55,7 +56,7 @@ class HumanSnakeAgent:
             imgData = self.env.reset()
 
         self.displayUpdatedBoard(imgData)
-        
+
     def getActionFromUserInput(self, input):
         if input == Key.up:
             return Actions.ACTION_UP.value
@@ -68,14 +69,14 @@ class HumanSnakeAgent:
         if input == Key.space:
             return Actions.ACTION_NOOP.value
         return
-    
+
     def run(self):
 
         print("Input Move (up/down/left/right/spacebar/Esc): ")
         self.env.start_run_loop()
-        
+
         # with Listener(on_press=self.on_press, on_release=self.on_release) as listener:
-        #     listener.join() 
+        #     listener.join()
 
     def update_and_get_metrics(self, info):
         rewards = info["rewards"]
@@ -100,7 +101,8 @@ class HumanSnakeAgent:
         if len(self.slidingWindowScoresArray) > 50:
             self.slidingWindowScoresArray.pop(0)
 
-        self.slidingWindowAverageScore = sum(self.slidingWindowScoresArray) / len(self.slidingWindowScoresArray)
+        self.slidingWindowAverageScore = sum(
+            self.slidingWindowScoresArray) / len(self.slidingWindowScoresArray)
 
         info["negativeRewardCount"] = self.negativeRewardCount
         info["zeroRewardCount"] = self.zeroRewardCount

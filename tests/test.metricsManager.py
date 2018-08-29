@@ -1,12 +1,15 @@
-from metricsManager import MetricsManager 
+from metricsManager import MetricsManager
+
 
 def TestDrawGraphs():
-	manager = MetricsManager()
-	manager.displayMetricsGraph()
-	return 
+    manager = MetricsManager()
+    manager.displayMetricsGraph()
+    return
+
 
 def main():
-	TestDrawGraphs()
+    TestDrawGraphs()
+
 
 if __name__ == "__main__":
     main()
