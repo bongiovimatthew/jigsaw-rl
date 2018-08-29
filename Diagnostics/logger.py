@@ -4,7 +4,7 @@ import json
 import time
 import numpy as np
 from scipy.misc import imsave
-from Environment.env import Actions
+#from Environment.env import Actions
 
 class Logger: 
 
@@ -98,7 +98,7 @@ class Logger:
         with open(file_name, "a+") as f:
             stringToPrint = ""
             for i in range(len(info["numberOfTimesExecutedEachAction"])):
-                actionName = Actions(i).name
+                #actionName = Actions(i).name
                 stringToPrint += actionName + ": " + str(info["numberOfTimesExecutedEachAction"][i]) + " "
 
             stringToPrint += "\r\n"

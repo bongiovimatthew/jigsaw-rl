@@ -2,6 +2,7 @@ from pygame.locals import *
 from random import randint
 import pygame
 import time
+import os
  
 class Apple:
     x = 0
@@ -14,11 +15,26 @@ class Apple:
  
     def draw(self, surface, image):
         surface.blit(image,(self.x, self.y)) 
+
+    def place(self, player):
+        counter = 0
+        touchesSnake = True 
+        while counter < 1000000 and touchesSnake:
+            self.x = randint(2, 9) * 44
+            self.y = randint(2, 9) * 44
+            touchesSnake = False
+
+            for i in range(0, player.length):
+                if self.x == player.x[i] and self.y == player.y[i]:
+                    touchesSnake = True
+                    break
+
+            counter += 1
+        return self
  
  
 class Player:
-    x = [0]
-    y = [0]
+
     step = 44
     direction = 0
     length = 3
@@ -27,6 +43,8 @@ class Player:
     updateCount = 0
  
     def __init__(self, length):
+       self.x = [0]
+       self.y = [0]
        self.length = length
        for i in range(0,2000):
            self.x.append(-100)
@@ -37,7 +55,6 @@ class Player:
        self.x[2] = 2*44
  
     def update(self):
- 
         self.updateCount = self.updateCount + 1
         if self.updateCount > self.updateCountMax:
  
@@ -97,10 +114,9 @@ class Game:
             return True 
         return False
 
-    def isCollision(self,x1,y1,x2,y2,bsize):
-        if x1 >= x2 and x1 <= x2 + bsize:
-            if y1 >= y2 and y1 <= y2 + bsize:
-                return True
+    def isCollision(self, x1, y1, x2, y2, bsize):
+        if x1 == x2 and y1 == y2: 
+            return True
         return False
  
 class App:
@@ -126,9 +142,10 @@ class App:
  
         pygame.display.set_caption('Snake')
         self._running = True
-        self._image_surf = pygame.image.load("block.jpg").convert()
-        self._apple_surf = pygame.image.load("apple.jpg").convert()
-        self._head_surf = pygame.image.load("head.jpg").convert()
+        basePath = os.path.dirname(__file__)
+        self._image_surf = pygame.image.load(os.path.join(basePath, "block.jpg")).convert()
+        self._apple_surf = pygame.image.load(os.path.join(basePath, "apple.jpg")).convert()
+        self._head_surf = pygame.image.load(os.path.join(basePath, "head.jpg")).convert()
  
     def on_event(self, event):
         if event.type == QUIT:
@@ -136,26 +153,31 @@ class App:
  
     def on_loop(self):
         self.player.update()
- 
+        reward = 0
+
         # does snake eat apple?
-        for i in range(0, self.player.length):
-            if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[i], self.player.y[i], 44):
-                self.apple.x = randint(2,9) * 44
-                self.apple.y = randint(2,9) * 44
-                self.player.length = self.player.length + 1
- 
- 
+        if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0], 44):
+            self.apple = self.apple.place(self.player)
+            self.player.length = self.player.length + 1
+            reward = 1
+            #print("Reward +1")
+
         # does snake collide with itself?
-        for i in range(2,self.player.length):
-            if self.game.isCollision(self.player.x[0],self.player.y[0],self.player.x[i], self.player.y[i],40):
-                print("You lose! Collision: ")
-                print("x[0] (" + str(self.player.x[0]) + "," + str(self.player.y[0]) + ")")
-                print("x[" + str(i) + "] (" + str(self.player.x[i]) + "," + str(self.player.y[i]) + ")")
-                exit(0)
+        for i in range(2, self.player.length):
+            if self.game.isCollision(self.player.x[0], self.player.y[0], self.player.x[i], self.player.y[i], 40):
+                reward = -1
+                done = True
+                #print("Reward -1")
+                self._running = False
 
         if self.game.isOutOfBounds(self.player.x[0], self.player.y[0], 44):
-            exit(0)
- 
+            reward = -1 
+            done = True
+            #print("Reward -1")
+            self._running = False
+
+        #if reward == 0:
+            #print("Reward 0")
         pass
  
     def on_render(self):
@@ -169,6 +191,11 @@ class App:
         pygame.display.flip()
  
     def on_cleanup(self):
+        print("------------------------------------------------------")
+        print("Game Over: Score: {0}".format(self.player.length - 3))
+        print("------------------------------------------------------")
+        print()
+
         pygame.quit()
  
     def on_execute(self):
@@ -203,5 +230,9 @@ class App:
         self.on_cleanup()
  
 if __name__ == "__main__" :
-    theApp = App()
-    theApp.on_execute()
+    replay = 5
+
+    while replay > 0: 
+        theApp = App()
+        theApp.on_execute()
+        replay -= 1

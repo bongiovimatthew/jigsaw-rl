@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 
 from Brain.dnn import DeepNetBrain
-from Brain.kerasNetBrain import KerasNetBrain 
+#from Brain.kerasNetBrain import KerasNetBrain 
 
 from Diagnostics.logger import Logger as logger
 from ActionChoosers.EpsilonGreedyActionChooser import EpsilonGreedyActionChooser
@@ -46,7 +46,7 @@ class ActorCriticAgent:
         
         self.env = env 
 
-        brain = KerasNetBrain(self.env.action_space.n, lr, (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
+        brain = DeepNetBrain(self.env.action_space.n, lr, (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
         self.ActionChooser = EpsilonGreedyActionChooser(brain)
 
         self.gamma = gamma

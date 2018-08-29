@@ -1,5 +1,6 @@
 from Learners.ActorCriticLearner import ActorCriticLearner as lrn
-from Environment.env import PuzzleEnvironment
+from Environment.puzzleEnvironment import PuzzleEnvironment
+from Environment.snakeEnvironment import SnakeEnvironment
 import argparse
 
 parser = argparse.ArgumentParser(description='Actor Critic Learning')
@@ -10,5 +11,6 @@ parser.add_argument('--T-max', type=int, default=1200, metavar='N', help='the le
 parser.add_argument('--batch-length', type=int, default=4, metavar='N', help='the length of the training batch (default:4)')
 args = parser.parse_args()
 
-env = PuzzleEnvironment()
+#env = PuzzleEnvironment()
+env = SnakeEnvironment()
 lrn.execute_agent(env, args.batch_length, args.game_length, args.T_max, args.gamma, args.lr)
