@@ -1,8 +1,13 @@
-from keras.models import Sequential
-from keras.layers import Input, Dense, Conv2D, MaxPooling2D
+from keras.models import Sequential, Model
+from keras.layers import Input, Dense, Dropout, Conv2D, MaxPooling2D
 from keras.models import load_model
+from keras.layers.merge import Add, Multiply
+from keras.optimizers import Adam
+from keras import backend as K
 
 from Brain.IBrain import IBrain 
+
+import numpy as np
 
 class KerasNetBrain(IBrain): 
 
@@ -15,26 +20,111 @@ class KerasNetBrain(IBrain):
         self.STATE_HEIGHT = stateShape[1]
 
         # Defining the input variables for training and evaluation.
-        self.stacked_frames = Input(shape=(1, self.STATE_WIDTH, self.STATE_HEIGHT))
-        self.action = Input(shape=(self.num_actions,))
-        self.R = Input(shape=(1,))
-        self.v_calc = Input(shape=(1,))
+
+        if K.image_data_format() == 'channels_first':
+            input_shape = (1, self.STATE_WIDTH, self.STATE_HEIGHT)
+        else:
+            input_shape = (self.STATE_WIDTH, self.STATE_HEIGHT, 1)
+
+        self.input_shape = input_shape
+
+        self.state_image = Input(shape=input_shape, name="state_image_input", dtype='float32')
+        self.action = Input(shape=(self.num_actions,), name="action_input")
+        self.R = Input(shape=(1,), name="reward_input", dtype='float32')
+        self.v_calc = Input(shape=(1,), name="value_function_input", dtype='float32')
                 
-        self.pi = self.build_model()
-        self.v = self.build_model()
+        #self.pi = self.build_model('pi')
+        #self.v = self.build_model('v')
+
+        self.actor_state_input, self.actor_model = self.create_actor_model()
+        _, self.target_actor_model = self.create_actor_model()
+        self.actor_critic_grad = K.placeholder(dtype='float32', [None, self.input_shape]) # This placeholder is used to feed dError / dCritic (from critic model)
         
-    def build_model(self):
-        model = Sequential()
+        actor_model_weights = self.actor_model.trainable_weights
+        self.actor_grads = tf.gradients(self.actor_model.output, actor_model_weights, -self.actor_critic_grad)
+        grads = zip(self.actor_grads, actor_model_weights)
+        self.optimize = keras.optimizers.Adam(lr=self.lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False).apply_gradients(grads)
 
-        model.add(Conv2D(16, (8, 8), activation='sigmoid', strides=4, input_shape=(self.STATE_WIDTH, self.STATE_HEIGHT, 3)))
-        model.add(Conv2D(32, (4, 4), activation='sigmoid', strides=2))
 
-        model.add(Dense(units=64, activation='sigmoid', input_dim=100))
-        model.add(Dense(units=10, activation='softmax'))
+        
 
-        model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
+        self.critic_state_input, self.critic_action_input, self.critic_model = self.create_critic_model()
+        _, _, self.target_critic_model = self.create_critic_model()
+        self.critic_grads = tf.gradients(self.critic_model.output, self.critic_action_input)
+        
+        # Initialize for later gradient calculations
+        self.sess.run(tf.initialize_all_variables())
 
-        return model
+
+    def create_critic_model(self):
+        state_input = Input(shape=self.input_shape)
+        state_h1 = Dense(24, activation='relu')(state_input)
+        state_h2 = Dense(48)(state_h1)
+        
+        action_input = Input(shape=self.num_actions)
+        action_h1    = Dense(48)(action_input)
+        
+        merged    = Add()([state_h2, action_h1])
+        merged_h1 = Dense(24, activation='relu')(merged)
+        output = Dense(1, activation='relu')(merged_h1)
+        model  = Model(input=[state_input,action_input], output=output)
+        
+        adam  = Adam(lr=self.lr)
+        model.compile(loss="mse", optimizer=adam)
+        return state_input, action_input, model
+
+    def create_actor_model(self):
+        state_input = Input(shape=self.input_shape)
+        h1 = Dense(24, activation='relu')(state_input)
+        h2 = Dense(48, activation='relu')(h1)
+        h3 = Dense(24, activation='relu')(h2)
+        output = Dense(self.num_actions, activation='softmax')(h3)
+        
+        model = Model(input=state_input, output=output)
+        adam  = Adam(lr=self.lr)
+        model.compile(loss="mse", optimizer=adam)
+        return state_input, model
+
+
+    def build_model(self, type):    
+
+
+        loss_on_v = cntk.squared_error(self.R, self.v)
+        pi_a_s = cntk.log(cntk.times_transpose(self.pi, self.action))
+
+        loss_on_pi = cntk.variables.Constant(-1) * (cntk.plus(cntk.times(pi_a_s, cntk.minus(self.R, self.v_calc)), 0.01 * cntk.times_transpose(self.pi, cntk.log(self.pi))))
+
+
+
+
+
+
+
+
+    # def build_model(self, type):
+    #     model = Sequential()
+
+    #     if K.image_data_format() == 'channels_first':
+    #         input_shape = (1, self.STATE_WIDTH, self.STATE_HEIGHT)
+    #     else:
+    #         input_shape = (self.STATE_WIDTH, self.STATE_HEIGHT, 1)
+
+    #     print(input_shape)
+    #     print("image data format")
+    #     print(K.image_data_format())
+
+    #     model.add(Conv2D(16, (8, 8), activation='sigmoid', strides=4, input_shape=input_shape))
+    #     model.add(Conv2D(32, (4, 4), activation='sigmoid', strides=2))
+    #     model.add(Dense(256, activation='sigmoid'))
+        
+    #     if type == 'pi':
+    #         model.add(Dense(self.num_actions, activation='softmax'))
+    #     else: 
+    #         model.add(Dense(1, activation='sigmoid'))
+        
+    #     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
+
+    #     return model
         
     def train(self, states, actions, Rs, calc_diff):
 
@@ -62,16 +152,26 @@ class KerasNetBrain(IBrain):
 
         float32_Rs = np.float32(Rs) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
 
-        self.pi.fit({self.stacked_frames: states, self.action: actions_1hot, self.R: float32_Rs, self.v_calc: v_calcs})
-        self.v.fit({self.stacked_frames: states, self.R: float32_Rs})
+        self.pi.fit({'state_image_input': states[0], 'action_input': actions_1hot[0], 'reward_input': float32_Rs[0], 'value_function_input': v_calcs[0]})
+        self.v.fit({'state_image_input': states, 'reward_input': float32_Rs})
         
+    def process_state(self, state):
+        if K.image_data_format() == 'channels_first':
+            img_final = state 
+        else:
+            img_final = np.reshape(state, (self.STATE_WIDTH, self.STATE_HEIGHT, 1))
+
+        return np.array([img_final])
+
     # Called
     def state_value(self, state):
-        return self.v.predict({self.stacked_frames: [state]}, batch_size=None, verbose=0, steps=None)
+        proc_state = self.process_state(state)
+        return self.v.predict(proc_state)
     
     # Called by Agent
     def pi_probabilities(self, state):
-        return self.pi.predict({self.stacked_frames: [state]}, batch_size=None, verbose=0, steps=None)
+        proc_state = self.process_state(state)
+        return self.pi.predict(proc_state)
     
     # Called by Agent
     def get_num_actions(self):
