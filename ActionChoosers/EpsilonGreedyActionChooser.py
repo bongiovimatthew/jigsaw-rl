@@ -13,14 +13,16 @@ class EpsilonGreedyActionChooser(IActionChooser):
 
     def action(self, state, epsilon):
         act = 0
-        
+
         n = self.Brain.get_num_actions()
-        
+
+
         if state is None:
             act = r.randint(0, n - 1)
         else:
             # Decide to explore or not.
-            explore = False 
+            explore = False
+
             if epsilon != -1:
                 explore = np.random.binomial(1, epsilon)
 
@@ -36,6 +38,7 @@ class EpsilonGreedyActionChooser(IActionChooser):
     def exploit(self, state):
         n = self.Brain.get_num_actions()
         prob_vec = self.Brain.action_probabilities(state)
+
         if self.debugMode:
             print("Probability vector: ", prob_vec)
 
@@ -47,4 +50,5 @@ class EpsilonGreedyActionChooser(IActionChooser):
                 possibleActions = [i]
             elif prob_vec[i] == maxProbability:
                 possibleActions.append(i)
+
         return possibleActions[np.random.randint(0, len(possibleActions))]
