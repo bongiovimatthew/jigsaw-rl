@@ -181,7 +181,7 @@ class TFBrain(IBrain):
 
         
     def train(self, states, actions, Rs, calc_diff):
-        self.stepCount += len(states)
+        self.stepCount += 1
         diff = None
 
         # We should split the 2 models into 2 classes to prevent this
@@ -206,8 +206,8 @@ class TFBrain(IBrain):
             )
 
         # Write summaries
-        self.summary_writer.add_summary(actor_summaries, self.stepCount)
-        self.summary_writer.add_summary(critic_summaries, self.stepCount)
+        self.summary_writer.add_summary(actor_summaries,  (self.stepCount))
+        self.summary_writer.add_summary(critic_summaries, (self.stepCount))
         self.summary_writer.flush()
 
         return
