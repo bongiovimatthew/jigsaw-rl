@@ -39,6 +39,7 @@ class KerasNetBrain(IBrain):
 
         self.actor_state_input, self.actor_model = self.create_actor_model()
         _, self.target_actor_model = self.create_actor_model()
+
         # This placeholder is used to feed dError / dCritic (from critic model)
         self.actor_critic_grad = K.placeholder(dtype='float32', [None, self.input_shape])
 
@@ -56,20 +57,22 @@ class KerasNetBrain(IBrain):
         # Initialize for later gradient calculations
         self.sess.run(tf.initialize_all_variables())
 
+
     def create_critic_model(self):
         state_input = Input(shape=self.input_shape)
         state_h1 = Dense(24, activation='relu')(state_input)
         state_h2 = Dense(48)(state_h1)
-
+        
         action_input = Input(shape=self.num_actions)
-        action_h1 = Dense(48)(action_input)
-
-        merged = Add()([state_h2, action_h1])
+        action_h1    = Dense(48)(action_input)
+        
+        merged    = Add()([state_h2, action_h1])
         merged_h1 = Dense(24, activation='relu')(merged)
         output = Dense(1, activation='relu')(merged_h1)
-        model = Model(input=[state_input, action_input], output=output)
+        model  = Model(input=[state_input,action_input], output=output)
+        
+        adam  = Adam(lr=self.lr)
 
-        adam = Adam(lr=self.lr)
         model.compile(loss="mse", optimizer=adam)
         return state_input, action_input, model
 
@@ -92,31 +95,6 @@ class KerasNetBrain(IBrain):
 
         loss_on_pi = cntk.variables.Constant(-1) * (cntk.plus(cntk.times(pi_a_s, cntk.minus(
             self.R, self.v_calc)), 0.01 * cntk.times_transpose(self.pi, cntk.log(self.pi))))
-
-    # def build_model(self, type):
-    #     model = Sequential()
-
-    #     if K.image_data_format() == 'channels_first':
-    #         input_shape = (1, self.STATE_WIDTH, self.STATE_HEIGHT)
-    #     else:
-    #         input_shape = (self.STATE_WIDTH, self.STATE_HEIGHT, 1)
-
-    #     print(input_shape)
-    #     print("image data format")
-    #     print(K.image_data_format())
-
-    #     model.add(Conv2D(16, (8, 8), activation='sigmoid', strides=4, input_shape=input_shape))
-    #     model.add(Conv2D(32, (4, 4), activation='sigmoid', strides=2))
-    #     model.add(Dense(256, activation='sigmoid'))
-
-    #     if type == 'pi':
-    #         model.add(Dense(self.num_actions, activation='softmax'))
-    #     else:
-    #         model.add(Dense(1, activation='sigmoid'))
-
-    #     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
-
-    #     return model
 
     def train(self, states, actions, Rs, calc_diff):
 
@@ -142,13 +120,11 @@ class KerasNetBrain(IBrain):
         for state in states:
             v_calcs.append(self.state_value(state))
 
-        # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
-        float32_Rs = np.float32(Rs)
+        float32_Rs = np.float32(Rs) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
 
-        self.pi.fit({'state_image_input': states[0], 'action_input': actions_1hot[0],
-                     'reward_input': float32_Rs[0], 'value_function_input': v_calcs[0]})
+        self.pi.fit({'state_image_input': states[0], 'action_input': actions_1hot[0], 'reward_input': float32_Rs[0], 'value_function_input': v_calcs[0]})
         self.v.fit({'state_image_input': states, 'reward_input': float32_Rs})
-
+        
     def process_state(self, state):
         if K.image_data_format() == 'channels_first':
             img_final = state
