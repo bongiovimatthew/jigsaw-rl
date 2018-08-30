@@ -1,13 +1,5 @@
-from enum import Enum
 from PIL import Image
-
-from Environment.JigsawPuzzle.direction import Direction
-from Environment.JigsawPuzzle.edge import EdgeShape
-from Environment.JigsawPuzzle.puzzlePiece import PuzzlePiece
-
 import numpy as np
-import random
-import math
 
 
 class Puzzle:

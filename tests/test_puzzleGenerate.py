@@ -1,4 +1,3 @@
-from Environment.puzzle import Puzzle
 from Environment.puzzleFactory import PuzzleFactory
 
 

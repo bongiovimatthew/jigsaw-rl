@@ -2,8 +2,6 @@ from Environment.env import Environment, ActionSpace
 from Environment.JigsawPuzzle.direction import Direction
 from Environment.JigsawPuzzle.edge import EdgeShape
 from Environment.JigsawPuzzle.puzzleFactory import PuzzleFactory
-from PIL import Image
-import numpy as np
 from enum import Enum
 
 

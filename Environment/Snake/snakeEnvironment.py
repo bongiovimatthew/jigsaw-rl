@@ -1,13 +1,10 @@
-from pygame.locals import *
 from random import randint
 import pygame
-import time
 from Environment.env import Environment, ActionSpace
 from enum import Enum
 import os
 import pygame.surfarray as surfarray
 from PIL import Image
-import numpy as np
 
 
 class Apple:

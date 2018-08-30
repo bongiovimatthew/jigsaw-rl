@@ -1,10 +1,8 @@
 import numpy as np
 import cntk
-from cntk.device import try_set_default_device, cpu
-from cntk.layers import Convolution2D, Dense, Sequential, BatchNormalization
+from cntk.layers import Convolution2D, Dense, Sequential
 from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitType
 from cntk.logging import TensorBoardProgressWriter
-from celery.contrib import rdb
 import random as r
 from Brain.IBrain import IBrain
 from PIL import Image

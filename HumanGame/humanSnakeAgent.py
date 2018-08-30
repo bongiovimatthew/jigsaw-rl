@@ -1,8 +1,4 @@
-from pynput.keyboard import Key, Listener
 from enum import Enum
-import PIL as pl
-from PIL import ImageTk, Image
-
 from Environment.snakeEnvironment import SnakeEnvironment
 
 
