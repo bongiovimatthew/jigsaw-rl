@@ -4,3 +4,8 @@ https://github.com/adamtiger/A3C
 https://github.com/Microsoft/CNTK/blob/master/Examples/ReinforcementLearning/DeepQNeuralNetwork.py
 
 https://docs.microsoft.com/en-us/cognitive-toolkit/Using-TensorBoard-for-Visualization
+
+# AC -> https://github.com/dennybritz/reinforcement-learning/blob/master/PolicyGradient/CliffWalk%20Actor%20Critic%20Solution.ipynb
+# A3C -> https://github.com/dennybritz/reinforcement-learning/tree/master/PolicyGradient/a3c
+
+# Another TF Example -> https://github.com/awjuliani/DeepRL-Agents/blob/master/A3C-Doom.ipynb
