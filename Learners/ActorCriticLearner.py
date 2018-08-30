@@ -3,6 +3,7 @@ from PIL import Image
 
 from Brain.dnn import DeepNetBrain
 #from Brain.kerasNetBrain import KerasNetBrain
+from Brain.tfBrain import TFBrain 
 
 from Diagnostics.logger import Logger as logger
 from ActionChoosers.EpsilonGreedyActionChooser import EpsilonGreedyActionChooser

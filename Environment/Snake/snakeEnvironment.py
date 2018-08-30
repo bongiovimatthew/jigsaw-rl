@@ -5,6 +5,7 @@ from enum import Enum
 import os
 import pygame.surfarray as surfarray
 from PIL import Image
+import numpy as np
 
 
 class Apple:
@@ -146,6 +147,7 @@ class SnakeEnvironment(Environment):
         self.windowHeight = 600
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
         self._display_surf = None
+        self.setupEnvironment()
 
     def setupEnvironment(self):
         self._display_surf = pygame.display.set_mode(
@@ -159,7 +161,7 @@ class SnakeEnvironment(Environment):
         self._running = True
         self.game = Game()
         self.player = Player(3)
-        self.apple = Apple(5, 5)
+        self.apple = Apple(0, 1)
 
     def reset(self):
         pygame.quit()
@@ -234,4 +236,4 @@ class SnakeEnvironment(Environment):
         self._display_surf.fill((0, 0, 0))
         self.player.draw(self._display_surf, self._image_surf, self._head_surf)
         self.apple.draw(self._display_surf, self._apple_surf)
-        return surfarray.array3d(self._display_surf)
+        return np.rot90(np.flipud(surfarray.array3d(self._display_surf)), axes=(1,0))

@@ -16,6 +16,6 @@ parser.add_argument('--batch-length', type=int, default=4, metavar='N',
                     help='the length of the training batch (default:4)')
 args = parser.parse_args()
 
-env = PuzzleEnvironment()
-#env = SnakeEnvironment()
+#env = PuzzleEnvironment()
+env = SnakeEnvironment()
 lrn.execute_agent(env, args.batch_length, args.game_length, args.T_max, args.gamma, args.lr)

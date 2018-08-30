@@ -136,7 +136,7 @@ class App:
         self._head_surf = None
         self.game = Game()
         self.player = Player(3)
-        self.apple = Apple(5, 5)
+        self.apple = Apple(2, 1)
 
     def on_init(self):
         pygame.init()

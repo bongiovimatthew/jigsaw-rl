@@ -1,4 +1,4 @@
-from Environment.puzzleFactory import PuzzleFactory
+from Environment.JigsawPuzzle.puzzleFactory import PuzzleFactory
 
 
 class PuzzleGenerateTests:
