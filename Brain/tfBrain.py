@@ -25,12 +25,11 @@ class BaseTFModel():
         # REMOVING DROPOUT TEMPORARILY
         # fc1 = tf.layers.dropout(fc1, rate=dropout, training=is_training)
 
-        # add_summaries = not reuse
-        # if add_summaries:
-        #     tf.contrib.layers.summarize_activation(conv1)
-        #     tf.contrib.layers.summarize_activation(conv2)
-        #     tf.contrib.layers.summarize_activation(fc1)
-        #     tf.contrib.layers.summarize_activation(out)
+        add_summaries = not reuse
+        if add_summaries:
+            tf.contrib.layers.summarize_activation(conv1)
+            tf.contrib.layers.summarize_activation(conv2)
+            tf.contrib.layers.summarize_activation(fc1)
 
         return fc1
 
@@ -49,29 +48,53 @@ class Critic(BaseTFModel):
         self.R = tf.placeholder(tf.float32, [None], "RewardR")
                 
         self.dropout = 0.01
+     
+        with tf.variable_scope("CriticModel"):
+            # Create the train and test graphs
+            logits_train = self.create_model(self.dropout, reuse = False, is_training = True)
+            logits_test = self.create_model(self.dropout, reuse = True, is_training = False)
 
-        # Create the train and test graphs
-        logits_train = self.create_model(self.dropout, reuse = False, is_training = True)
-        logits_test = self.create_model(self.dropout, reuse = True, is_training = False)
+
+            self.loss_op = tf.reduce_sum(tf.squared_difference(logits_train, self.R), name="Critic_loss")
+
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
+            self.train_op = optimizer.minimize(self.loss_op,
+                                          global_step=tf.train.get_global_step())
+
+            # Evaluate the accuracy of the model
+            # self.acc_op = tf.metrics.accuracy(labels=self.R, predictions=logits_test)
+
+            self.prediction_op = logits_test
 
 
-        self.loss_op = tf.reduce_sum(tf.squared_difference(logits_train, self.R))
+            # Summaries
+            prefix = tf.get_variable_scope().name
+            tf.summary.scalar(self.loss_op.name, self.loss_op)
+            tf.summary.scalar("{}/max_value".format(prefix), tf.reduce_max(logits_train))
+            tf.summary.scalar("{}/min_value".format(prefix), tf.reduce_min(logits_train))
+            tf.summary.scalar("{}/mean_value".format(prefix), tf.reduce_mean(logits_train))
+            tf.summary.scalar("{}/reward_max".format(prefix), tf.reduce_max(self.R))
+            tf.summary.scalar("{}/reward_min".format(prefix), tf.reduce_min(self.R))
+            tf.summary.scalar("{}/reward_mean".format(prefix), tf.reduce_mean(self.R))
+            tf.summary.histogram("{}/reward_targets".format(prefix), self.R)
+            tf.summary.histogram("{}/values".format(prefix), logits_train)
 
-        optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
-        self.train_op = optimizer.minimize(self.loss_op,
-                                      global_step=tf.train.get_global_step())
 
-        # Evaluate the accuracy of the model
-        # self.acc_op = tf.metrics.accuracy(labels=self.R, predictions=logits_test)
+        summary_ops = tf.get_collection(tf.GraphKeys.SUMMARIES)
+        summaries = [s for s in summary_ops if "CriticModel" in s.name]
 
-        self.prediction_op = logits_test
+        self.summaries = tf.summary.merge(summaries)
 
         return
 
-    def create_model(self, dropout, reuse, is_training):        
+    def create_model(self, dropout, reuse, is_training):
         with tf.variable_scope("CriticModel", reuse=reuse):
             fc1 = self.create_base_model(self.dropout, reuse, is_training)
             out = tf.contrib.layers.fully_connected(fc1, 1, activation_fn=tf.nn.sigmoid)
+
+            add_summaries = not reuse
+            if add_summaries:
+                tf.contrib.layers.summarize_activation(out)
 
         return out
 
@@ -91,28 +114,38 @@ class Actor(BaseTFModel):
         self.v_calc = tf.placeholder(tf.float32, [None], "V_Calc")
                 
         self.dropout = 0.01
+   
+        with tf.variable_scope("ActorModel"):
+            logits_train = self.create_model(self.dropout, reuse = False, is_training = True)
+            logits_test = self.create_model(self.dropout, reuse = True, is_training = False)
 
-        logits_train = self.create_model(self.dropout, reuse = False, is_training = True)
-        logits_test = self.create_model(self.dropout, reuse = True, is_training = False)
+            probs_fixed = logits_train + 1e-8
+            test_probs_fixed = logits_test + 1e-8
 
-        probs_fixed = logits_train + 1e-8
-        test_probs_fixed = logits_test + 1e-8
+            batch_size = tf.shape(self.state)[0]
 
-        batch_size = tf.shape(self.state)[0]
+            gather_indices = tf.range(batch_size) * tf.shape(probs_fixed)[1] + self.action
+            picked_action_probs = tf.gather(tf.reshape(probs_fixed, [-1]), gather_indices)
 
-        gather_indices = tf.range(batch_size) * tf.shape(probs_fixed)[1] + self.action
-        picked_action_probs = tf.gather(tf.reshape(probs_fixed, [-1]), gather_indices)
-
-        entropy = -tf.reduce_sum(probs_fixed * tf.log(probs_fixed), 1, name="entropy")
-        self.loss_op = tf.reduce_sum(-(tf.log(picked_action_probs) * (self.R - self.v_calc) + 0.01 * entropy))
-
-
-        optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
-        self.train_op = optimizer.minimize(self.loss_op,
-                                      global_step=tf.train.get_global_step())
+            entropy = -tf.reduce_sum(probs_fixed * tf.log(probs_fixed), 1, name="actor_entropy")
+            self.loss_op = tf.reduce_sum((-(tf.log(picked_action_probs) * (self.R - self.v_calc) + 0.01 * entropy)), name="actor_loss")
 
 
-        self.prediction_op = test_probs_fixed
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
+            self.train_op = optimizer.minimize(self.loss_op,
+                                          global_step=tf.train.get_global_step())
+
+            self.prediction_op = test_probs_fixed
+
+
+            tf.summary.scalar(self.loss_op.name, self.loss_op)
+            tf.summary.histogram(entropy.op.name, entropy)
+
+        
+        summary_ops = tf.get_collection(tf.GraphKeys.SUMMARIES)
+        summaries = [s for s in summary_ops if "ActorModel" in s.name]
+
+        self.summaries = tf.summary.merge(summaries)
 
         return
 
@@ -120,6 +153,9 @@ class Actor(BaseTFModel):
         with tf.variable_scope("ActorModel", reuse=reuse):
             fc1 = self.create_base_model(self.dropout, reuse, is_training)
             out = tf.contrib.layers.fully_connected(fc1, self.num_actions, activation_fn=tf.nn.softmax)
+            add_summaries = not reuse
+            if add_summaries:
+                tf.contrib.layers.summarize_activation(out)
 
         return out
 
@@ -137,8 +173,15 @@ class TFBrain(IBrain):
         self.sess = tf.Session()
         self.sess.run(init)
 
+        # THIS DOESNT WORK, NOT SURE WHY
+        self.global_step = tf.train.get_global_step()
+
+        self.stepCount = 0
+        self.summary_writer = tf.summary.FileWriter('tf_train', self.sess.graph)
+
         
     def train(self, states, actions, Rs, calc_diff):
+        self.stepCount += len(states)
         diff = None
 
         # We should split the 2 models into 2 classes to prevent this
@@ -151,16 +194,23 @@ class TFBrain(IBrain):
             print("v_calcs: ", v_calcs)
 
         actor_train_feed_dict = {self.Actor.state: states, self.Actor.action: (actions), self.Actor.R: (fixedUpRs), self.Actor.v_calc: v_calcs}
-        self.sess.run(
-            [self.Actor.loss_op, self.Actor.train_op], 
+        _, _, actor_summaries = self.sess.run(
+            [self.Actor.loss_op, self.Actor.train_op, self.Actor.summaries], 
             actor_train_feed_dict
             )
 
         critic_train_feed_dict = {self.Critic.state: states, self.Critic.R: fixedUpRs}
-        self.sess.run(
-            [self.Critic.loss_op, self.Critic.train_op], 
+        _, _, critic_summaries = self.sess.run(
+            [self.Critic.loss_op, self.Critic.train_op, self.Critic.summaries], 
             critic_train_feed_dict
             )
+
+        # Write summaries
+        self.summary_writer.add_summary(actor_summaries, self.stepCount)
+        self.summary_writer.add_summary(critic_summaries, self.stepCount)
+        self.summary_writer.flush()
+
+        return
         
     # Called
     def state_value(self, state):
