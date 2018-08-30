@@ -49,7 +49,7 @@ class ActorCriticAgent:
 
         self.env = env
 
-        brain = DeepNetBrain(self.env.action_space.n, lr,
+        brain = TFBrain(self.env.action_space.n, lr,
                              (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
         self.ActionChooser = EpsilonGreedyActionChooser(brain)
 
@@ -100,10 +100,9 @@ class ActorCriticAgent:
 
         self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1.5) / self.total_max_moves)
                            * self.total_step_count)  # first decreasing, then it is constant
-        batch_count = 0
-
+        
         batch_count_start = self.episode_step_count
-
+        batch_count = batch_count_start
         while not (self.is_terminal or batch_count - batch_count_start == self.batch_length):
             self.episode_step_count += 1
             self.total_step_count += 1

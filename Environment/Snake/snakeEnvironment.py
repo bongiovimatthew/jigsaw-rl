@@ -212,7 +212,7 @@ class SnakeEnvironment(Environment):
         return (next_state, reward, done, info)
 
     def check_state(self):
-        reward = 1
+        reward = 0
         info = {}
         done = False
 
@@ -220,7 +220,7 @@ class SnakeEnvironment(Environment):
         if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0]):
             self.apple = self.apple.place(self.player)
             self.player.length = self.player.length + 1
-            reward = 5
+            reward = 2 * self.player.length
 
         # does snake collide with itself?
         for i in range(2, self.player.length):
