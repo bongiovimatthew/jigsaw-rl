@@ -96,3 +96,6 @@ To do this, run the following:
     tensorboard --logdir=log
 
 Then, navigate to http://localhost:6006/
+
+
+flake8 --ignore="E265,E501"
