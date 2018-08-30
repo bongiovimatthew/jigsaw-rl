@@ -57,8 +57,13 @@ class Player:
             self.y.append(-100)
 
         # initial positions, no collision.
+        self.x[0] = 2 * self.step
         self.x[1] = 1 * self.step
-        self.x[2] = 2 * self.step
+        self.x[2] = 0
+
+        self.y[0] = 0
+        self.y[1] = 0
+        self.y[2] = 0
 
     def update(self):
 
@@ -158,7 +163,7 @@ class SnakeEnvironment(Environment):
         self._running = True
         self.game = Game()
         self.player = Player(3)
-        self.apple = Apple(0, 1)
+        self.apple = Apple(2, 1)
 
     def reset(self):
         pygame.quit()
