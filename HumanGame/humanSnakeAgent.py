@@ -1,30 +1,18 @@
-from pynput.keyboard import Key, Listener
 from enum import Enum
-import PIL as pl
-from PIL import ImageTk, Image
-
-from Environment.puzzleEnvironment import PuzzleEnvironment
-
-from threading import Thread
-from time import sleep
-
-from tkinter import *
+from Environment.snakeEnvironment import SnakeEnvironment
 
 
 class Actions(Enum):
-    ACTION_CYCLE = 0
-    ACTION_TRANS_UP = 1
-    ACTION_TRANS_RIGHT = 2
-    ACTION_TRANS_DOWN = 3
-    ACTION_TRANS_LEFT = 4
-    ACTION_ROT90_1 = 5
-    ACTION_ROT90_2 = 6
-    ACTION_ROT90_3 = 7
+    ACTION_NOOP = 0
+    ACTION_UP = 1
+    ACTION_RIGHT = 2
+    ACTION_DOWN = 3
+    ACTION_LEFT = 4
 
 
-class HumanAgent:
+class HumanSnakeAgent:
     def __init__(self):
-        self.env = PuzzleEnvironment()
+        self.env = SnakeEnvironment()
         self.s_t = self.env.reset()
         self.R = 0
         self.negativeRewardCount = 0
@@ -40,36 +28,8 @@ class HumanAgent:
         self.displayUpdatedBoard(startImg)
 
     def displayUpdatedBoard(self, imgData):
-        # Create a window
-        #self.window = tkinter.Tk()
-
-        # Create a canvas that can fit the above image
-        #width = 228
-        #height = 228
-        #self.canvas = tkinter.Canvas(self.window, width = width, height = height)
-        # self.canvas.pack()
-
         img = pl.Image.fromarray(imgData, 'RGB')
         img.show(title="Move")
-        # sleep(2)
-        # img.destroy()
-
-        # root = Tk()
-        # root_panel = Frame(root)
-        # root_panel.pack(side="bottom", fill="both", expand="yes")
-
-        # img_tk = ImageTk.PhotoImage(img)
-        # img_panel = Label(root_panel)
-        # img_panel.configure(image=img_tk)
-
-        # root.mainloop()
-        # sleep(2)
-        # root.destroy()
-
-        #self.canvas.create_image(0, 0, image=img, anchor=tkinter.NW)
-        # self.window.mainloop()
-        # sleep(2)
-        # self.window.root.destroy()
 
     def on_press(self, key):
         #print('{0} pressed'.format(key))
@@ -86,48 +46,33 @@ class HumanAgent:
         self.s_t, reward, done, info = self.env.step(action)
         #info = self.update_and_get_metrics(info)
 
-        file_name = "gameOutput.txt"
-        with open(file_name, "a+") as f:
-            f.write("------------------------------------\r\n")
-            f.write("Step: {0}\r\n".format(info["step"]))
-            f.write("Action: {0}\r\n".format(Actions(info["action"])))
-            f.write("Reward: {0}\r\n".format(reward))
-            f.write("Score: {0}\r\n".format(info["score"]))
-            f.write("------------------------------------\r\n")
-            f.write("\r\n")
-            f.write("\r\n")
-
         imgData = self.env.render()
 
         if (done):
             imgData = self.env.reset()
 
-        #thread = Thread(target = self.displayUpdatedBoard(imgData), args = (10, ))
-        # thread.start()
-        # thread.join()
-
         self.displayUpdatedBoard(imgData)
 
     def getActionFromUserInput(self, input):
         if input == Key.up:
-            return Actions.ACTION_TRANS_UP.value
+            return Actions.ACTION_UP.value
         if input == Key.down:
-            return Actions.ACTION_TRANS_DOWN.value
+            return Actions.ACTION_DOWN.value
         if input == Key.left:
-            return Actions.ACTION_TRANS_LEFT.value
+            return Actions.ACTION_LEFT.value
         if input == Key.right:
-            return Actions.ACTION_TRANS_RIGHT.value
+            return Actions.ACTION_RIGHT.value
         if input == Key.space:
-            return Actions.ACTION_CYCLE.value
-        if str(input) == "'r'":
-            return Actions.ACTION_ROT90_1.value
+            return Actions.ACTION_NOOP.value
         return
 
     def run(self):
 
         print("Input Move (up/down/left/right/spacebar/Esc): ")
-        with Listener(on_press=self.on_press, on_release=self.on_release) as listener:
-            listener.join()
+        self.env.start_run_loop()
+
+        # with Listener(on_press=self.on_press, on_release=self.on_release) as listener:
+        #     listener.join()
 
     def update_and_get_metrics(self, info):
         rewards = info["rewards"]
