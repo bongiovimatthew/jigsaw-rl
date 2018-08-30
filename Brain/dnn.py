@@ -3,6 +3,7 @@ import cntk
 from cntk.layers import Convolution2D, Dense, Sequential
 from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitType
 from cntk.logging import TensorBoardProgressWriter
+
 import random as r
 from Brain.IBrain import IBrain
 from PIL import Image
@@ -20,46 +21,38 @@ class DeepNetBrain(IBrain):
         self.STATE_WIDTH = stateShape[0]
         self.STATE_HEIGHT = stateShape[1]
 
+        
         self.build_model()
         self.build_trainer()
-
+        
     def build_model(self):
-
+        
         cntk.debugging.set_checked_mode(True)
 
         # Defining the input variables for training and evaluation.
-        self.stacked_frames = cntk.input_variable(
-            (1, self.STATE_WIDTH, self.STATE_HEIGHT), dtype=np.float32)
+        self.stacked_frames = cntk.input_variable((1, self.STATE_WIDTH, self.STATE_HEIGHT), dtype=np.float32)
         #self.stacked_frames = cntk.input_variable((1, 84, 84), dtype=np.float32)
         self.action = cntk.input_variable(self.num_actions)
         self.R = cntk.input_variable(1, dtype=np.float32)
-        # In the loss of pi, the parameters of V(s) should be fixed.
-        self.v_calc = cntk.input_variable(1, dtype=np.float32)
-
+        self.v_calc = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
+        
         # Creating the value approximator extension.
-        conv1_v = Convolution2D((8, 8), num_filters=16, pad=False, strides=4,
-                                activation=cntk.sigmoid, name='conv1_v')
-        conv2_v = Convolution2D((4, 4), num_filters=32, pad=False, strides=2,
-                                activation=cntk.sigmoid, name='conv2_v')
-        dense_v = Dense(256, activation=cntk.sigmoid, name='dense_v', init=cntk.xavier())
-        v = Sequential([conv1_v, conv2_v, dense_v, Dense(
-            1, activation=cntk.sigmoid, name='outdense_v', init=cntk.xavier())])
-
+        conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.sigmoid, name='conv1_v')
+        conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.sigmoid, name='conv2_v')
+        dense_v = Dense(256, activation=cntk.sigmoid, name='dense_v', init = cntk.xavier())
+        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.sigmoid, name='outdense_v', init = cntk.xavier())])
+        
         # Creating the policy approximator extension.
-        conv1_pi = Convolution2D((8, 8), num_filters=16, pad=False, strides=4,
-                                 activation=cntk.sigmoid, name='conv1_pi')
-        conv2_pi = Convolution2D((4, 4), num_filters=32, pad=False, strides=2,
-                                 activation=cntk.sigmoid, name='conv2_pi')
-        dense_pi = Dense(256, activation=cntk.sigmoid, name='dense_pi', init=cntk.xavier())
-        pi = Sequential([conv1_v, conv2_v, dense_pi, Dense(self.num_actions,
-                                                           activation=cntk.softmax, name='outdense_pi', init=cntk.xavier())])
-
+        conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.sigmoid, name='conv1_pi')
+        conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.sigmoid, name='conv2_pi')
+        dense_pi = Dense(256, activation=cntk.sigmoid, name='dense_pi', init = cntk.xavier())
+        pi = Sequential([conv1_v, conv2_v, dense_pi, Dense(self.num_actions, activation=cntk.softmax, name='outdense_pi', init = cntk.xavier())])
+        
         self.pi = pi(self.stacked_frames)
-        # List of cntk Parameter types (containes the function's parameters)
-        self.pms_pi = self.pi.parameters
+        self.pms_pi = self.pi.parameters # List of cntk Parameter types (containes the function's parameters)
         self.v = v(self.stacked_frames)
         self.pms_v = self.v.parameters
-
+        
         cntk.debugging.debug_model(v)
 
     def build_trainer(self):
@@ -148,29 +141,19 @@ class DeepNetBrain(IBrain):
 
             startingYIndex = rowIndex * singleBoxHeight
             endingYIndex = startingYIndex + singleBoxHeight
-
+            
             startingXIndex = colIndex * singleBoxWidth
             endingXIndex = startingXIndex + singleBoxWidth
-            imageArray[startingYIndex: endingYIndex, startingXIndex: endingXIndex] = (
-                layer_output[0][layer_index] + 1) * 128
+            imageArray[startingYIndex : endingYIndex, startingXIndex : endingXIndex ] = (layer_output[0][layer_index] + 1) * 128
             colIndex += 1
 
         imageArray = np.uint8(imageArray / layer_output.shape[0])
 
-        imToShow = Image.fromarray(imageArray, 'L').resize((1024, 1024))
+        imToShow = Image.fromarray(imageArray, 'L').resize((1024,1024))
         logger.log_dnn_intermediate_image(imToShow, "layer_{0}".format(layerId))
 
     def train(self, states, actions, Rs, calc_diff):
         diff = None
-
-        if calc_diff:
-            # Save the parameters before a training step.
-            self.update_pi = []
-            for x in self.pms_pi:
-                self.update_pi.append(x.value)
-            self.update_v = []
-            for x in self.pms_v:
-                self.update_v.append(x.value)
 
         actions_1hot = []
         for action in actions:
@@ -199,18 +182,17 @@ class DeepNetBrain(IBrain):
             self.printCNNOutput(conv2_v, conv2_v.eval(state), 2)
 
         #print("v_calc:{0} float32_R:{1} action:{2} trained_pi:{3} trained_v:{4}".format(v_calcs[0], float32_Rs[0], actions[0], trained_pi, trained_v))
-
+        
         if calc_diff:
             # Calculate the differences between the updated and the original params.
             for idx in range(len(self.pms_pi)):
-                self.tb_pi.write_value(self.pms_pi[idx].uid + "/mean",
-                                       reduce_mean(self.pms_pi[idx]).eval(), idx)
+                self.tb_pi.write_value(self.pms_pi[idx].uid + "/mean",  reduce_mean(self.pms_pi[idx]).eval(), idx)
                 self.update_pi[idx] = self.pms_pi[idx].value - self.update_pi[idx]
             for idx in range(len(self.pms_v)):
                 self.update_v[idx] = self.pms_v[idx].value - self.update_v[idx]
-
+            
             diff = [self.update_pi, self.update_v]
-
+        
         return diff
 
     def state_value(self, state):
