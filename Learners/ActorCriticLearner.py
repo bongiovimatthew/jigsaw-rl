@@ -2,7 +2,8 @@ import numpy as np
 from PIL import Image
 
 from Brain.dnn import DeepNetBrain
-#from Brain.kerasNetBrain import KerasNetBrain
+# from Brain.kerasNetBrain import KerasNetBrain 
+from Brain.tfBrain import TFBrain 
 
 from Diagnostics.logger import Logger as logger
 from ActionChoosers.EpsilonGreedyActionChooser import EpsilonGreedyActionChooser
@@ -48,8 +49,7 @@ class ActorCriticAgent:
 
         self.env = env
 
-        brain = DeepNetBrain(self.env.action_space.n, lr,
-                             (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
+        brain = TFBrain(self.env.action_space.n, lr, (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
         self.ActionChooser = EpsilonGreedyActionChooser(brain)
 
         self.gamma = gamma
@@ -99,9 +99,9 @@ class ActorCriticAgent:
 
         self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1.5) / self.total_max_moves)
                            * self.total_step_count)  # first decreasing, then it is constant
-        batch_count = 0
 
         batch_count_start = self.episode_step_count
+        batch_count = batch_count_start 
 
         while not (self.is_terminal or batch_count - batch_count_start == self.batch_length):
             self.episode_step_count += 1
@@ -140,5 +140,8 @@ class ActorCriticAgent:
             self.R = (reward + self.gamma * self.R)
             Rs.append(self.R)
             idx = idx - 1
+
+        # if self.debug_mode:
+        # print("R: ", Rs)
 
         self.ActionChooser.get_brain().train(states, actions, Rs, False)

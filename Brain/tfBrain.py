@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
+import tf_cnnvis 
 
+from tensorflow.python import debug as tf_debug
 from Brain.IBrain import IBrain 
 
 
@@ -23,7 +25,7 @@ class BaseTFModel():
 
         # Apply Dropout (if is_training is False, dropout is not applied)
         # REMOVING DROPOUT TEMPORARILY
-        # fc1 = tf.layers.dropout(fc1, rate=dropout, training=is_training)
+        fc1 = tf.layers.dropout(fc1, rate=dropout, training=is_training)
 
         add_summaries = not reuse
         if add_summaries:
@@ -47,7 +49,7 @@ class Critic(BaseTFModel):
         self.state = tf.placeholder(tf.float32, [None, 1, self.STATE_WIDTH, self.STATE_HEIGHT], "State")
         self.R = tf.placeholder(tf.float32, [None], "RewardR")
                 
-        self.dropout = 0.01
+        self.dropout = 0.1
      
         with tf.variable_scope("CriticModel"):
             # Create the train and test graphs
@@ -113,7 +115,7 @@ class Actor(BaseTFModel):
         self.R = tf.placeholder(tf.float32, [None], "RewardR")
         self.v_calc = tf.placeholder(tf.float32, [None], "V_Calc")
                 
-        self.dropout = 0.01
+        self.dropout = 0.1
    
         with tf.variable_scope("ActorModel"):
             logits_train = self.create_model(self.dropout, reuse = False, is_training = True)
@@ -128,7 +130,8 @@ class Actor(BaseTFModel):
             picked_action_probs = tf.gather(tf.reshape(probs_fixed, [-1]), gather_indices)
 
             entropy = -tf.reduce_sum(probs_fixed * tf.log(probs_fixed), 1, name="actor_entropy")
-            self.loss_op = tf.reduce_sum((-(tf.log(picked_action_probs) * (self.R - self.v_calc) + 0.01 * entropy)), name="actor_loss")
+            advantage = tf.reduce_sum(self.R - self.v_calc, name="advantage")
+            self.loss_op = tf.reduce_sum((-(tf.log(picked_action_probs) * advantage + 0.01 * entropy)), name="actor_loss")
 
 
             optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
@@ -139,7 +142,12 @@ class Actor(BaseTFModel):
 
 
             tf.summary.scalar(self.loss_op.name, self.loss_op)
+            tf.summary.scalar(advantage.name, advantage)
             tf.summary.histogram(entropy.op.name, entropy)
+
+            # tf_cnnvis.activation_visualization(sess_graph_path = tf.get_default_graph(), value_feed_dict = {X : im}, 
+            #                               layers=layers, path_logdir=os.path.join("Log","AlexNet"), 
+            #                               path_outdir=os.path.join("Output","AlexNet"))
 
         
         summary_ops = tf.get_collection(tf.GraphKeys.SUMMARIES)
@@ -170,7 +178,11 @@ class TFBrain(IBrain):
         self.Critic = Critic(num_actions, lr, stateShape)
 
         init = tf.global_variables_initializer()
+
         self.sess = tf.Session()
+        # if self.debugMode:
+        #     self.sess = tf_debug.LocalCLIDebugWrapperSession(self.sess)
+
         self.sess.run(init)
 
         # THIS DOESNT WORK, NOT SURE WHY
