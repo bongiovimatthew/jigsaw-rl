@@ -12,10 +12,10 @@ class BaseTFModel():
         local_state = tf.reshape(self.state, shape=[-1, self.STATE_WIDTH, self.STATE_HEIGHT, 1])
 
         # Convolution Layer with no padding
-        conv1 = tf.layers.conv2d(local_state, filters=16, kernel_size=(8, 8), strides=4, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv1")
+        conv1 = tf.layers.conv2d(local_state, filters=8, kernel_size=(8, 8), strides=8, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv1")
 
         # Convolution Layer with 64 filters and a kernel size of 3
-        conv2 = tf.layers.conv2d(conv1, filters=32, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv2")
+        conv2 = tf.layers.conv2d(conv1, filters=16, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv2")
 
         # Flatten the data to a 1-D vector for the fully connected layer
         fc1 = tf.contrib.layers.flatten(conv2)
@@ -51,98 +51,35 @@ class BaseTFModel():
 
         tf.summary.image("input_image", local_state)
 
-
-        
-            
-        # W1_row0 = tf.concat(0, W1_c[0:6])    # [30, 5, 1, 1]
-        # W1_row1 = tf.concat(0, W1_c[6:12])   # [30, 5, 1, 1]
-        # W1_row2 = tf.concat(0, W1_c[12:18])  # [30, 5, 1, 1]
-        # W1_row3 = tf.concat(0, W1_c[18:24])  # [30, 5, 1, 1]
-        # W1_row4 = tf.concat(0, W1_c[24:30])  # [30, 5, 1, 1]
-        # W1_row5 = tf.concat(0, W1_c[30:36])  # [30, 5, 1, 1]
-        
-        # W1_d = tf.concat(1, [W1_row0, W1_row1, W1_row2, W1_row3, W1_row4, W1_row5]) # [30, 30, 1, 1]
-        # W1_e = tf.reshape(W1_d, [1, 30, 30, 1])
-        # Wtag = tf.placeholder(tf.string, None)
-        # tf.image_summary("Visualize_kernels", W1_e)
-    
-
-        # aa
-
-        # # In this section, we visualize the filters of the first convolutional layers
-        # # We concatenate the filters into one image
-        # # Credits for the inspiration go to Martin Gorner
-        # W1_a = W_conv1                       # [5, 5, 1, 32]
-        # # W1pad= tf.zeros([5, 5, 1, 1])        # [5, 5, 1, 4]  - four zero kernels for padding
-        # # We have a 6 by 6 grid of kernepl visualizations. yet we only have 32 filters
-        # # Therefore, we concatenate 4 empty filters
-        # W1_b = tf.concat(3, [W1_a, W1pad, W1pad, W1pad, W1pad])   # [5, 5, 1, 36]  
-        # W1_c = tf.split(3, 36, W1_b)         # 36 x [5, 5, 1, 1]
-        # W1_row0 = tf.concat(0, W1_c[0:6])    # [30, 5, 1, 1]
-        # W1_row1 = tf.concat(0, W1_c[6:12])   # [30, 5, 1, 1]
-        # W1_row2 = tf.concat(0, W1_c[12:18])  # [30, 5, 1, 1]
-        # W1_row3 = tf.concat(0, W1_c[18:24])  # [30, 5, 1, 1]
-        # W1_row4 = tf.concat(0, W1_c[24:30])  # [30, 5, 1, 1]
-        # W1_row5 = tf.concat(0, W1_c[30:36])  # [30, 5, 1, 1]
-        # W1_d = tf.concat(1, [W1_row0, W1_row1, W1_row2, W1_row3, W1_row4, W1_row5]) # [30, 30, 1, 1]
-        # W1_e = tf.reshape(W1_d, [1, 30, 30, 1])
-        # Wtag = tf.placeholder(tf.string, None)
-        # tf.image_summary("Visualize_kernels", W1_e)
-
     def visualize_single_kernel(self, layer_name, num_rows, num_kernels_per_row):
 
         conv_layer_weights = [v for v in tf.trainable_variables(tf.get_variable_scope().name) if v.name ==  tf.get_variable_scope().name + layer_name][0]
 
-        print(conv_layer_weights)
-        print(conv_layer_weights.shape)
         kernel_height = conv_layer_weights.shape[0]
         kernel_width = conv_layer_weights.shape[1]
         kernel_colors = conv_layer_weights.shape[2]
         num_kernels = int(conv_layer_weights.shape[3].value)
 
-        # print(num_kernels)
-        # print(type(num_kernels))
-        # num_rows = 4 # tf.constant(4)
-        # num_kernels_per_row = 2# tf.cast(num_kernels / num_rows, tf.int32)
-
-        # conv_layer_weights = tf.concat(3, [conv_layer_weights])   # [5, 5, 1, 36]  
         W1_c = tf.split(conv_layer_weights, num_kernels, 3)         # 36 x [5, 5, 1, 1]
 
-        print(len(W1_c))
-        print(W1_c[0].shape)
         arrayOfFilterRows = []
         for i in range(num_rows):
-
-            print(num_kernels_per_row * i)
-            print((i + 1) * num_kernels_per_row )
             W1_row = tf.concat(W1_c[num_kernels_per_row * i:(i + 1) * num_kernels_per_row ], 0)    # [30, 5, 1, 1]
-            print(W1_row.shape)
             arrayOfFilterRows.append(W1_row)        
+
         W1_d = tf.concat(arrayOfFilterRows, 1) # [30, 30, 1, 1]
-        print(W1_d.shape)
         tf.summary.image("Visualize_kernels_conv1_" + layer_name , W1_d)
     
     # https://stackoverflow.com/questions/33802336/visualizing-output-of-convolutional-layer-in-tensorflow
     def visualize_single_tensor(self, tensor, iy, ix, cy, cx, name):
         initTensor = tensor
+
         tensor = tf.slice(tensor,(0,0,0,0),(1,-1,-1,-1))
         tensor = tf.reshape(tensor,(iy,ix,cy*cx))
-
-        # ix += 4
-        # iy += 4
-
-        # print(tensor.shape)
-        # print(iy)
-        # print(ix)
-        # tensor = tf.expand_dims(tensor, 1)
-        # tensor = tf.image.resize_image_with_crop_or_pad(tensor, iy, ix)
-
         tensor = tf.reshape(tensor,(iy,ix,cy,cx))
-
         tensor = tf.transpose(tensor,(2,0,3,1)) #cy,iy,cx,ix
 
         newtensor = tf.einsum('yxYX->YyXx',tensor)
-
         newtensor = tf.reshape(newtensor,(1,cy*iy,cx*ix,1))
         tf.summary.image("Visualize_output_" + name, newtensor)
 
@@ -179,7 +116,6 @@ class Critic(BaseTFModel):
             # self.acc_op = tf.metrics.accuracy(labels=self.R, predictions=logits_test)
 
             self.prediction_op = logits_test
-
 
             # Summaries
             prefix = tf.get_variable_scope().name
@@ -304,37 +240,6 @@ class TFBrain(IBrain):
 
         self.stepCount = 0
         self.summary_writer = tf.summary.FileWriter('tf_train', self.sess.graph)
-
-        variables_names =[v.name for v in tf.trainable_variables()]
-        values = self.sess.run(variables_names)
-        for k,v in zip(variables_names, values):
-            print(k, v)
-        # conv1_weights = [v for v in tf.trainable_variables() if v.name == "CriticModel/filter:0"][0]
-
-        # aaaaa
-
-    def setupVisualizations(self):
-        # var = [v for v in tf.trainable_variables() if v.name == "ActorModel/ActorModel/conv2d/kernel:0"][0]
-        W_conv1 = [v for v in tf.trainable_variables() if v.name == "ActorModel/ActorModel/conv2d/bias:0"][0]
-        # In this section, we visualize the filters of the first convolutional layers
-        # We concatenate the filters into one image
-        # Credits for the inspiration go to Martin Gorner
-        W1_a = W_conv1                       # [5, 5, 1, 32]
-        W1pad= tf.zeros([5, 5, 1, 1])        # [5, 5, 1, 4]  - four zero kernels for padding
-        # We have a 6 by 6 grid of kernepl visualizations. yet we only have 32 filters
-        # Therefore, we concatenate 4 empty filters
-        W1_b = tf.concat(3, [W1_a, W1pad, W1pad, W1pad, W1pad])   # [5, 5, 1, 36]  
-        W1_c = tf.split(3, 36, W1_b)         # 36 x [5, 5, 1, 1]
-        W1_row0 = tf.concat(0, W1_c[0:6])    # [30, 5, 1, 1]
-        W1_row1 = tf.concat(0, W1_c[6:12])   # [30, 5, 1, 1]
-        W1_row2 = tf.concat(0, W1_c[12:18])  # [30, 5, 1, 1]
-        W1_row3 = tf.concat(0, W1_c[18:24])  # [30, 5, 1, 1]
-        W1_row4 = tf.concat(0, W1_c[24:30])  # [30, 5, 1, 1]
-        W1_row5 = tf.concat(0, W1_c[30:36])  # [30, 5, 1, 1]
-        W1_d = tf.concat(1, [W1_row0, W1_row1, W1_row2, W1_row3, W1_row4, W1_row5]) # [30, 30, 1, 1]
-        W1_e = tf.reshape(W1_d, [1, 30, 30, 1])
-        Wtag = tf.placeholder(tf.string, None)
-        tf.image_summary("Visualize_kernels", W1_e)
     
     def train(self, states, actions, Rs, calc_diff):
         self.stepCount += 1
