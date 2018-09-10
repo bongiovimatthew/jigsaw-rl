@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from PIL import Image
 
 from Brain.dnn import DeepNetBrain
@@ -8,11 +9,12 @@ from Brain.tfBrain import TFBrain
 from Diagnostics.logger import Logger as logger
 from ActionChoosers.EpsilonGreedyActionChooser import EpsilonGreedyActionChooser
 from Learners.BatchQueue import BatchQueue
+from Learners.CircularBatchQueue import CircularBatchQueue
 
 class ActorCriticLearner:
 
-    STATE_WIDTH = 224
-    STATE_HEIGHT = 224
+    STATE_WIDTH = 124
+    STATE_HEIGHT = 124
 
     def execute_agent(env, batch_length, game_length, total_max_moves, gamma, lr):
         agent = ActorCriticLearner.create_agent(
@@ -36,12 +38,13 @@ class ActorCriticLearner:
         queue.queue_reset()
         obs = env.reset()
         queue.add(ActorCriticLearner.process_img(obs), 0, 0, False)
+        queue.set_discounted_reward_at(queue.get_last_idx(), 0)
         return queue.get_recent_state()  # should return None
 
     def env_step(env, queue, action):
         obs, rw, done, info = env.step(action)
         queue.add(ActorCriticLearner.process_img(obs), rw, action, done)
-        return queue.get_recent_state(), info
+        return queue.get_recent_state(), info, done
 
 class ActorCriticAgent:
 
@@ -54,8 +57,13 @@ class ActorCriticAgent:
 
         self.gamma = gamma
         self.is_terminal = False
+
+        self.use_experience_replay = True
         
-        self.queue = BatchQueue(total_max_moves, ActorCriticLearner.STATE_HEIGHT) 
+        if self.use_experience_replay:
+            self.queue = CircularBatchQueue(20, ActorCriticLearner.STATE_HEIGHT) 
+        else:
+            self.queue = BatchQueue(total_max_moves, ActorCriticLearner.STATE_HEIGHT) 
 
         self.current_state = ActorCriticLearner.env_reset(self.env, self.queue)        
 
@@ -64,8 +72,10 @@ class ActorCriticAgent:
         self.episode_step_count = 0
         self.total_step_count = 0
         self.total_max_moves = total_max_moves
+        self.current_step_count = 0
 
-        self.batch_length = batch_length     
+        self.batch_length = batch_length
+        self.training_batch_length = batch_length     
         self.game_length = game_length
         self.learner_id = "ActorCriticLearner"   
         self.debug_mode = False
@@ -77,9 +87,26 @@ class ActorCriticAgent:
             self.play_game_for_a_while()
             self.set_R()
             self.calculate_gradients()
+            self.calculate_gradients()
+            # self.calculate_gradients()
+            # self.calculate_gradients()
+            # self.calculate_gradients()
+
+        self.debug_mode = True
+
+        while self.total_step_count < 100:
+
+            self.play_game_for_a_while()
+
+        #     self.set_R()
+        #     self.calculate_gradients()
+        #     # self.calculate_gradients()
+        #     # self.calculate_gradients()
+        #     # self.calculate_gradients()
+
+
 
     def set_R(self):
-
         self.R = self.ActionChooser.get_brain().state_value(self.current_state)
 
         if self.is_terminal:
@@ -89,9 +116,11 @@ class ActorCriticAgent:
         self.ActionChooser.get_brain().save_model(path_model_pi, path_model_v)
 
     def play_game_for_a_while(self):
+        self.current_step_count = 0
+
         if self.is_terminal:
             if self.debug_mode:
-                logger.log_state_image(self.current_state, self.total_step_count, -1,
+                logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, -1,
                                        (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
             self.current_state = ActorCriticLearner.env_reset(self.env, self.queue)
             self.episode_step_count = 0
@@ -104,44 +133,75 @@ class ActorCriticAgent:
         batch_count = batch_count_start 
 
         while not (self.is_terminal or batch_count - batch_count_start == self.batch_length):
+            self.current_step_count += 1
             self.episode_step_count += 1
             self.total_step_count += 1
             batch_count += 1
 
             action = self.ActionChooser.action(self.current_state, self.epsilon)
-            self.current_state, info = ActorCriticLearner.env_step(self.env, self.queue, action)
+            self.current_state, info, done = ActorCriticLearner.env_step(self.env, self.queue, action)
 
             if self.debug_mode:
                 logger.log_metrics(info, self.episode_step_count, self.learner_id)
                 logger.log_state_image(self.current_state, self.episode_step_count, self.learner_id,
                                        action, (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
 
-                self.reset_running_metrics()
+                # self.reset_running_metrics()
 
-            self.is_terminal = self.queue.get_is_last_terminal()
+            self.is_terminal = done
 
-    def calculate_gradients(self):
+        self.updateDiscountedRewards()
 
+    def updateDiscountedRewards(self):
         idx = self.queue.get_last_idx()
-        final_index = max(idx - self.batch_length, 0)
+        final_index = (idx - self.current_step_count) + 1 # max(idx - self.current_step_count, (-1 * self.current_step_count))
 
-
-        states = []
-        rewards = []
-        actions = []
-        Rs = []
-
-        while idx > final_index:
-
-            states.append(self.queue.get_state_at(idx))
+        print("Init self.R: ", self.R)
+        for idx in range(idx, final_index - 1, -1):
             reward = (self.queue.get_reward_at(idx))
-            actions.append(self.queue.get_action_at(idx))
 
             self.R = (reward + self.gamma * self.R)
-            Rs.append(self.R)
+            print("self.R:{0}, idx:{1}, reward:{2}, action:{3}".format(self.R, idx, reward, self.queue.get_action_at(idx)))
+            # print("Init self.R: ", self.R, " idx: ", idx, " reward: ", reward)
+            self.queue.set_discounted_reward_at(idx, self.R)
             idx = idx - 1
+
+    def get_indices_to_train(self):
+        indices_array = None
+        idx = self.queue.get_last_idx()
+        final_index = (idx - self.current_step_count) + 1
+
+        if self.use_experience_replay:
+            indices_array = list(range(final_index, idx + 1))
+            random.shuffle(indices_array)
+            # indices_array = random.sample(range(self.queue.get_max_index() + 1), min(self.training_batch_length, self.queue.get_max_index() + 1))
+
+        else:
+            indices_array = list(range(final_index, idx + 1))
+
+        return indices_array
+
+    def calculate_gradients(self):
+        states = []
+        actions = []
+        discounted_rewards = []
+
+        indices_array = self.get_indices_to_train()
+
+        print("indices_array: ", indices_array)
+
+        for idx in indices_array:
+            states.append(self.queue.get_state_at(idx))
+            actions.append(self.queue.get_action_at(idx))
+            discounted_rewards.append(self.queue.get_discounted_reward_at(idx))
+            print("Non zeros: ", np.count_nonzero(self.queue.get_state_at(idx)))
+        # print(states)
+        # print(actions)
+        # print(discounted_rewards)
+
+
 
         # if self.debug_mode:
         # print("R: ", Rs)
 
-        self.ActionChooser.get_brain().train(states, actions, Rs, False)
+        self.ActionChooser.get_brain().train(states, actions, discounted_rewards, False)
