@@ -12,10 +12,10 @@ class BaseTFModel():
         local_state = tf.reshape(self.state, shape=[-1, self.STATE_WIDTH, self.STATE_HEIGHT, 1])
 
         # Convolution Layer with no padding
-        conv1 = tf.layers.conv2d(local_state, filters=16, kernel_size=(8, 8), strides=4, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv1")
+        conv1 = tf.layers.conv2d(local_state, filters=8, kernel_size=(8, 8), strides=8, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv1")
 
         # Convolution Layer with 64 filters and a kernel size of 3
-        conv2 = tf.layers.conv2d(conv1, filters=32, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv2")
+        conv2 = tf.layers.conv2d(conv1, filters=16, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv2")
 
         # Flatten the data to a 1-D vector for the fully connected layer
         fc1 = tf.contrib.layers.flatten(conv2)
