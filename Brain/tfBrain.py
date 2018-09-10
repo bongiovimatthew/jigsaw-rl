@@ -19,7 +19,7 @@ class BaseTFModel():
         fc1 = tf.contrib.layers.flatten(conv2)
 
         # Fully connected layer (in tf contrib folder for now)
-        fc1 = tf.contrib.layers.fully_connected(fc1, 256, activation_fn=tf.nn.sigmoid)
+        fc1 = tf.contrib.layers.fully_connected(fc1, 512, activation_fn=tf.nn.sigmoid)
 
         # Apply Dropout (if is_training is False, dropout is not applied)
         # REMOVING DROPOUT TEMPORARILY

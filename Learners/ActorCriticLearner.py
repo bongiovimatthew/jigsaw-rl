@@ -11,8 +11,8 @@ from Learners.BatchQueue import BatchQueue
 
 class ActorCriticLearner:
 
-    STATE_WIDTH = 224
-    STATE_HEIGHT = 224
+    STATE_WIDTH = 80
+    STATE_HEIGHT = 80
 
     def execute_agent(env, batch_length, game_length, total_max_moves, gamma, lr):
         agent = ActorCriticLearner.create_agent(
@@ -49,7 +49,7 @@ class ActorCriticAgent:
 
         self.env = env
 
-        brain = TFBrain(self.env.action_space.n, lr,
+        brain = DeepNetBrain(self.env.action_space.n, lr,
                              (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
         self.ActionChooser = EpsilonGreedyActionChooser(brain)
 

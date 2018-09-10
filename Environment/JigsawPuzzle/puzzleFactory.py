@@ -187,7 +187,7 @@ class PuzzleFactory:
         #piece.coords_x = random.randint(3, sideDimension - 1)
         #piece.coords_y = random.randint(3, sideDimension - 1)
 
-        return (2, 2), (3, 2)
+        return (2, 2), (3, 3)
 
     # Generates the randomly placed, randomly rotated pieces
     #  Rotation based on image data (no geom)
