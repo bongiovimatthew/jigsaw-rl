@@ -26,7 +26,7 @@ class PuzzleEnvironment(Environment):
     NOT_CONNECTED_SCORE = -1
     CORRECT_PLACEMENT_SCORE = 100
 
-    MAX_ACTIONS_NUM = 4
+    MAX_ACTIONS_NUM = 5
 
     def __init__(self):
         self.oldScore = 0
