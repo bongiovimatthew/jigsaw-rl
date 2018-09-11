@@ -191,7 +191,7 @@ class ActorCriticAgent:
             states.append(self.queue.get_state_at(idx))
             actions.append(self.queue.get_action_at(idx))
             discounted_rewards.append(self.queue.get_discounted_reward_at(idx))
-            if self.pause_when_training
+            if self.pause_when_training:
                 logger.log_state_image(states[-1], self.total_step_count, self.learner_id,
                                        actions[-1], (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
                 print("action: ", actions[-1])
