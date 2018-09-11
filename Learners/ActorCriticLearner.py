@@ -13,8 +13,8 @@ from Learners.CircularBatchQueue import CircularBatchQueue
 
 class ActorCriticLearner:
 
-    STATE_WIDTH = 124
-    STATE_HEIGHT = 124
+    STATE_WIDTH = 160
+    STATE_HEIGHT = 160
 
     def execute_agent(env, batch_length, game_length, total_max_moves, gamma, lr):
         agent = ActorCriticLearner.create_agent(
@@ -37,14 +37,11 @@ class ActorCriticLearner:
     def env_reset(env, queue):
         queue.queue_reset()
         obs = env.reset()
-        queue.add(ActorCriticLearner.process_img(obs), 0, 0, False)
-        queue.set_discounted_reward_at(queue.get_last_idx(), 0)
-        return queue.get_recent_state()  # should return None
+        return obs
 
     def env_step(env, queue, action):
         obs, rw, done, info = env.step(action)
-        queue.add(ActorCriticLearner.process_img(obs), rw, action, done)
-        return queue.get_recent_state(), info, done
+        return obs, rw, done, info
 
 class ActorCriticAgent:
 
@@ -65,7 +62,10 @@ class ActorCriticAgent:
         else:
             self.queue = BatchQueue(total_max_moves, ActorCriticLearner.STATE_HEIGHT) 
 
-        self.current_state = ActorCriticLearner.env_reset(self.env, self.queue)        
+        self.current_state = ActorCriticLearner.process_img(ActorCriticLearner.env_reset(self.env, self.queue))        
+
+        self.queue.add(self.current_state, 0, 0, False)
+        self.queue.set_discounted_reward_at(self.queue.get_last_idx(), 0)
 
         self.R = 0
 
@@ -79,6 +79,7 @@ class ActorCriticAgent:
         self.game_length = game_length
         self.learner_id = "ActorCriticLearner"   
         self.debug_mode = False
+        self.pause_when_training = False
 
     def run(self):
 
@@ -88,22 +89,12 @@ class ActorCriticAgent:
             self.set_R()
             self.calculate_gradients()
             self.calculate_gradients()
-            # self.calculate_gradients()
-            # self.calculate_gradients()
-            # self.calculate_gradients()
 
         self.debug_mode = True
 
-        while self.total_step_count < 100:
-
+        # Just test essentially i.e. no train
+        while self.total_step_count < (self.total_max_moves + 100):
             self.play_game_for_a_while()
-
-        #     self.set_R()
-        #     self.calculate_gradients()
-        #     # self.calculate_gradients()
-        #     # self.calculate_gradients()
-        #     # self.calculate_gradients()
-
 
 
     def set_R(self):
@@ -122,7 +113,11 @@ class ActorCriticAgent:
             if self.debug_mode:
                 logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, -1,
                                        (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
-            self.current_state = ActorCriticLearner.env_reset(self.env, self.queue)
+            self.current_state = ActorCriticLearner.process_img(ActorCriticLearner.env_reset(self.env, self.queue))
+
+            self.queue.add(self.current_state, 0, 0, False)
+            self.queue.set_discounted_reward_at(self.queue.get_last_idx(), 0)
+
             self.episode_step_count = 0
             self.is_terminal = False
 
@@ -139,11 +134,14 @@ class ActorCriticAgent:
             batch_count += 1
 
             action = self.ActionChooser.action(self.current_state, self.epsilon)
-            self.current_state, info, done = ActorCriticLearner.env_step(self.env, self.queue, action)
+            next_state, rw, done, info = ActorCriticLearner.env_step(self.env, self.queue, action)
+
+            self.queue.add(self.current_state, rw, action, done)
+            self.current_state = ActorCriticLearner.process_img(next_state)
 
             if self.debug_mode:
                 logger.log_metrics(info, self.episode_step_count, self.learner_id)
-                logger.log_state_image(self.current_state, self.episode_step_count, self.learner_id,
+                logger.log_state_image(self.current_state, self.total_step_count, self.learner_id,
                                        action, (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
 
                 # self.reset_running_metrics()
@@ -162,7 +160,6 @@ class ActorCriticAgent:
 
             self.R = (reward + self.gamma * self.R)
             print("self.R:{0}, idx:{1}, reward:{2}, action:{3}".format(self.R, idx, reward, self.queue.get_action_at(idx)))
-            # print("Init self.R: ", self.R, " idx: ", idx, " reward: ", reward)
             self.queue.set_discounted_reward_at(idx, self.R)
             idx = idx - 1
 
@@ -194,14 +191,11 @@ class ActorCriticAgent:
             states.append(self.queue.get_state_at(idx))
             actions.append(self.queue.get_action_at(idx))
             discounted_rewards.append(self.queue.get_discounted_reward_at(idx))
-            print("Non zeros: ", np.count_nonzero(self.queue.get_state_at(idx)))
-        # print(states)
-        # print(actions)
-        # print(discounted_rewards)
-
-
-
-        # if self.debug_mode:
-        # print("R: ", Rs)
+            if self.pause_when_training
+                logger.log_state_image(states[-1], self.total_step_count, self.learner_id,
+                                       actions[-1], (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
+                print("action: ", actions[-1])
+                print("discounted_rewards: ", discounted_rewards[-1])
+                input()
 
         self.ActionChooser.get_brain().train(states, actions, discounted_rewards, False)

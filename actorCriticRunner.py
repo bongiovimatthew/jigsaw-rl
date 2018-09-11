@@ -4,7 +4,7 @@ from Environment.Snake.snakeEnvironment import SnakeEnvironment
 import argparse
 
 parser = argparse.ArgumentParser(description='Actor Critic Learning')
-parser.add_argument('--gamma', type=float, default=0.75, metavar='F',
+parser.add_argument('--gamma', type=float, default=0.99, metavar='F',
                     help='the discounting factor (default:0.99)')
 parser.add_argument('--lr', type=float, default=0.0002, metavar='F',
                     help='the learning rate (default:0.00025)')
