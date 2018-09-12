@@ -65,7 +65,7 @@ class Logger:
         os.makedirs(Logger.path_dnn_intermediate_images)
         os.makedirs(Logger.path_metrics)
 
-    def log_state_image(boardData, steps, action, stateShape):
+    def log_state_image(boardData, steps, learner_id, action, stateShape):
         Logger.init()
         #pngfile = "testImage.png"
         #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
@@ -91,30 +91,29 @@ class Logger:
     def log_metrics(info, iteration, learner_id):
         Logger.init()
 
-        Logger.log_scores(iteration, learner_id, info['score'], info['oldScore'], info['averageScore'], info['slidingWindowAverageScore'])
+        Logger.log_scores(iteration, learner_id, info['score'], info['oldScore'])
 
         file_name = Logger.path_metrics + "metrics_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:
-            f.write("Step {0}: negativeRewardCount: {1}, zeroRewardCount: {2} positiveRewardCount: {3} averageRewards: {4}\r\n".format(
-                iteration, info["negativeRewardCount"], info["zeroRewardCount"], info["positiveRewardCount"], info["averageRewards"]))
+            f.write("Step {0}: negativeRewardCount: {1}, zeroRewardCount: {2} positiveRewardCount: {3}\r\n".format(
+                iteration, info["negativeRewardCount"], info["zeroRewardCount"], info["positiveRewardCount"]))
 
         file_name = Logger.path_metrics + "moves_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:
             stringToPrint = ""
             for i in range(len(info["numberOfTimesExecutedEachAction"])):
                 #actionName = Actions(i).name
-                stringToPrint += actionName + ": " + \
-                    str(info["numberOfTimesExecutedEachAction"][i]) + " "
+                stringToPrint += str(info["numberOfTimesExecutedEachAction"][i]) + ", " # actionName + ": " + \
 
             stringToPrint += "\r\n"
             f.write(stringToPrint)
 
-    def log_scores(iteration, learner_id, currentScore, oldScore, averageScore, slidingWindowAverageScore):
+    def log_scores(iteration, learner_id, currentScore, oldScore):
         Logger.init()
         file_name = Logger.path_scores + "score_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:
-            f.write("Step {0}: PreviousScore: {1}, CurrentScore: {2} AverageScore: {3} SlidingWindowAverageScore: {4}\r\n".format(
-                iteration, oldScore, currentScore, averageScore, slidingWindowAverageScore))
+            f.write("Step {0}: PreviousScore: {1}, CurrentScore: {2}\r\n".format(
+                iteration, oldScore, currentScore))
 
     def log_rewards(rewards, iteration, learner_id, rnd):
         Logger.init()
