@@ -1,9 +1,7 @@
 from random import randint
-import pygame
 from Environment.env import Environment, ActionSpace
 from enum import Enum
 import os
-import pygame.surfarray as surfarray
 from PIL import Image
 import numpy as np
 
@@ -17,7 +15,7 @@ class Apple:
         self.y = y * self.step
 
     def draw(self, surface, image):
-        surface.blit(image, (self.x, self.y))
+        surface.paste(image, (self.x, self.y))
 
     def place(self, player):
         counter = 0
@@ -109,8 +107,8 @@ class Player:
 
     def draw(self, surface, image, headImage):
         for i in range(1, self.length):
-            surface.blit(image, (self.x[i], self.y[i]))
-        surface.blit(headImage, (self.x[0], self.y[0]))
+            surface.paste(image, (self.x[i], self.y[i]))
+        surface.paste(headImage, (self.x[0], self.y[0]))
 
 
 class Game:
@@ -152,13 +150,16 @@ class SnakeEnvironment(Environment):
         self.setupEnvironment()
 
     def setupEnvironment(self):
-        self._display_surf = pygame.display.set_mode(
-            (self.windowWidth, self.windowHeight), pygame.HWSURFACE)
+        self._display_surf = Image.new('RGB', (self.windowWidth, self.windowHeight), (0, 0, 0))
 
         basePath = os.path.dirname(__file__)
-        self._image_surf = pygame.image.load(os.path.join(basePath, "block.jpg")).convert()
-        self._apple_surf = pygame.image.load(os.path.join(basePath, "apple.jpg")).convert()
-        self._head_surf = pygame.image.load(os.path.join(basePath, "head.jpg")).convert()
+        apple_path = os.path.join(basePath, "apple.jpg")
+        block_path = os.path.join(basePath, "block.jpg")
+        head_path = os.path.join(basePath, "head.jpg")
+
+        self._image_surf = Image.open(block_path, 'r')
+        self._apple_surf = Image.open(apple_path, 'r')
+        self._head_surf = Image.open(head_path, 'r')
 
         self._running = True
         self.game = Game()
@@ -235,7 +236,9 @@ class SnakeEnvironment(Environment):
         return (reward, done, info)
 
     def render(self):
-        self._display_surf.fill((0, 0, 0))
+        #self._display_surf.fill((0, 0, 0))
+        self._display_surf.paste( (0, 0, 0), [0, 0, self._display_surf.size[0], self._display_surf.size[1]])
         self.player.draw(self._display_surf, self._image_surf, self._head_surf)
         self.apple.draw(self._display_surf, self._apple_surf)
+        return np.array(self._display_surf)
         return np.rot90(np.flipud(surfarray.array3d(self._display_surf)), axes=(1,0))
