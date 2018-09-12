@@ -37,14 +37,14 @@ class DeepNetBrain(IBrain):
         self.v_calc = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
         
         # Creating the value approximator extension.
-        conv1_v = Convolution2D((4, 4), num_filters = 16, pad = False, strides=2, activation=cntk.relu, name='conv1_v')
-        conv2_v = Convolution2D((2, 2), num_filters = 32, pad = False, strides=1, activation=cntk.relu, name='conv2_v')
+        conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu, name='conv1_v')
+        conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu, name='conv2_v')
         dense_v = Dense(256, activation=cntk.sigmoid, name='dense_v', init = cntk.xavier())
         v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.sigmoid, name='outdense_v', init = cntk.xavier())])
         
         # Creating the policy approximator extension.
-        conv1_pi = Convolution2D((4, 4), num_filters = 16, pad = False, strides=2, activation=cntk.relu, name='conv1_pi')
-        conv2_pi = Convolution2D((2, 2), num_filters = 32, pad = False, strides=1, activation=cntk.relu, name='conv2_pi')
+        conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu, name='conv1_pi')
+        conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu, name='conv2_pi')
         dense_pi = Dense(256, activation=cntk.sigmoid, name='dense_pi', init = cntk.xavier())
         pi = Sequential([conv1_v, conv2_v, dense_pi, Dense(self.num_actions, activation=cntk.softmax, name='outdense_pi', init = cntk.xavier())])
         
