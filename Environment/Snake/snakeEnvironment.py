@@ -167,15 +167,11 @@ class SnakeEnvironment(Environment):
         self.apple = Apple(2, 1)
 
     def reset(self):
-        pygame.quit()
-
         self._running = False
         self.game = None
         self.player = None
         self.apple = None
         self._display_surf = None
-
-        pygame.init()
         self.setupEnvironment()
         return self.render()
 
