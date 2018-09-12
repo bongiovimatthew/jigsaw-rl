@@ -3,6 +3,7 @@ from Environment.JigsawPuzzle.direction import Direction
 from Environment.JigsawPuzzle.edge import EdgeShape
 from Environment.JigsawPuzzle.puzzleFactory import PuzzleFactory
 from enum import Enum
+from pathlib import Path
 
 
 class Actions(Enum):
@@ -31,9 +32,12 @@ class PuzzleEnvironment(Environment):
         self.debugMode = False
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
 
+        img_folder = Path("images/")
+        puzzle_img_path = img_folder / "rainier_small.jpg"
+
         # Generate the puzzle
         factory = PuzzleFactory()
-        puzzle = factory.generatePuzzle('images\\rainier_small.jpg', 3, 3)
+        puzzle = factory.generatePuzzle(puzzle_img_path, 3, 3)
         randomizedPieces = factory.createRandomPuzzlePieceArray(puzzle)
 
         # pieceState is an array of PuzzlePiece objects
