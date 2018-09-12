@@ -7,14 +7,16 @@ from pathlib import Path
 
 
 class Actions(Enum):
-    ACTION_CYCLE = 0
-    ACTION_TRANS_UP = 1
-    ACTION_TRANS_RIGHT = 2
-    ACTION_TRANS_DOWN = 3
-    ACTION_TRANS_LEFT = 4
+    ACTION_TRANS_UP    = 0
+    ACTION_TRANS_RIGHT = 1
+    ACTION_TRANS_DOWN  = 2
+    ACTION_TRANS_LEFT  = 3
+    ACTION_CYCLE = 4
     ACTION_ROT90_1 = 5
     ACTION_ROT90_2 = 6
     ACTION_ROT90_3 = 7
+
+    ACTION_INVALID = -1
 
 
 class PuzzleEnvironment(Environment):
@@ -25,7 +27,7 @@ class PuzzleEnvironment(Environment):
     NOT_CONNECTED_SCORE = -1
     CORRECT_PLACEMENT_SCORE = 100
 
-    MAX_ACTIONS_NUM = 5
+    MAX_ACTIONS_NUM = 4
 
     def __init__(self):
         self.oldScore = 0
@@ -43,6 +45,7 @@ class PuzzleEnvironment(Environment):
         # pieceState is an array of PuzzlePiece objects
         self.pieceState = randomizedPieces
         self.puzzle = puzzle
+        self.numberOfTimesExecutedEachAction = list(range(self.MAX_ACTIONS_NUM))
 
         self.setupEnvironment()
 
@@ -150,7 +153,7 @@ class PuzzleEnvironment(Environment):
         if action >= Actions.ACTION_TRANS_UP.value and action <= Actions.ACTION_TRANS_LEFT.value:
             currentPiece = self.pieceState[self.currentPieceIndex]
             directions = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
-            direction = directions[action - 1]
+            direction = directions[action - Actions.ACTION_TRANS_UP.value]
             self._translate_piece(currentPiece.id, direction)
 
         return self.render()
@@ -159,19 +162,35 @@ class PuzzleEnvironment(Environment):
         self.stepCount += 1
         next_state = self._convert_state(action)
         currentScore = self.getScoreOfCurrentState()
+
         done = self.isMaxReward(currentScore) or (self.stepCount > 1)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore
 
         reward = currentScore - tempOldScore
+
+
+        # if self.isMaxReward(currentScore):
+        #     reward = 1
+        # elif reward > 0:
+        #     reward = 0.5
+        # elif reward < 0:
+        #     reward = -1
+
+        # reward = reward / 180
+        # reward = ((reward / 180) + 1) / 10
         if self.isMaxReward(currentScore):
             reward = 1
         else:
             reward = 0
 
+        self.numberOfTimesExecutedEachAction[action] += 1
+
         info = {'score': currentScore, 'oldScore': tempOldScore,
-                'action': action, 'step': self.stepCount}
+                'action': action, 'step': self.stepCount,
+                'negativeRewardCount': reward < 0, 'zeroRewardCount': reward == 0,
+                'positiveRewardCount': reward > 0, 'numberOfTimesExecutedEachAction': self.numberOfTimesExecutedEachAction}
 
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(
