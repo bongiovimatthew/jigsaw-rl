@@ -72,6 +72,7 @@ class Logger:
         timestr = time.strftime("%Y%m%d-%H%M%S")
         file_name = "stateImage_" + str(learner_id) + "_" + str(steps) + "_" + timestr + "_action_" + str(action) + ".png"
         file_path = Logger.path_state_images / file_name
+        file_path.touch(exist_ok=True)
 
         input_img = np.array(boardData)
 
@@ -94,13 +95,15 @@ class Logger:
         Logger.log_scores(iteration, learner_id, info['score'], info['oldScore'])
         file_name = "metrics_" + str(learner_id) + ".txt"
         file_path = Logger.path_metrics / file_name
-        with open(file_path, "a+") as f:
+        file_path.touch(exist_ok=True)
+        with file_path.open(mode="a+") as f:
             f.write("Step {0}: negativeRewardCount: {1}, zeroRewardCount: {2} positiveRewardCount: {3}\r\n".format(
                 iteration, info["negativeRewardCount"], info["zeroRewardCount"], info["positiveRewardCount"]))
 
         file_name = "moves_" + str(learner_id) + ".txt"
         file_path = Logger.path_metrics / file_name
-        with open(file_path, "a+") as f:
+        file_path.touch(exist_ok=True)
+        with file_path.open(mode="a+") as f:
             stringToPrint = ""
             for i in range(len(info["numberOfTimesExecutedEachAction"])):
                 #actionName = Actions(i).name
@@ -113,7 +116,8 @@ class Logger:
         Logger.init()
         file_name = "score_" + str(learner_id) + ".txt"
         file_path = Logger.path_scores / file_name
-        with open(file_path, "a+") as f:
+        file_path.touch(exist_ok=True)
+        with file_path.open(mode="a+") as f:
             f.write("Step {0}: PreviousScore: {1}, CurrentScore: {2}\r\n".format(
                 iteration, oldScore, currentScore))
 
@@ -122,15 +126,16 @@ class Logger:
         file_name = "rwd_" + str(iteration) + "_" + str(learner_id) + "_" + str(rnd) + ".json"
 
         file_path = Logger.path_rewards / file_name
-
-        with open(file_path, "w") as f:
+        file_path.touch(exist_ok=True)
+        with file_path.open(mode="w") as f:
             f.write(json.dumps(rewards))
 
     def log_losses(loss, iteration, learner_id):
         Logger.init()
         file_name = "loss_" + str(iteration) + "_" + str(learner_id) + ".json"
         file_path = Logger.path_losses / file_name
-        with open(file_path, "w") as f:
+        file_path.touch(exist_ok=True)
+        with file_path.open(mode="w") as f:
             f.write(json.dumps(loss))
 
     def read_metadata():

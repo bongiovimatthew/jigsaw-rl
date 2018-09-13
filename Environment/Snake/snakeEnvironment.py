@@ -165,6 +165,8 @@ class SnakeEnvironment(Environment):
         self.game = Game()
         self.player = Player(3)
         self.apple = Apple(2, 1)
+        self.movesCount = 0
+        self.numberOfTimesExecutedEachAction = list(range(self.MAX_ACTIONS_NUM))
 
     def reset(self):
         self._running = False
@@ -195,14 +197,17 @@ class SnakeEnvironment(Environment):
 
     def step(self, action):
         next_state = self._convert_state(action)
-
+        self.movesCount += 1
         #imgDisp = Image.fromarray(next_state, 'RGB')
         # imgDisp.show()
+        self.numberOfTimesExecutedEachAction[action] += 1
+
         reward, done, info = self.check_state()
 
         if done:
             print("------------------------------------------------------")
             print("Game Over: Score: {0}".format(self.player.length - 3))
+            print("Num Moves: {0}".format(self.movesCount))
             print("------------------------------------------------------")
             print()
 
@@ -212,6 +217,12 @@ class SnakeEnvironment(Environment):
         reward = 0
         info = {}
         done = False
+        info['oldScore'] = self.player.length
+        info['movesCount'] = self.movesCount
+        info["negativeRewardCount"] = -1 
+        info["zeroRewardCount"] = -1
+        info["positiveRewardCount"] = -1
+        info['numberOfTimesExecutedEachAction'] = self.numberOfTimesExecutedEachAction
 
         # does snake eat apple?
         if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0]):
@@ -228,6 +239,8 @@ class SnakeEnvironment(Environment):
         if self.game.isOutOfBounds(self.player.x[0], self.player.y[0]):
             reward = -5
             done = True
+
+        info['score'] = self.player.length
 
         return (reward, done, info)
 
