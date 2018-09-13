@@ -6,11 +6,10 @@ import os
 
 
 class Apple:
-    x = 0
-    y = 0
-    step = 44
-
+    
     def __init__(self, x, y):
+        self.step = 50
+
         self.x = x * self.step
         self.y = y * self.step
 
@@ -21,8 +20,8 @@ class Apple:
         counter = 0
         touchesSnake = True
         while counter < 1000000 and touchesSnake:
-            self.x = randint(1, 17) * 44
-            self.y = randint(1, 12) * 44
+            self.x = randint(0, (800 / 50) - 1) * self.step
+            self.y = randint(0, (600 / 50) - 1) * self.step
             touchesSnake = False
 
             for i in range(0, player.length):
@@ -33,10 +32,8 @@ class Apple:
             counter += 1
         return self
 
-
 class Player:
 
-    step = 44
     direction = 0
     length = 3
 
@@ -47,13 +44,20 @@ class Player:
         self.x = [0]
         self.y = [0]
         self.length = length
+        self.step = 50 
+
         for i in range(0, 2000):
             self.x.append(-100)
             self.y.append(-100)
 
         # initial positions, no collision.
-        self.x[1] = 1*44
-        self.x[2] = 2*44
+        self.x[0] = 2 * self.step
+        self.x[1] = 1 * self.step
+        self.x[2] = 0
+
+        self.y[0] = 0
+        self.y[1] = 0
+        self.y[2] = 0
 
     def update(self):
         self.updateCount = self.updateCount + 1
@@ -104,18 +108,18 @@ class Player:
 
 class Game:
 
-    def isOutOfBounds(self, x1, y1, bsize):
-        if x1 >= 750:
+    def isOutOfBounds(self, x1, y1):
+        if x1 >= 800:
             return True
 
-        if y1 >= 550:
+        if y1 >= 600:
             return True
 
         if x1 < 0 or y1 < 0:
             return True
         return False
 
-    def isCollision(self, x1, y1, x2, y2, bsize):
+    def isCollision(self, x1, y1, x2, y2):
         if x1 == x2 and y1 == y2:
             return True
         return False
@@ -136,7 +140,7 @@ class App:
         self._head_surf = None
         self.game = Game()
         self.player = Player(3)
-        self.apple = Apple(5, 5)
+        self.apple = Apple(2, 1)
 
     def on_init(self):
         pygame.init()
@@ -159,7 +163,7 @@ class App:
         reward = 0
 
         # does snake eat apple?
-        if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0], 44):
+        if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0]):
             self.apple = self.apple.place(self.player)
             self.player.length = self.player.length + 1
             reward = 1
@@ -167,13 +171,13 @@ class App:
 
         # does snake collide with itself?
         for i in range(2, self.player.length):
-            if self.game.isCollision(self.player.x[0], self.player.y[0], self.player.x[i], self.player.y[i], 40):
+            if self.game.isCollision(self.player.x[0], self.player.y[0], self.player.x[i], self.player.y[i]):
                 reward = -1
                 done = True
                 #print("Reward -1")
                 self._running = False
 
-        if self.game.isOutOfBounds(self.player.x[0], self.player.y[0], 44):
+        if self.game.isOutOfBounds(self.player.x[0], self.player.y[0]):
             reward = -1
             done = True
             #print("Reward -1")
