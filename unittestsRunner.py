@@ -1,8 +1,9 @@
 from tests.test_puzzleGenerate import PuzzleGenerateTests
-
+from tests.test_snakeGame import SnakeGameTests
 
 def main():
-    PuzzleGenerateTests.TestGenerateAndDisplayPuzzle()
+    #PuzzleGenerateTests.TestGenerateAndDisplayPuzzle()
+    SnakeGameTests.TestGenerateAndDisplayPuzzle()
     return
 
 
