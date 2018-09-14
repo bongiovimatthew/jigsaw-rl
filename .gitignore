@@ -9,6 +9,7 @@ gameOutput.txt
 models/
 tensorboard_pi_logs/
 tensorboard_v_logs/
+tf_train/
 *.models
 
 # C extensions

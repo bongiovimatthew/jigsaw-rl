@@ -1,77 +1,85 @@
-# Reinforcement Learning - Jigsaw Puzzle 
+# Reinforcement Learning - Multiple Games
 
 ## Overview 
 
-This project contains an implementation of a jigsaw puzzle game, along with a learning agent. 
+This project contains an implementation of a jigsaw puzzle game, a snake game, and multiple learning agents which learn to play both games.
+
+## Jigsaw Game 
+
 The puzzle game takes an image and generates a simple jigsaw puzzle, similar to below. The jigsaw puzzle is then randomly initialized onto a playing surface, at which point, our learning agent can interact with it. 
 
 ![Puzzle Sliced](./images/docs/puzzle_sliced.png =250x250)
 
 ![Puzzle Initialized](./images/docs/puzzle_shuffled.PNG =250x250)
 
+
 ## Running the Code 
 
-You will need to install a handful of dependencies before running this project. 
+Before you run the code, you must install all dependencies: 
 
+`pipenv install -e .` 
 
-* __CNTK__: Used to perform NN operations, maintain state, etc. 
+Once the dependencies are installed, you should run the virtual environment with: 
 
-	`pip install cntk`
-
-* __Python Imaging Library__: Used for generating and manipulating puzzle pieces from an image 
-
-	`pip install pillow `
-
-* __Numpy__: Used for numerous array and mathematical operations 
-
-    `pip install numpy `
-
-* __SciPy__: Used for saving images of puzzle state
-
-    `pip install scipy `
-
-* __Pynput__: Used for controlling the human version of the puzzle game 
-
-	`pip install pynput`
-
-* __Celery__: Used for debugging (setting breakpoints, analyzing memory, etc.)
-
-    `pip install celery`
+`pipenv shell`
 
 
 
-Once all the dependencies are installed, you can begin the different learning agents by running one of the following: 
+Once the virtual environment is up and running, you can begin the actor critic learning agents by running the following: 
 
-`python a3cRunner.py` 
+`python actorCriticRunner.py` 
 
-This will run the A3C learning agent against the Jigsaw Puzzle game for `--T-max` training games, updating the NN as it learns. After the training games, the model will be evaluated. 
+This will run the A2C learning agent against the Jigsaw Puzzle game for `--T-max` training games, updating the NN as it learns. 
+
+If you wish to run the agent against the Snake game instead of the Jigsaw Puzzle, you should adjust the environment definition in `actorCriticRunner.py`. 
 
 
-`python dqnRunner.py` 
+## Human Testing
 
-This will run the Deep Q learning agent
-
+If you want to run the Jigsaw Puzzle game in human-playable form, you can run: 
 
 `python humanGameRunner.py` 
 
-This will run the human-playable game that interacts with the puzzle environment the same way the learners do. 
 
+If you want to run the Snake game in human-playable form, you can run: 
+
+`python .\Environment\Snake\snake.py`
+
+Note that the snake game currently runs the pygame implementation, and not the pillow implementation. This means that the human version of the game does not properly test the snake environment. If you wish to test against the true Snake environment, you should run the unit tests. 
+
+
+## Unit Tests 
+
+There are a handful of unit tests you can use to validate environment behavior. You should adjust `unittestsRunner.py` to execute the unit tests you wish to run. 
+
+
+## Visualizing the Model with TensorBoard 
+
+You can use TensorBoard to visualize the model training progress, and monitor several health metrics. 
+
+To do this, run the following: 
+
+    tensorboard --logdir=tf_train  http://localhost:6006/
+
+Then, navigate to http://localhost:6006/
 
 
 ## Package Overview 
 
-jigsaw-rl/ 
-
-   __A3C/__ - package containing the A3C learner and supporting Neural Network code 
-
-   __Environment/__ - package containing the jigsaw puzzle environment that the learners interact with 
-   
-   __Diagnostics/__ - package containing diagnostics tools such as logging 
-
-   __HumanGame/__ - package containing a human-playable game that interacts with the environment the same way the learners do 
-
-   __QLearning/__ - package containing the Deep Q leaner and supporting Neural Network code
-
+jigsaw-rl
+.
++-- ActionChoosers: contains the action choosers responsible for selecting the action an agent should take 
++-- Brain: the neural network logic 
++-- Diagnostics: logging, metrics, etc. 
++-- Environment
+|   +-- JigsawPuzzle: the Jigsaw Puzzle game 
+|   +-- Snake: the Snake game 
++-- HumanGame: runs the Jigsaw Puzzle environment so that a human can play (instead of a learning agent)
++-- Learners: the learning agents
++-- tests: unit tests 
++-- actorCriticRunner.py
++-- humanGameRunner.py
++-- unittestsRunner.py
 
 
 ## How the Game Works 
@@ -86,16 +94,6 @@ jigsaw-rl/
 
 
 * [Deep Q Learning against Atari games](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf)
-
-## Visualizing the Model with TensorBoard 
-
-You can use TensorBoard to visualize the model training progress, and monitor several health metrics. 
-
-To do this, run the following: 
-
-    tensorboard --logdir=log
-
-Then, navigate to http://localhost:6006/
 
 
 flake8 --ignore="E265,E501"

@@ -3,6 +3,7 @@ from puzzleFactory import PuzzleFactory
 from env import PuzzleEnvironment
 from PIL import Image
 import random
+from pathlib import Path
 
 
 def DrawPiecesInArrayOrder(initialPieceState, puzzle):
@@ -11,7 +12,11 @@ def DrawPiecesInArrayOrder(initialPieceState, puzzle):
 
 def TestInitialScoring():
     factory = PuzzleFactory()
-    puzzle = factory.generatePuzzle('images\\rainier.jpg', 3, 3)
+
+    img_folder = Path("images/")
+    puzzle_img_path = img_folder / "rainier_small.jpg"
+
+    puzzle = factory.generatePuzzle(puzzle_img_path, 3, 3)
     initialPieceState, guidArray = factory.createRandomPuzzlePieceArray(puzzle)
 
     env = PuzzleEnvironment(puzzle, initialPieceState, guidArray)

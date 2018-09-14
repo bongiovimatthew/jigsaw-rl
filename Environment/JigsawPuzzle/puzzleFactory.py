@@ -191,6 +191,7 @@ class PuzzleFactory:
 
         return (2, 2), coordsToSetTo[-1]
 
+
     # Generates the randomly placed, randomly rotated pieces
     #  Rotation based on image data (no geom)
     def placePiecesOnBoard(puzzle, listOfPiecesAvailable):
