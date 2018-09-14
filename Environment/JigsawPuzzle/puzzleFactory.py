@@ -187,16 +187,16 @@ class PuzzleFactory:
         #piece.coords_x = random.randint(3, sideDimension - 1)
         #piece.coords_y = random.randint(3, sideDimension - 1)
 
-        optionToPick = random.randint(0, 2)
+        coordsToSetTo = [(4,4), (3,4), (4,3), (3,3), (3,2), (2,3)] 
 
-        coordsToSetTo = [(3,3), (3,2), (2,3)] 
-
-        return (2, 2), coordsToSetTo[0]
+        return (2, 2), coordsToSetTo[-1]
 
 
     # Generates the randomly placed, randomly rotated pieces
     #  Rotation based on image data (no geom)
     def placePiecesOnBoard(puzzle, listOfPiecesAvailable):
+
+        PuzzleFactory.optionToPick = random.randint(0, 5)
 
         sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY
 
