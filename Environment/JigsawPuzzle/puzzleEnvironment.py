@@ -5,6 +5,7 @@ from Environment.JigsawPuzzle.puzzleFactory import PuzzleFactory
 from enum import Enum
 from pathlib import Path
 
+import random
 
 class Actions(Enum):
     ACTION_TRANS_UP    = 0
@@ -62,7 +63,8 @@ class PuzzleEnvironment(Environment):
             count = 0
             for piece in self.pieceState:
                 if (piece.coords_y == after[1]) and piece.coords_x == after[0]:
-                    self.currentPieceIndex = count
+                    cycle_offset = 0 # random.randint(0, 4)
+                    self.currentPieceIndex = count - cycle_offset
 
                 if (self.debugMode):
                     print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(
@@ -71,6 +73,8 @@ class PuzzleEnvironment(Environment):
                 count += 1
         else:
             self.currentPieceIndex = 0
+    
+        # self.currentPieceIndex = random.randint(0, len(self.pieceState) - 1) #
 
         self.oldScore = self.getScoreOfCurrentState()
         self.stepCount = 0
@@ -162,8 +166,7 @@ class PuzzleEnvironment(Environment):
         self.stepCount += 1
         next_state = self._convert_state(action)
         currentScore = self.getScoreOfCurrentState()
-
-        done = self.isMaxReward(currentScore) or (self.stepCount > 1)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 35)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore
@@ -179,11 +182,11 @@ class PuzzleEnvironment(Environment):
         #     reward = -1
 
         # reward = reward / 180
-        # reward = ((reward / 180) + 1) / 10
+        reward = ((reward / 180)) # / 2
         if self.isMaxReward(currentScore):
-            reward = 1
-        else:
-            reward = 0
+            reward = 2
+        # else:
+        #     reward = 0
 
         self.numberOfTimesExecutedEachAction[action] += 1
 
