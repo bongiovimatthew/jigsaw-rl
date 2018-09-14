@@ -189,7 +189,7 @@ class PuzzleFactory:
 
         coordsToSetTo = [(4,4), (3,4), (4,3), (3,3), (3,2), (2,3)] 
 
-        return (2, 2), coordsToSetTo[PuzzleFactory.optionToPick]
+        return (2, 2), coordsToSetTo[-1]
 
     # Generates the randomly placed, randomly rotated pieces
     #  Rotation based on image data (no geom)
