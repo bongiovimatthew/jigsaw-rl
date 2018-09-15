@@ -78,7 +78,7 @@ class ActorCriticAgent:
         self.training_batch_length = batch_length     
         self.game_length = game_length
         self.learner_id = "ActorCriticLearner"   
-        self.debug_mode = False
+        self.debug_mode = True
         self.pause_when_training = False
 
     def run(self):
@@ -89,8 +89,6 @@ class ActorCriticAgent:
             self.set_R()
             self.calculate_gradients()
             self.calculate_gradients()
-
-        self.debug_mode = True
 
         # Just test essentially i.e. no train
         while self.total_step_count < (self.total_max_moves + 100):
