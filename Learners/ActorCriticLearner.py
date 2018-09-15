@@ -78,7 +78,7 @@ class ActorCriticAgent:
         self.training_batch_length = batch_length     
         self.game_length = game_length
         self.learner_id = "ActorCriticLearner"   
-        self.debug_mode = True
+        self.debug_mode = False
         self.pause_when_training = False
         self.print_images_start_end = True
 

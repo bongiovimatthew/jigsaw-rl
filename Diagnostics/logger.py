@@ -6,6 +6,7 @@ import numpy as np
 from scipy.misc import imsave
 #from Environment.env import Actions
 from pathlib import Path
+from datetime import datetime
 
 class Logger:
 
@@ -69,7 +70,9 @@ class Logger:
         Logger.init()
         #pngfile = "testImage.png"
         #pngWriter.write(pngfile, numpy.reshape(boardData, (-1, column_count * plane_count)))
-        timestr = time.strftime("%Y%m%d-%H%M%S")
+        timestr = time.strftime("%Y%m%d-%H%M%S_") + str(int(datetime.now().microsecond / 1000))
+ 
+        
         file_name = "stateImage_" + str(learner_id) + "_" + str(steps) + "_" + timestr + "_action_" + str(action) + ".png"
         file_path = Logger.path_state_images / file_name
         file_path.touch(exist_ok=True)

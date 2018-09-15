@@ -49,7 +49,7 @@ class PuzzleEnvironment(Environment):
             initializer = json.load(f)
 
         self.MAX_GAME_MOVES = initializer['max_game_moves']
-        self.SELECTED_PIECE_OFFSET = random.randint(0, initializer['max_selected_offset'])
+        self.MAX_SELECTED_PIECE_OFFSET =  initializer['max_selected_offset']
         
         img_folder = Path("images/")
         puzzle_img_path = img_folder / initializer['img_path']
@@ -84,7 +84,9 @@ class PuzzleEnvironment(Environment):
             count = 0
             for piece in self.pieceState:
                 if (piece.coords_y == afters[0][1]) and piece.coords_x == afters[0][0]:
-                    self.currentPieceIndex = (len(self.pieceState) + count - self.SELECTED_PIECE_OFFSET) % len(self.pieceState)
+                    cycle_offset = random.randint(0, self.MAX_SELECTED_PIECE_OFFSET)
+                    print("cycle_offset:", cycle_offset)
+                    self.currentPieceIndex = (len(self.pieceState) + count - cycle_offset) % len(self.pieceState)
 
                 if (self.debugMode):
                     print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(
