@@ -164,7 +164,7 @@ class SnakeEnvironment(Environment):
         self._running = True
         self.game = Game()
         self.player = Player(3)
-        self.apple = Apple(2, 1)
+        self.apple = Apple(4, 4)
         self.movesCount = 0
         self.numberOfTimesExecutedEachAction = list(range(self.MAX_ACTIONS_NUM))
 
@@ -214,7 +214,7 @@ class SnakeEnvironment(Environment):
         return (next_state, reward, done, info)
 
     def check_state(self):
-        reward = 0
+        reward = 0.25
         info = {}
         done = False
         info['oldScore'] = self.player.length
@@ -228,16 +228,16 @@ class SnakeEnvironment(Environment):
         if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0]):
             self.apple = self.apple.place(self.player)
             self.player.length = self.player.length + 1
-            reward = 2 * self.player.length
+            reward = 1  #+ 2 * self.player.length
 
         # does snake collide with itself?
         for i in range(2, self.player.length):
             if self.game.isCollision(self.player.x[0], self.player.y[0], self.player.x[i], self.player.y[i]):
-                reward = -5
+                reward = 0
                 done = True
 
         if self.game.isOutOfBounds(self.player.x[0], self.player.y[0]):
-            reward = -5
+            reward = 0
             done = True
 
         info['score'] = self.player.length
@@ -250,4 +250,4 @@ class SnakeEnvironment(Environment):
         self.player.draw(self._display_surf, self._image_surf, self._head_surf)
         self.apple.draw(self._display_surf, self._apple_surf)
         return np.array(self._display_surf)
-        return np.rot90(np.flipud(surfarray.array3d(self._display_surf)), axes=(1,0))
+        #return np.rot90(np.flipud(surfarray.array3d(self._display_surf)), axes=(1,0))
