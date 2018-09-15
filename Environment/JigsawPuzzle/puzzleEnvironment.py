@@ -192,20 +192,9 @@ class PuzzleEnvironment(Environment):
 
         reward = currentScore - tempOldScore
 
-
-        # if self.isMaxReward(currentScore):
-        #     reward = 1
-        # elif reward > 0:
-        #     reward = 0.5
-        # elif reward < 0:
-        #     reward = -1
-
-        # reward = reward / 180
-        # reward = ((reward / 180) + 1) / 10
+        reward = ((reward / 180)) 
         if self.isMaxReward(currentScore):
-            reward = 1
-        else:
-            reward = 0
+            reward = 2
 
         self.numberOfTimesExecutedEachAction[action] += 1
 
@@ -244,8 +233,8 @@ class PuzzleEnvironment(Environment):
                 if (self.debugMode):
                     print("CURRENTPIECE_INDEX: {0}", self.currentPieceIndex)
                 # Add a green bar on the current piece
-                greenSquareW = 5
-                greenSquareH = 5
+                greenSquareW = 10
+                greenSquareH = 10
                 boardCopy[baseY: baseY + greenSquareH, baseX: baseX + greenSquareW] = [0, 255, 0]
                 boardCopy[baseY + yHeight - greenSquareH: baseY +
                           yHeight, baseX: baseX + greenSquareW] = [0, 255, 0]

@@ -80,8 +80,13 @@ class ActorCriticAgent:
         self.learner_id = "ActorCriticLearner"   
         self.debug_mode = True
         self.pause_when_training = False
+        self.print_images_start_end = True
 
     def run(self):
+
+        if self.print_images_start_end:
+                logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, 10,
+                                       (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
 
         while self.total_step_count < self.total_max_moves:
 
@@ -90,8 +95,10 @@ class ActorCriticAgent:
             self.calculate_gradients()
             self.calculate_gradients()
 
+        self.debug_mode = True
+
         # Just test essentially i.e. no train
-        while self.total_step_count < (self.total_max_moves + 100):
+        while self.total_step_count < (self.total_max_moves + 500):
             self.play_game_for_a_while()
 
 
@@ -111,9 +118,18 @@ class ActorCriticAgent:
             if self.debug_mode:
                 logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, -1,
                                        (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
+
+            if self.print_images_start_end:
+                logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, 20,
+                                       (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
+
             self.current_state = ActorCriticLearner.process_img(ActorCriticLearner.env_reset(self.env, self.queue))
 
+            if self.print_images_start_end:
+                logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, 10,
+                                       (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
             self.queue.add(self.current_state, 0, 0, False)
+
             self.queue.set_discounted_reward_at(self.queue.get_last_idx(), 0)
 
             self.episode_step_count = 0

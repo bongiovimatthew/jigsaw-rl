@@ -242,7 +242,10 @@ class TFBrain(IBrain):
 
         init = tf.global_variables_initializer()
 
-        self.sess = tf.Session()
+        config = tf.ConfigProto()
+        # config.gpu_options.allow_growth = True
+        config.gpu_options.per_process_gpu_memory_fraction = 0.7
+        self.sess = tf.Session(config=config)
         # if self.debugMode:
         #     self.sess = tf_debug.LocalCLIDebugWrapperSession(self.sess)
 

@@ -228,7 +228,6 @@ class PuzzleFactory:
 
             #if not self.USE_SCOPED_DOWN:
             #    piece.rotate()
-
             done = False
             while not done:
 
