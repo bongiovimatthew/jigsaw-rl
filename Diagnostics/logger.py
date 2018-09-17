@@ -28,7 +28,10 @@ class Logger:
         if Logger.logger_initiated:
             return
 
-        Logger.create_folders_internal()
+        try:
+            Logger.create_folders_internal()
+        except:
+            Logger.create_folders_internal()
         Logger.logger_initiated = True
 
         return
