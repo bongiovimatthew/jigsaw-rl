@@ -1,9 +1,11 @@
 import tensorflow as tf
 import numpy as np
+import os
 # import tf_cnnvis 
 
 from tensorflow.python import debug as tf_debug
 from Brain.IBrain import IBrain 
+from pathlib import Path
 # tensorboard --logdir=tf_train  http://localhost:6006/
 
 class BaseTFModel():
@@ -11,10 +13,8 @@ class BaseTFModel():
 
         local_state = tf.reshape(self.state, shape=[-1, self.STATE_WIDTH, self.STATE_HEIGHT, 1])
 
-        # Convolution Layer with no padding
-        conv1 = tf.layers.conv2d(local_state, filters=8, kernel_size=(8, 8), strides=8, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv1")
+        conv1 = tf.layers.conv2d(local_state, filters=8, kernel_size=(8, 8), strides=4, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv1")
 
-        # Convolution Layer with 64 filters and a kernel size of 3
         conv2 = tf.layers.conv2d(conv1, filters=16, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv2")
 
         # Flatten the data to a 1-D vector for the fully connected layer
@@ -231,7 +231,8 @@ class Actor(BaseTFModel):
         return out
 
 class TFBrain(IBrain): 
-
+    MODEL_PREFIX = "model"
+    META_SUFFIX = ".meta"
     def __init__(self, num_actions, lr, stateShape):
         self.num_actions = num_actions
         self.lr = lr
@@ -243,9 +244,15 @@ class TFBrain(IBrain):
         self.Actor_global = Actor(num_actions, lr, stateShape, "ActorModel_global")
         self.Critic_global= Critic(num_actions, lr, stateShape, "CriticModel_global")
 
+        # Add ops to save and restore all the variables.
+        self.saver = tf.train.Saver()
+
         init = tf.global_variables_initializer()
 
-        self.sess = tf.Session()
+        config = tf.ConfigProto()
+        # config.gpu_options.allow_growth = True
+        config.gpu_options.per_process_gpu_memory_fraction = 0.7
+        self.sess = tf.Session(config=config)
         # if self.debugMode:
         #     self.sess = tf_debug.LocalCLIDebugWrapperSession(self.sess)
 
@@ -340,14 +347,21 @@ class TFBrain(IBrain):
         return self.trainer_pi.previous_minibatch_loss_average + self.trainer_v.previous_minibatch_loss_average
             
     # Called through logger 
-    def load_model(self, file_name_pi, file_name_v):
-        self.pi = load_model(file_name_pi) # load(fn) does different things, it would
-        self.v = load_model(file_name_v)   # create a new function. It did not work.
+    def load_model(self, model_path):
+        model_meta_path = str(model_path / (TFBrain.MODEL_PREFIX + TFBrain.META_SUFFIX))
+        if os.path.exists(str(model_meta_path)):
+            print("Model being loaded from path: %s" % model_meta_path)
+            new_saver = tf.train.import_meta_graph(model_meta_path)
+            new_saver.restore(self.sess, tf.train.latest_checkpoint(str(model_path)))
+            # self.saver.restore(self.sess, model_meta_path)
         
     # Called
-    def save_model(self, file_name_pi, file_name_v):
-        self.pi.save(file_name_pi)
-        self.v.save(file_name_v)
+    def save_model(self, model_path):
+        model_path = model_path / TFBrain.MODEL_PREFIX
+
+        # Save the variables to disk.
+        save_path = self.saver.save(self.sess, str(model_path))
+        print("Model saved in path: %s" % save_path)
 
     def __del__(self):
         print("Closing tf session")

@@ -1,0 +1,10 @@
+{
+    "max_game_moves": 100,
+    "max_selected_offset": 0,
+    "img_path": "rainier_small.jpg",
+    "size": [2, 2],
+    "scoped_down": 0,
+    "coords_to_move": [],
+    "coords_destination": [],
+    "coords_random_destination": 0
+}

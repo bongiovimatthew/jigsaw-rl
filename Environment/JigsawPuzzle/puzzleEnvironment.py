@@ -4,6 +4,8 @@ from Environment.JigsawPuzzle.edge import EdgeShape
 from Environment.JigsawPuzzle.puzzleFactory import PuzzleFactory
 from enum import Enum
 from pathlib import Path
+import random
+import json
 
 
 class Actions(Enum):
@@ -21,26 +23,45 @@ class Actions(Enum):
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 4
-    INCORRECT_OVERLAY_SCORE = -200
     CORRECT_GEOMMETRY_SCORE = 1
     INCORRECT_GEOMMETRY_SCORE = -2
     NOT_CONNECTED_SCORE = -1
+    
     CORRECT_PLACEMENT_SCORE = 100
+    INCORRECT_OVERLAY_SCORE = -200
 
     MAX_ACTIONS_NUM = 5
-
-    def __init__(self):
+    
+    def __init__(self, config):
         self.oldScore = 0
         self.debugMode = False
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
 
+        self.pieceState = None
+        self.puzzle = None
+        self.numberOfTimesExecutedEachAction = None
+        self.MAX_GAME_MOVES = 15
+        self.SELECTED_PIECE_OFFSET = 0
+
+        config_path = Path.cwd().joinpath('Environment', 'JigsawPuzzle', 'Initializers', config)
+        
+        with config_path.open(mode="r") as f:
+            initializer = json.load(f)
+
+        self.MAX_GAME_MOVES = initializer['max_game_moves']
+        self.MAX_SELECTED_PIECE_OFFSET =  initializer['max_selected_offset']
+        
         img_folder = Path("images/")
-        puzzle_img_path = img_folder / "rainier_small.jpg"
+        puzzle_img_path = img_folder / initializer['img_path']
+
+        self.init_core(puzzle_img_path, (initializer['size'][0], initializer['size'][1]), initializer['scoped_down'], initializer)
+
+    def init_core(self, puzzle_img_path, size, scoped_down, config_data):
 
         # Generate the puzzle
-        factory = PuzzleFactory()
-        puzzle = factory.generatePuzzle(puzzle_img_path, 3, 3)
-        randomizedPieces = factory.createRandomPuzzlePieceArray(puzzle)
+        self.factory = PuzzleFactory(config_data)
+        puzzle = self.factory.generatePuzzle(puzzle_img_path, size[0], size[1])
+        randomizedPieces = self.factory.createRandomPuzzlePieceArray(puzzle)
 
         # pieceState is an array of PuzzlePiece objects
         self.pieceState = randomizedPieces
@@ -55,14 +76,17 @@ class PuzzleEnvironment(Environment):
 
     def setupEnvironment(self):
         # Contains the relative position of the piece IDs in the current state
-        self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState)
+        self.guidArray = self.factory.placePiecesOnBoard(self.puzzle, self.pieceState)
 
-        if PuzzleFactory.getUseScopedDown():
-            before, after = PuzzleFactory.getCoordsToSelect()
+        if self.factory.USE_SCOPED_DOWN:
+            _, afters = self.factory.getCoordsToSelect()
+
             count = 0
             for piece in self.pieceState:
-                if (piece.coords_y == after[1]) and piece.coords_x == after[0]:
-                    self.currentPieceIndex = count
+                if (piece.coords_y == afters[0][1]) and piece.coords_x == afters[0][0]:
+                    cycle_offset = random.randint(0, self.MAX_SELECTED_PIECE_OFFSET)
+                    print("cycle_offset:", cycle_offset)
+                    self.currentPieceIndex = (len(self.pieceState) + count - cycle_offset) % len(self.pieceState)
 
                 if (self.debugMode):
                     print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(
@@ -163,27 +187,16 @@ class PuzzleEnvironment(Environment):
         next_state = self._convert_state(action)
         currentScore = self.getScoreOfCurrentState()
 
-        done = self.isMaxReward(currentScore) or (self.stepCount > 1)
+        done = self.isMaxReward(currentScore) or (self.stepCount > self.MAX_GAME_MOVES)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore
 
         reward = currentScore - tempOldScore
 
-
-        # if self.isMaxReward(currentScore):
-        #     reward = 1
-        # elif reward > 0:
-        #     reward = 0.5
-        # elif reward < 0:
-        #     reward = -1
-
-        # reward = reward / 180
-        # reward = ((reward / 180) + 1) / 10
+        reward = ((reward / 180)) 
         if self.isMaxReward(currentScore):
-            reward = 1
-        else:
-            reward = 0
+            reward = 2
 
         self.numberOfTimesExecutedEachAction[action] += 1
 
@@ -222,8 +235,8 @@ class PuzzleEnvironment(Environment):
                 if (self.debugMode):
                     print("CURRENTPIECE_INDEX: {0}", self.currentPieceIndex)
                 # Add a green bar on the current piece
-                greenSquareW = 5
-                greenSquareH = 5
+                greenSquareW = 10
+                greenSquareH = 10
                 boardCopy[baseY: baseY + greenSquareH, baseX: baseX + greenSquareW] = [0, 255, 0]
                 boardCopy[baseY + yHeight - greenSquareH: baseY +
                           yHeight, baseX: baseX + greenSquareW] = [0, 255, 0]

@@ -11,9 +11,16 @@ from Environment.JigsawPuzzle.puzzle import Puzzle
 
 class PuzzleFactory:
     NUMBER_OF_PIECES_TO_SCALE_BY = 2
-    USE_SCOPED_DOWN = True
-
+    
     def __init__(self):
+        self.USE_SCOPED_DOWN = False
+        return
+ 
+    def __init__(self, config_data):
+        self.USE_SCOPED_DOWN = config_data['scoped_down']
+        self.initializer = config_data
+        self.coordsToSetTo = []
+        self.coordsToMove = []
         return
 
     def generatePuzzle(self, imgFileName, xNumPieces, yNumPieces):
@@ -178,23 +185,33 @@ class PuzzleFactory:
 
         return listOfPiecesAvailable
 
-    def getUseScopedDown():
-        return PuzzleFactory.USE_SCOPED_DOWN
-
-    def getCoordsToSelect():
+    def getCoordsToSelect(self):
         # (BeforeX, BeforeY), (AfterX, AfterY)
 
         #piece.coords_x = random.randint(3, sideDimension - 1)
         #piece.coords_y = random.randint(3, sideDimension - 1)
+        if len(self.coordsToMove ) > 0 and len(self.coordsToSetTo) > 0: 
+            return self.coordsToMove, self.coordsToSetTo 
 
-        coordsToSetTo = [(4,4), (3,4), (4,3), (3,3), (3,2), (2,3)] 
+        for item in self.initializer['coords_to_move']:
+            self.coordsToMove.append( (item['x'], item['y']))
 
-        return (2, 2), coordsToSetTo[-1]
+        if self.initializer['coords_random_destination']:
+
+            if len(self.coordsToSetTo) == 0:
+                # Set the coords randomly             
+                for coords in self.coordsToMove:
+                    self.coordsToSetTo.append( (random.randint(3, self.initializer['size'][0] * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY - 1), random.randint(3, self.initializer['size'][1] * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY - 1)) )
+        else: 
+            for item in self.initializer['coords_destination']:
+                self.coordsToSetTo.append( (item['x'], item['y']) )
+
+        return self.coordsToMove, self.coordsToSetTo 
 
 
     # Generates the randomly placed, randomly rotated pieces
     #  Rotation based on image data (no geom)
-    def placePiecesOnBoard(puzzle, listOfPiecesAvailable):
+    def placePiecesOnBoard(self, puzzle, listOfPiecesAvailable):
 
         PuzzleFactory.optionToPick = random.randint(0, 5)
 
@@ -209,21 +226,23 @@ class PuzzleFactory:
 
         for piece in listOfPiecesAvailable:
 
-            if not PuzzleFactory.USE_SCOPED_DOWN:
-                piece.rotate()
-
+            #if not self.USE_SCOPED_DOWN:
+            #    piece.rotate()
             done = False
             while not done:
 
-                if PuzzleFactory.USE_SCOPED_DOWN:
+                if self.USE_SCOPED_DOWN:
                     piece.coords_x = piece.correct_coords_x
                     piece.coords_y = piece.correct_coords_y
 
-                    before, after = PuzzleFactory.getCoordsToSelect()
+                    befores, afters = self.getCoordsToSelect()
+                    i = 0
+                    for before in befores:
+                        if (piece.coords_x == before[0]) and (piece.coords_y == before[1]):
 
-                    if (piece.coords_x == before[0]) and (piece.coords_y == before[1]):
-                        piece.coords_x = after[0]
-                        piece.coords_y = after[1]
+                            piece.coords_x = afters[i][0]
+                            piece.coords_y = afters[i][1]
+                        i += 1
 
                 else:
                     piece.coords_x = random.randint(0, sideDimension - 1)

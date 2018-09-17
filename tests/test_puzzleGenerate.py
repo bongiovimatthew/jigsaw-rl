@@ -1,7 +1,16 @@
 from Environment.JigsawPuzzle.puzzleFactory import PuzzleFactory
+from Environment.JigsawPuzzle.puzzleEnvironment import PuzzleEnvironment
 from pathlib import Path
+from PIL import Image
 
 class PuzzleGenerateTests:
+
+    def TestPuzzleEnvironment(): 
+        paths = ['full_2_2.json', 'single_piece_3_3.json', 'single_piece_3_3_cycle.json', 'single_piece_3_3_random_cycle.json']
+        env = PuzzleEnvironment(paths[2])
+        state = env.render()
+        img = Image.fromarray(state, 'RGB')
+        img.show()
 
     def TestGenerateAndDisplayPuzzle():
         factory = PuzzleFactory()

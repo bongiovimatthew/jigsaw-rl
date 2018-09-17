@@ -1,5 +1,7 @@
 import numpy as np
 import random
+import os
+
 from PIL import Image
 
 from Brain.dnn import DeepNetBrain
@@ -10,19 +12,20 @@ from Diagnostics.logger import Logger as logger
 from ActionChoosers.EpsilonGreedyActionChooser import EpsilonGreedyActionChooser
 from Learners.BatchQueue import BatchQueue
 from Learners.CircularBatchQueue import CircularBatchQueue
+from pathlib import Path
 
 class ActorCriticLearner:
 
     STATE_WIDTH = 160
     STATE_HEIGHT = 160
 
-    def execute_agent(env, batch_length, game_length, total_max_moves, gamma, lr):
+    def execute_agent(env, batch_length, game_length, total_max_moves, gamma, lr, load_model, evaluate_mode):
         agent = ActorCriticLearner.create_agent(
-            env, batch_length, game_length, total_max_moves, gamma, lr)
+            env, batch_length, game_length, total_max_moves, gamma, lr, load_model, evaluate_mode)
         agent.run()
 
-    def create_agent(env, batch_length, game_length, total_max_moves, gamma, lr):
-        agent = ActorCriticAgent(env, batch_length, game_length, total_max_moves, gamma, lr)
+    def create_agent(env, batch_length, game_length, total_max_moves, gamma, lr, load_model, evaluate_mode):
+        agent = ActorCriticAgent(env, batch_length, game_length, total_max_moves, gamma, lr, load_model, evaluate_mode)
         return agent
 
     # Preprocessing of the raw frames from the game
@@ -44,12 +47,14 @@ class ActorCriticLearner:
         return obs, rw, done, info
 
 class ActorCriticAgent:
+    model_path = Path('models/')
 
-    def __init__(self, env, batch_length, game_length, total_max_moves, gamma, lr):
+    def __init__(self, env, batch_length, game_length, total_max_moves, gamma, lr, load_model, evaluate_mode):
 
         self.env = env
 
         brain = TFBrain(self.env.action_space.n, lr, (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
+
         self.ActionChooser = EpsilonGreedyActionChooser(brain)
 
         self.gamma = gamma
@@ -80,21 +85,37 @@ class ActorCriticAgent:
         self.learner_id = "ActorCriticLearner"   
         self.debug_mode = False
         self.pause_when_training = False
+        self.print_images_start_end = True
+        self.flag_load_model = load_model
+        self.evaluate_mode = evaluate_mode 
+
+        if load_model:
+            self.load_model()
 
     def run(self):
+
+        if self.print_images_start_end:
+                logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, 10,
+                                       (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
 
         while self.total_step_count < self.total_max_moves:
 
             self.play_game_for_a_while()
-            self.set_R()
-            self.calculate_gradients()
-            self.calculate_gradients()
 
-        self.debug_mode = True
+            if not self.evaluate_mode:
+                self.set_R()
+                self.calculate_gradients()
+                self.calculate_gradients()
 
-        # Just test essentially i.e. no train
-        while self.total_step_count < (self.total_max_moves + 100):
-            self.play_game_for_a_while()
+                if self.total_step_count % 5000 == 0 or self.total_step_count >= self.total_max_moves:
+                    self.save_model()
+
+        if not self.evaluate_mode:
+            self.debug_mode = True
+
+            # Just test essentially i.e. no train
+            while self.total_step_count < (self.total_max_moves + 500):
+                self.play_game_for_a_while()
 
 
     def set_R(self):
@@ -103,8 +124,11 @@ class ActorCriticAgent:
         if self.is_terminal:
             self.R[0][0] = 0.0  # Without this, error dropped. special format is given back.
 
-    def save_model(self, path_model_pi, path_model_v):
-        self.ActionChooser.get_brain().save_model(path_model_pi, path_model_v)
+    def save_model(self):
+        self.ActionChooser.get_brain().save_model(ActorCriticAgent.model_path)
+
+    def load_model(self):
+        self.ActionChooser.get_brain().load_model(ActorCriticAgent.model_path)
 
     def play_game_for_a_while(self):
         self.current_step_count = 0
@@ -113,15 +137,28 @@ class ActorCriticAgent:
             if self.debug_mode:
                 logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, -1,
                                        (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
+
+            if self.print_images_start_end:
+                logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, 20,
+                                       (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
+
             self.current_state = ActorCriticLearner.process_img(ActorCriticLearner.env_reset(self.env, self.queue))
 
+            if self.print_images_start_end:
+                logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, 10,
+                                       (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
             self.queue.add(self.current_state, 0, 0, False)
+
             self.queue.set_discounted_reward_at(self.queue.get_last_idx(), 0)
 
             self.episode_step_count = 0
             self.is_terminal = False
 
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1.5) / self.total_max_moves)
+        
+        if self.evaluate_mode:
+            self.epsilon = 0.1
+        else:
+            self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1.5) / self.total_max_moves)
                            * self.total_step_count)  # first decreasing, then it is constant
 
         batch_count_start = self.episode_step_count
@@ -154,7 +191,6 @@ class ActorCriticAgent:
         idx = self.queue.get_last_idx()
         final_index = (idx - self.current_step_count) + 1 # max(idx - self.current_step_count, (-1 * self.current_step_count))
 
-        print("Init self.R: ", self.R)
         for idx in range(idx, final_index - 1, -1):
             reward = (self.queue.get_reward_at(idx))
 
@@ -184,8 +220,6 @@ class ActorCriticAgent:
         discounted_rewards = []
 
         indices_array = self.get_indices_to_train()
-
-        print("indices_array: ", indices_array)
 
         for idx in indices_array:
             states.append(self.queue.get_state_at(idx))
