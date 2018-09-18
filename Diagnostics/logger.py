@@ -83,9 +83,10 @@ class Logger:
         input_img = np.array(boardData)
 
         # Reshape input to meet with CNTK expectations.
-        grayScaleImg = np.reshape(input_img, (stateShape[0], stateShape[1]))
+        #grayScaleImg = np.reshape(input_img, (stateShape[0], stateShape[1]))
+        out_image = np.reshape(input_img, (stateShape[0], stateShape[1], 3))
 
-        imsave(file_path, grayScaleImg)
+        imsave(file_path, out_image)
 
     def log_dnn_intermediate_image(imageToSave, imgInfoStr):
         Logger.init()

@@ -30,11 +30,13 @@ class ActorCriticLearner:
 
     # Preprocessing of the raw frames from the game
     def process_img(observation):
-        img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize(
-            (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT), Image.ANTIALIAS))
-        img_final = np.reshape(img_final, (1, ActorCriticLearner.STATE_WIDTH,
-                                           ActorCriticLearner.STATE_HEIGHT))
+        img_final = np.array(Image.fromarray(observation, 'RGB').resize((ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT), Image.ANTIALIAS))
+        img_final = np.reshape(img_final, (3, ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT))
 
+        # img_final = np.array(Image.fromarray(observation, 'RGB').convert("L").resize(
+        #     (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT), Image.ANTIALIAS))
+        # img_final = np.reshape(img_final, (1, ActorCriticLearner.STATE_WIDTH,
+        #                                    ActorCriticLearner.STATE_HEIGHT))
         return img_final
 
     def env_reset(env, queue):

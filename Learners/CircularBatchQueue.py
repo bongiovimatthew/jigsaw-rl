@@ -7,7 +7,7 @@ class CircularBatchQueue:
         self.size = max_size
 
         self.observations = np.ndarray(
-            (self.size, img_dimensions, img_dimensions), dtype=np.uint8)  # save memory with uint8
+            (self.size, 3, img_dimensions, img_dimensions), dtype=np.uint8)  # save memory with uint8
         self.rewards = np.ndarray((self.size))
         self.actions = np.ndarray((self.size))
         self.discounted_rewards = np.ndarray((self.size))
@@ -38,7 +38,7 @@ class CircularBatchQueue:
     def add(self, observation, reward, action, done):
         self.next_index = (self.next_index + 1) % self.size
         self.max_index = max(self.max_index, self.next_index)
-        self.observations[self.next_index, :, :] = observation[0, :, :]
+        self.observations[self.next_index, :, :, :] = observation[:, :, :]
         self.rewards[self.next_index] = reward
         self.actions[self.next_index] = action
 
@@ -46,12 +46,12 @@ class CircularBatchQueue:
 
     def get_recent_state(self):
         if self.next_index >= 0:
-            return np.float32(self.observations[self.next_index:self.next_index+1, :, :])
+            return np.float32(self.observations[self.next_index:self.next_index+1, :, :, :])
         return None
 
     def get_state_at(self, idx):
         # if idx >= 0:
-        return np.float32([self.observations[idx, :, :]])
+        return np.float32(self.observations[idx, :, :, :])
         # return None
 
     def get_reward_at(self, idx):

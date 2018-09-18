@@ -21,8 +21,8 @@ class Apple:
         counter = 0
         touchesSnake = True
         while counter < 1000000 and touchesSnake:
-            self.x = randint(0, (800 / 50) - 1) * self.step
-            self.y = randint(0, (600 / 50) - 1) * self.step
+            self.x = randint(0, (SnakeEnvironment.WINDOW_WIDTH / self.step) - 1) * self.step
+            self.y = randint(0, (SnakeEnvironment.WINDOW_HEIGHT / self.step) - 1) * self.step
             touchesSnake = False
 
             for i in range(0, player.length):
@@ -110,14 +110,19 @@ class Player:
             surface.paste(image, (self.x[i], self.y[i]))
         surface.paste(headImage, (self.x[0], self.y[0]))
 
+    def draw(self, body_surface, head_surface, image, headImage):
+        for i in range(1, self.length):
+            body_surface.paste(image, (self.x[i], self.y[i]))
+        head_surface.paste(headImage, (self.x[0], self.y[0]))
+
 
 class Game:
 
     def isOutOfBounds(self, x1, y1):
-        if x1 >= 800:
+        if x1 >= SnakeEnvironment.WINDOW_WIDTH:
             return True
 
-        if y1 >= 700:
+        if y1 >= SnakeEnvironment.WINDOW_HEIGHT:
             return True
 
         if x1 < 0 or y1 < 0:
@@ -141,16 +146,16 @@ class Actions(Enum):
 class SnakeEnvironment(Environment):
 
     MAX_ACTIONS_NUM = 5
+    WINDOW_HEIGHT = 400
+    WINDOW_WIDTH = 400
 
     def __init__(self):
-        self.windowWidth = 800
-        self.windowHeight = 600
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
         self._display_surf = None
         self.setupEnvironment()
 
     def setupEnvironment(self):
-        self._display_surf = Image.new('RGB', (self.windowWidth, self.windowHeight), (0, 0, 0))
+        self._display_surf = Image.new('RGB', (SnakeEnvironment.WINDOW_WIDTH, SnakeEnvironment.WINDOW_HEIGHT), (0, 0, 0))
 
         basePath = os.path.dirname(__file__)
         apple_path = os.path.join(basePath, "apple.jpg")
@@ -164,7 +169,7 @@ class SnakeEnvironment(Environment):
         self._running = True
         self.game = Game()
         self.player = Player(3)
-        self.apple = Apple(4, 4)
+        self.apple = Apple(0, 3)
         self.movesCount = 0
         self.numberOfTimesExecutedEachAction = list(range(self.MAX_ACTIONS_NUM))
 
@@ -245,9 +250,20 @@ class SnakeEnvironment(Environment):
         return (reward, done, info)
 
     def render(self):
-        #self._display_surf.fill((0, 0, 0))
-        self._display_surf.paste( (0, 0, 0), [0, 0, self._display_surf.size[0], self._display_surf.size[1]])
-        self.player.draw(self._display_surf, self._image_surf, self._head_surf)
-        self.apple.draw(self._display_surf, self._apple_surf)
-        return np.array(self._display_surf)
+#        self._display_surf.paste( (0, 0, 0), [0, 0, self._display_surf.size[0], self._display_surf.size[1]])
+
+        body_surface = Image.new('L', (SnakeEnvironment.WINDOW_WIDTH, SnakeEnvironment.WINDOW_HEIGHT))
+        head_surface = Image.new('L', (SnakeEnvironment.WINDOW_WIDTH, SnakeEnvironment.WINDOW_HEIGHT))
+        apple_surface = Image.new('L', (SnakeEnvironment.WINDOW_WIDTH, SnakeEnvironment.WINDOW_HEIGHT))
+
+        self.player.draw(body_surface, head_surface, self._image_surf, self._head_surf)
+        self.apple.draw(apple_surface, self._apple_surf)
+
+        body_array = np.array(body_surface)
+        head_array = np.array(head_surface)
+        apple_array = np.array(apple_surface)
+
+        full_image = np.dstack((body_array, head_array, apple_array))
+        return full_image
+        #return np.array(self._display_surf)
         #return np.rot90(np.flipud(surfarray.array3d(self._display_surf)), axes=(1,0))

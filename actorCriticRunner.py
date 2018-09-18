@@ -32,8 +32,8 @@ parser.set_defaults(evaluate_mode=False)
 
 args = parser.parse_args()
 
-env = PuzzleEnvironment(args.config)
-#env = SnakeEnvironment()
+#env = PuzzleEnvironment(args.config)
+env = SnakeEnvironment()
 
 start_time = time.time()
 lrn.execute_agent(env, args.batch_length, args.game_length, args.T_max, args.gamma, args.lr, args.load_model, args.evaluate_mode)

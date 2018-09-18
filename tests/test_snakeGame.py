@@ -17,7 +17,9 @@ class SnakeGameTests:
         imgDisp = Image.fromarray(imageData, 'RGB')
         imgDisp.show()
 
-        for i in range(0, 2):
+        return
+
+        for i in range(0, 12):
             print("NOOP")
             imageData, _, _, _ = env.step(Actions.ACTION_NOOP.value) 
             imgDisp = Image.fromarray(imageData, 'RGB')
