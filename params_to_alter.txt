@@ -1,0 +1,65 @@
+=======================================
+Hyper Parameters: 
+=======================================
+
+Learning Rate 
+Epsilon 
+Epsilon Annealing rate 
+Gamma
+Batch Length
+State size
+T-max 
+Evaluation length 
+
+Enable experience replay 
+
+Reward structure 
+
+
+=======================================
+NN Structure: 
+=======================================
+
+Conv Layer(s)
+    Filter count
+    Padding
+    Stride
+    Activation function 
+
+Dense Layer(s)
+    Activation function 
+    Dense size 
+
+
+
+=======================================
+Output Params: 
+=======================================
+
+Reward mean graph
+Reward min graph
+Reward max graph
+
+Actor loss graph 
+Critic loss graph 
+
+Avg game length 
+Avg score 
+v_calcs 
+Prob array
+Start state image 
+End state image 
+Evaluation state images 
+
+Training time 
+Evaluation time 
+
+
+=======================================
+Snake Specific Outputs: 
+=======================================
+
+Percentage death by wall 
+Percentage death by self crash 
+Percentage death on explore 
+Percentage death on exploit 

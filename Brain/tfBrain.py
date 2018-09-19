@@ -15,10 +15,10 @@ class BaseTFModel():
 
         conv1 = tf.layers.conv2d(local_state, filters=8, kernel_size=(8, 8), strides=4, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv1")
 
-        #conv2 = tf.layers.conv2d(conv1, filters=16, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv2")
+        conv2 = tf.layers.conv2d(conv1, filters=16, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv2")
 
         # Flatten the data to a 1-D vector for the fully connected layer
-        fc1 = tf.contrib.layers.flatten(conv1)
+        fc1 = tf.contrib.layers.flatten(conv2)
 
         # Fully connected layer (in tf contrib folder for now)
         fc1 = tf.contrib.layers.fully_connected(fc1, 256, activation_fn=tf.nn.sigmoid)
@@ -30,24 +30,24 @@ class BaseTFModel():
         add_summaries = not reuse
         if add_summaries:
             tf.contrib.layers.summarize_activation(conv1)
-            #tf.contrib.layers.summarize_activation(conv2)
+            tf.contrib.layers.summarize_activation(conv2)
             tf.contrib.layers.summarize_activation(fc1)
 
             if self.debugMode:
-                self.setupVisualizations(conv1, local_state)
+                self.setupVisualizations(conv1, conv2, local_state)
 
         return fc1
 
     # https://github.com/tensorflow/tensorflow/issues/908
-    def setupVisualizations(self, conv1, local_state):
+    def setupVisualizations(self, conv1, conv2, local_state):
  
         self.visualize_single_tensor(conv1, conv1.shape[1], conv1.shape[2], 4, 2, 'conv1')
 
-        #self.visualize_single_tensor(conv2, conv2.shape[1], conv2.shape[2], 4, 4, 'conv2')
+        self.visualize_single_tensor(conv2, conv2.shape[1], conv2.shape[2], 4, 4, 'conv2')
 
         self.visualize_single_kernel("/conv1/kernel:0", 4, 2)
 
-        #self.visualize_single_kernel("/conv2/kernel:0", 8, 16)
+        self.visualize_single_kernel("/conv2/kernel:0", 8, 16)
 
         tf.summary.image("input_image", local_state)
 
@@ -109,7 +109,7 @@ class Critic(BaseTFModel):
         self.state = tf.placeholder(tf.float32, [None, 3, self.STATE_WIDTH, self.STATE_HEIGHT], "State")
         self.R = tf.placeholder(tf.float32, [None], "RewardR")
                 
-        self.dropout = 0.5
+        self.dropout = 0.1
      
         with tf.variable_scope(self.model_name):
             # Create the train and test graphs
@@ -153,7 +153,7 @@ class Critic(BaseTFModel):
     def create_model(self, dropout, reuse, is_training):
         with tf.variable_scope(self.model_name, reuse=reuse):
             fc1 = self.create_base_model(self.dropout, reuse, is_training)
-            out = tf.contrib.layers.fully_connected(fc1, 1, activation_fn=tf.nn.sigmoid)
+            out = tf.contrib.layers.fully_connected(fc1, 1, activation_fn=tf.nn.leaky_relu)
 
             add_summaries = not reuse
             if add_summaries:
@@ -193,7 +193,7 @@ class Actor(BaseTFModel):
 
             entropy = -tf.reduce_sum(probs_fixed * tf.log(probs_fixed), 1, name="actor_entropy")
             advantage = tf.reduce_sum(self.R - self.v_calc, name="advantage")
-            self.loss_op = tf.reduce_sum((-(tf.log(picked_action_probs) * advantage + 0.01 * entropy)), name="actor_loss")
+            self.loss_op = tf.reduce_sum((-(tf.log(picked_action_probs) * advantage + 0.03 * entropy)), name="actor_loss")
 
 
             optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
