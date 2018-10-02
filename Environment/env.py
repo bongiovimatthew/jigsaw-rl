@@ -6,6 +6,7 @@ from Environment.edge import EdgeShape
 from Environment.puzzleFactory import PuzzleFactory
 from PIL import Image
 from celery.contrib import rdb
+from scipy.misc import imsave
 
 ### Interface
 class Environment(object):
@@ -62,7 +63,7 @@ class PuzzleEnvironment(Environment):
 
         # Generate the puzzle 
         factory = PuzzleFactory()
-        puzzle = factory.generatePuzzle('images\\rainier_small.jpg', 3, 3)
+        puzzle = factory.generatePuzzle('images\\green_square.jpg', 2, 2)
         randomizedPieces = factory.createRandomPuzzlePieceArray(puzzle)
         
         # pieceState is an array of PuzzlePiece objects
@@ -136,6 +137,7 @@ class PuzzleEnvironment(Environment):
                     return
 
     def _convert_state(self, action):
+
         if action == Actions.ACTION_CYCLE.value: 
             self.currentPieceIndex = (self.currentPieceIndex + 1) % len(self.pieceState)
 
@@ -152,17 +154,25 @@ class PuzzleEnvironment(Environment):
 
         return self.render()
 
+    def saveState(self,fileName):
+
+        img = Image.fromarray(self.render(), 'RGB')
+        img.save(fileName)
+
+
     def step(self, action):
         self.stepCount += 1
-
+        # rdb.set_trace()
         next_state = self._convert_state(action)
         currentScore = self.getScoreOfCurrentState()
-        done = self.isMaxReward(currentScore) or (self.stepCount > 500)
+        # rdb.set_trace()
+
+        done = self.isMaxReward(currentScore) or (self.stepCount > 1000)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore
 
-        reward = currentScore - tempOldScore
+        reward = currentScore # - tempOldScore
         if self.isMaxReward(currentScore):
             reward *= 100
 
@@ -175,10 +185,10 @@ class PuzzleEnvironment(Environment):
         if (done):
             print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
             img = Image.fromarray(self.render(), 'RGB')
-            img.show()
+            img.save(r'files/state_images/episode%d.jpg'%self.stepCount)
 
-        if (action == Actions.ACTION_CYCLE.value):
-            reward = -1            
+        # if (action == Actions.ACTION_CYCLE.value):
+        #     reward = -1            
 
         return (next_state, reward, done, info)
         
@@ -209,6 +219,19 @@ class PuzzleEnvironment(Environment):
                 print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
 
         return boardCopy
+    def indicateCurrentPieceBy(self,board,indication,piece):
+        baseX,xWidth,baseY,yHeight = piece.getCoordinates()
+        if indication == 'green-square':
+            greenSquareW = 5
+            greenSquareH = 5
+            board[ baseY : baseY + greenSquareH, baseX : baseX + greenSquareW] = [0, 255, 0]                
+            board[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX : baseX + greenSquareW] = [0, 255, 0]                
+            board[ baseY : baseY + greenSquareH, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
+            board[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
+        elif indication == 'whiten':
+            
+
+
 
     def isMaxReward(self, reward):
         if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + PuzzleEnvironment.CORRECT_PLACEMENT_SCORE * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()): 
@@ -279,4 +302,15 @@ class PuzzleEnvironment(Environment):
                 
             score += pieceScore
 
-        return score
+        normalizedScore = self.getNormalizedScore(score)
+        # print("normalized Score %f"%normalizedScore)
+        return normalizedScore
+
+    def getNormalizedScore(self,score):
+        minScore = (len(self.pieceState) -1 ) * PuzzleEnvironment.INCORRECT_OVERLAY_SCORE  # (n-1) pieces on top of each others
+        minScore = minScore + len(self.pieceState) * 4* (PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE ) # all sides are wrong
+
+        maxScore = len(self.pieceState) * PuzzleEnvironment.CORRECT_PLACEMENT_SCORE   # (n) correctly placed peices
+        maxScore  = maxScore + len(self.pieceState) * 4 * ( PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE)
+        normalizedScore = (score - minScore)/(maxScore - minScore) 
+        return normalizedScore

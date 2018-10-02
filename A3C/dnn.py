@@ -4,7 +4,8 @@ from cntk.device import try_set_default_device, cpu
 from cntk.layers import Convolution2D, Dense, Sequential, BatchNormalization
 from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitType
 from celery.contrib import rdb
-
+from cntk.logging.progress_print import *
+import time
 # Set CPU as device for the neural network.
 try_set_default_device(cpu())
 
@@ -26,20 +27,22 @@ class DeepNet:
         self.v_calc = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
         
         # Creating the value approximator extension.
-        conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
-        conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
-        dense_v = Dense(256, activation=cntk.relu)
-        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1, activation=cntk.relu)])
+        # conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
+        # conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
+        dense_v = Dense(256, init = .1,activation=cntk.relu)
+        v = Sequential([ Dense(1,activation=cntk.relu)])  # , relu , conv1_v, conv2_v,
+        # v = Sequential([v2, Dense(1,init = cntk.normal(1), activation = cntk.relu)])  # conv1_v, conv2_v, relu , activation=cntk.sigmoid
         
         # Creating the policy approximator extension.
-        conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
-        conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
-        dense_pi = Dense(256, activation=cntk.relu)
-        pi = Sequential([conv1_pi, conv2_pi, dense_pi, Dense(self.num_actions, activation=cntk.softmax)])
+        # conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
+        # conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
+        # dense_pi = Dense(256, activation=cntk.relu)
+        pi = Sequential([ Dense(self.num_actions, activation=cntk.softmax)]) # conv1_v, conv2_v,dense_v,
         
         self.pi = pi(self.stacked_frames)
         self.pms_pi = self.pi.parameters # List of cntk Parameter types (containes the function's parameters)
         self.v = v(self.stacked_frames)
+        # self.v2 = v2(self.stacked_frames)
         self.pms_v = self.v.parameters
         
     def build_trainer(self):
@@ -65,11 +68,11 @@ class DeepNet:
         
         self.trainer_pi = trainer_pi
         self.trainer_v = trainer_v
-    
+        
     def train_net(self, state, action, R, calc_diff):
         
         diff = None
-        
+        state = self.normalizeState(state)
         if calc_diff:
             # Save the parameters before a training step.
             self.update_pi = []
@@ -85,12 +88,15 @@ class DeepNet:
         
         v_calc = self.state_value(state)
         print("v_calc:",v_calc)
+        print("R value:%f"%R)
         # rdb.set_trace()
         float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
-        
+        print("previous square loss with R %f"%(R - v_calc)**2)
         self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
         self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
-        
+        v_calc2 = self.state_value(state)
+        print("after square loss with R %f"%(R - v_calc2)**2)
+
         if calc_diff:
             # Calculate the differences between the updated and the original params.
             for idx in range(len(self.pms_pi)):
@@ -101,12 +107,18 @@ class DeepNet:
             diff = [self.update_pi, self.update_v]
         
         return diff
-        
+    
+    def normalizeState(self,state):
+        return (state/np.max(state))
+
     def state_value(self, state):
+        state = self.normalizeState(state)
         print("v.val:",self.v.eval(state))
+        # print("v2.val:",self.v2.eval(state))
         return self.v.eval({self.stacked_frames: [state]})
     
     def pi_probabilities(self, state):
+        state = self.normalizeState(state)
         return self.pi.eval({self.stacked_frames: [state]})
     
     def get_num_actions(self):
@@ -150,7 +162,7 @@ class DeepNet:
 # Functions to generate the next actions
 import random as r
 def action(net, state): # Take into account None as input -> generate random actions
-    
+
     act = 0
     n = net.get_num_actions()
     if state is None:
@@ -185,9 +197,9 @@ def action_with_exploration(net, state, epsilon): # Take into account None as in
             prob_vec = net.pi_probabilities(state)[0] * 1000
 
             candidate = r.randint(0, 1000)
-        
+            maxProb = 0 
             for i in range(0, n):
-                if prob_vec[i] >= candidate:
+                if prob_vec[i] >= maxProb:
                     act = i
-    
+                    maxProb = prob_vec[i]
     return act

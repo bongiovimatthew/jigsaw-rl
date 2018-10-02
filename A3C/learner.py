@@ -1,9 +1,8 @@
 import numpy as np
-
-from A3C.dnn import dnn
+from A3C import dnn
 from Environment.env import PuzzleEnvironment
 from Diagnostics.logger import Logger as logger
-
+from celery.contrib import rdb
 from PIL import Image
 
 # In case of Pool the Lock object can not be passed in the initialization argument.
@@ -279,20 +278,20 @@ class Agent:
         self.t_start = self.t
         
         self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
-        
+        # self.epsilon = 0
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
             self.T += 1
             # img = Image.fromarray(self.s_t, 'RGB')
             # img.save('files/image_agent_%d.jpg'%(self.learner_id)) 
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
-
+            print("action:%d"%action)
             self.s_t, info = env_step(self.env, self.queue, action)
 
 
             info = self.update_and_get_metrics(info, action)
 
-            if self.debugMode and self.t < 40 : 
+            if self.debugMode and self.t > 300 and self.t < 350 : 
                 logger.log_metrics(info, self.t, self.learner_id)
                 logger.log_state_image(self.s_t, self.t, self.learner_id,action)
                 self.reset_running_metrics()
@@ -308,7 +307,9 @@ class Agent:
             self.R = self.net.state_value(self.s_t)
             self.R[0][0] = 0.0 # Without this, error dropped. special format is given back.
         else:
-            self.R = self.net.state_value(self.s_t)
+            # self.R = self.net.state_value(self.s_t)
+            # rdb.set_trace()
+            self.R = np.array([[0.0]])
         
     def calculate_gradients(self):
 
@@ -317,6 +318,7 @@ class Agent:
         while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
             state = self.queue.get_state_at(idx)
             reward = self.queue.get_reward_at(idx)
+            
             action = self.queue.get_action_at(idx)
             self.R = reward + self.gamma * self.R
             self.net.train_net(state, action, self.R, False)
