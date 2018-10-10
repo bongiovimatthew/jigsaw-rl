@@ -152,6 +152,7 @@ class ActorCriticAgent:
             self.queue.add(self.current_state, 0, 0, False)
 
             self.queue.set_discounted_reward_at(self.queue.get_last_idx(), 0)
+            logger.log_avg_episode_length(self.episode_step_count)
 
             self.episode_step_count = 0
             self.is_terminal = False
@@ -160,8 +161,7 @@ class ActorCriticAgent:
         if self.evaluate_mode:
             self.epsilon = 0.1
         else:
-            self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1.5) / self.total_max_moves)
-                           * self.total_step_count)  # first decreasing, then it is constant
+            self.epsilon = 0.1 #max(0.1, 1.0 - (((1.0 - 0.1)*1.5) / self.total_max_moves) * self.total_step_count)  # first decreasing, then it is constant
 
         batch_count_start = self.episode_step_count
         batch_count = batch_count_start 

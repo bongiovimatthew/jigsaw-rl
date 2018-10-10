@@ -233,17 +233,17 @@ class SnakeEnvironment(Environment):
         if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0]):
             self.apple = self.apple.place(self.player)
             self.player.length = self.player.length + 1
-            reward = 2  #+ 2 * self.player.length
+            reward = 10 + self.player.length
             print("Got them apples")
 
         # does snake collide with itself?
         for i in range(2, self.player.length):
             if self.game.isCollision(self.player.x[0], self.player.y[0], self.player.x[i], self.player.y[i]):
-                reward = 0
+                reward = -5
                 done = True
 
         if self.game.isOutOfBounds(self.player.x[0], self.player.y[0]):
-            reward = 0
+            reward = -5
             done = True
 
         info['score'] = self.player.length

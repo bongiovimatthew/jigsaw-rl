@@ -159,3 +159,11 @@ class Logger:
         Logger.init()
         if os.path.exists(Logger.path_model_pi) and os.path.exists(Logger.path_model_v):
             net.load_model(Logger.path_model_pi, Logger.path_model_v)
+
+    def log_avg_episode_length(episode_length):
+        Logger.init()
+        file_name = "ep_length.csv"
+        file_path = Logger.path_scores / file_name
+        file_path.touch(exist_ok=True)
+        with file_path.open(mode="a+") as f:
+            f.write("{0}\r".format(episode_length))
