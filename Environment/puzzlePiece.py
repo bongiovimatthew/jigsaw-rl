@@ -19,6 +19,7 @@ class PuzzlePiece:
 		self.edgeGeometry = 0 # L, D, R, U (2 bits per direction totals 1 byte)
 		self.id = uuid.uuid4()
 		self.correctEdgeIds = []
+		self.overlappedScore = 0 
 
 	def getEdgeGeometry(self, direction):
 		if direction == Direction.UP:

@@ -1,9 +1,12 @@
 import numpy as np
 from A3C import dnn
 from Environment.env import PuzzleEnvironment
+from Environment.env import Actions
 from Diagnostics.logger import Logger as logger
 from celery.contrib import rdb
 from PIL import Image
+import imageio
+import cv2,time
 
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution
@@ -118,6 +121,10 @@ def process_img(observation):
 
     return img_final
 
+
+def deprocess_img(state):
+    img = np.reshape(state,(84,84))
+    return (img).astype(np.uint8)
 # Functions to avoid temporary coupling.
 def env_reset(env, queue):
     queue.queue_reset()
@@ -144,6 +151,7 @@ class Agent:
         
         self.t_start = 0
         self.t = 0
+        self.counter = 0 
         self.t_max = t_max
         
         self.game_length = game_length
@@ -281,20 +289,19 @@ class Agent:
         # self.epsilon = 0
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
+            self.counter += 1
             self.T += 1
-            # img = Image.fromarray(self.s_t, 'RGB')
-            # img.save('files/image_agent_%d.jpg'%(self.learner_id)) 
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
-            print("action:%d"%action)
+            # print("action:%d"%action)
             self.s_t, info = env_step(self.env, self.queue, action)
-
-
+            
+            imageio.imwrite('files/state_images/puzzle_time_%d_action_%s_reward_%d.jpg'%(self.counter,Actions(action).name,info["rewards"]),deprocess_img(self.s_t)) 
             info = self.update_and_get_metrics(info, action)
 
-            if self.debugMode and self.t > 300 and self.t < 350 : 
-                logger.log_metrics(info, self.t, self.learner_id)
-                logger.log_state_image(self.s_t, self.t, self.learner_id,action)
-                self.reset_running_metrics()
+            # if self.debugMode and self.t > 300 and self.t < 350 : 
+            #     logger.log_metrics(info, self.t, self.learner_id)
+            #     logger.log_state_image(self.s_t, self.t, self.learner_id,action)
+            #     self.reset_running_metrics()
 
             self.is_terminal = self.queue.get_is_last_terminal()
             if self.T % self.C == 0: # log loss when evaluation happens
@@ -304,37 +311,38 @@ class Agent:
         
     def set_R(self):
         if self.is_terminal:
-            self.R = self.net.state_value(self.s_t)
-            self.R[0][0] = 0.0 # Without this, error dropped. special format is given back.
-        else:
             # self.R = self.net.state_value(self.s_t)
-            # rdb.set_trace()
+            # self.R[0][0] = 0.0 # Without this, error dropped. special format is given back.
             self.R = np.array([[0.0]])
+        else:
+            self.R = self.net.state_value(self.s_t)
+            # rdb.set_trace()
+            # self.R = np.array([[0.0]])
         
     def calculate_gradients(self):
 
         idx = self.queue.get_last_idx()
         final_index = idx - self.t_max
-        while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
-            state = self.queue.get_state_at(idx)
+        # while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
+        while (idx > self.t_start):
+            state = self.queue.get_state_at(idx-1)
             reward = self.queue.get_reward_at(idx)
-            
             action = self.queue.get_action_at(idx)
             self.R = reward + self.gamma * self.R
             self.net.train_net(state, action, self.R, False)
-            
             idx = idx-1
         
         # At the last training step the differences should be saved
-        state = self.queue.get_state_at(idx)
-        reward = self.queue.get_reward_at(idx)
-        action = self.queue.get_action_at(idx)
+        # state = self.queue.get_state_at(idx)
+        # reward = self.queue.get_reward_at(idx)
+        # action = self.queue.get_action_at(idx)
             
-        self.R = reward + self.gamma * self.R
+        # self.R = reward + self.gamma * self.R
         self.diff = self.net.train_net(state, action, np.float32(self.R), True)
             
         if self.signal:
-            logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)
+            print("last avg loss %f, T: %d, leaner id:%d"%(self.net.get_last_avg_loss(), self.T, self.learner_id))
+            # logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)
         
     def sync_update(self):
         lock.acquire()
@@ -365,14 +373,18 @@ class Agent:
     def evaluate(self):
         
         print ('Start evaluating.')
-        env = wrappers.Monitor(self.env, 'videos', force=True)
+        env = PuzzleEnvironment()
         state = env_reset(env, self.queue)
         finished = False
         cntr = 0
         rewards = []
+        cv2.namedWindow('puzzle',cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('puzzle', 600,600)
         while not (finished or cntr == self.game_length):
-            img = Image.fromarray(env.render(), 'RGB')
-            img.show()
+            # img = Image.fromarray(env.render(), 'RGB')
+
+            cv2.imshow('puzzle',env.render())
+            cv2.waitKey(500) 
             env.render()
             action = dnn.action(self.net, state)
             state, info = env_step(env, self.queue, action)

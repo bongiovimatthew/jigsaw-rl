@@ -27,24 +27,23 @@ class DeepNet:
         self.v_calc = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
         
         # Creating the value approximator extension.
-        # conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
-        # conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
-        dense_v = Dense(256, init = .1,activation=cntk.relu)
-        v = Sequential([ Dense(1,activation=cntk.relu)])  # , relu , conv1_v, conv2_v,
+        conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
+        conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
+        # dense_v = Dense(256, init = .1,activation=cntk.relu)
+        v = Sequential([conv1_v, conv2_v, Dense(1)])  # , relu , conv1_v, conv2_v,
         # v = Sequential([v2, Dense(1,init = cntk.normal(1), activation = cntk.relu)])  # conv1_v, conv2_v, relu , activation=cntk.sigmoid
         
         # Creating the policy approximator extension.
         # conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
         # conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
         # dense_pi = Dense(256, activation=cntk.relu)
-        pi = Sequential([ Dense(self.num_actions, activation=cntk.softmax)]) # conv1_v, conv2_v,dense_v,
+        pi = Sequential([conv1_v, conv2_v, Dense(self.num_actions, activation=cntk.softmax)]) # conv1_v, conv2_v,dense_v,
         
         self.pi = pi(self.stacked_frames)
         self.pms_pi = self.pi.parameters # List of cntk Parameter types (containes the function's parameters)
         self.v = v(self.stacked_frames)
-        # self.v2 = v2(self.stacked_frames)
         self.pms_v = self.v.parameters
-        
+
     def build_trainer(self):
         
         # Set the learning rate, and the momentum parameters for the Adam optimizer.
@@ -72,7 +71,10 @@ class DeepNet:
     def train_net(self, state, action, R, calc_diff):
         
         diff = None
-        state = self.normalizeState(state)
+        try:
+            state = self.normalizeState(state)
+        except:
+            rdb.set_trace()
         if calc_diff:
             # Save the parameters before a training step.
             self.update_pi = []
@@ -87,22 +89,22 @@ class DeepNet:
         action_as_array[int(action)] = 1
         
         v_calc = self.state_value(state)
-        print("v_calc:",v_calc)
-        print("R value:%f"%R)
+        # self.print_v_loss(state,R,'before')
         # rdb.set_trace()
         float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
-        print("previous square loss with R %f"%(R - v_calc)**2)
+        # print("previous square loss with R %f"%(R - v_calc)**2)
         self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
         self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
         v_calc2 = self.state_value(state)
-        print("after square loss with R %f"%(R - v_calc2)**2)
-
+        # self.print_v_loss(state,R,'after')
         if calc_diff:
             # Calculate the differences between the updated and the original params.
             for idx in range(len(self.pms_pi)):
-                self.update_pi[idx] = self.pms_pi[idx].value - self.update_pi[idx]
+                # self.update_pi[idx] = self.pms_pi[idx].value - self.update_pi[idx]
+                self.update_pi[idx] = self.pms_pi[idx].value - self.pms_pi_prev[idx].value
             for idx in range(len(self.pms_v)):
-                self.update_v[idx] = self.pms_v[idx].value - self.update_v[idx]
+                # self.update_v[idx] = self.pms_v[idx].value - self.update_v[idx]
+                self.update_v[idx] = self.pms_v[idx].value - self.pms_v_prev[idx].value
             
             diff = [self.update_pi, self.update_v]
         
@@ -111,9 +113,21 @@ class DeepNet:
     def normalizeState(self,state):
         return (state/np.max(state))
 
+    def print_params(self,update_status='before'):
+        print("pi values %s:"%update_status)
+        for i, x in enumerate(self.pms_pi):
+            if i < 5:
+                print(x.value)
+            else: break 
+
+    def print_v_loss(self,state,R, update_status='before'):
+        v_calc = self.state_value(state)
+        print("%s: (V - R)^2:%f"%(update_status,(R - v_calc)**2))
+
+
     def state_value(self, state):
         state = self.normalizeState(state)
-        print("v.val:",self.v.eval(state))
+        # print("v.val:",self.v.eval(state))
         # print("v2.val:",self.v2.eval(state))
         return self.v.eval({self.stacked_frames: [state]})
     
@@ -128,10 +142,14 @@ class DeepNet:
         return self.trainer_pi.previous_minibatch_loss_average + self.trainer_v.previous_minibatch_loss_average
     
     def synchronize_net(self, shared): 
+        self.pms_pi_prev = []
+        self.pms_v_prev = [] 
         for idx in range(0, len(self.pms_pi)):
             self.pms_pi[idx].value = shared[0][idx]
+            self.pms_pi_prev.append(self.pms_pi[idx])
         for idx in range(0, len(self.pms_v)):
             self.pms_v[idx].value = shared[1][idx]
+            self.pms_v_prev.append(self.pms_v[idx])
                     
     def sync_update(self, shared, diff):
         for idx in range(0, len(self.pms_pi)):

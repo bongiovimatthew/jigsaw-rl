@@ -1,3 +1,4 @@
+
 import numpy as np
 from enum import Enum
 
@@ -27,14 +28,15 @@ class ActionSpace(object):
         self.n = len(actions)
 
 class Actions(Enum):
-    ACTION_CYCLE = 0 
-    ACTION_TRANS_UP = 1
-    ACTION_TRANS_RIGHT = 2
-    ACTION_TRANS_DOWN = 3
-    ACTION_TRANS_LEFT = 4
-    ACTION_ROT90_1 = 5
+ 
+    ACTION_TRANS_UP = 0
+    ACTION_TRANS_RIGHT = 1
+    ACTION_TRANS_DOWN = 2
+    ACTION_TRANS_LEFT = 3
+    ACTION_ROT90_1 = 4
     ACTION_ROT90_2 = 6
     ACTION_ROT90_3 = 7
+    ACTION_CYCLE = 10 
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 4
@@ -64,13 +66,13 @@ class PuzzleEnvironment(Environment):
         # Generate the puzzle 
         factory = PuzzleFactory()
         puzzle = factory.generatePuzzle('images\\green_square.jpg', 2, 2)
-        randomizedPieces = factory.createRandomPuzzlePieceArray(puzzle)
-        
+        # self.pieceState = factory.createRandomPuzzlePieceArray(puzzle)
+        self.pieceState = factory.getPuzzlePieceArray(puzzle)
         # pieceState is an array of PuzzlePiece objects
-        self.pieceState = randomizedPieces 
         self.puzzle = puzzle
 
         self.setupEnvironment()
+
 
     def reset(self):
         self.setupEnvironment()
@@ -78,9 +80,11 @@ class PuzzleEnvironment(Environment):
 
     def setupEnvironment(self):
         # Contains the relative position of the piece IDs in the current state 
-        self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState)
+        allocations = PuzzleFactory.getRandomAllocationOnlyOnePiece(self.puzzle,self.pieceState)
 
-        self.currentPieceIndex = 0
+        self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState,allocations)
+
+        self.currentPieceIndex = len(self.pieceState)-1  # only last piece gets to move
         self.oldScore = self.getScoreOfCurrentState()
         self.stepCount = 0
 
@@ -96,7 +100,7 @@ class PuzzleEnvironment(Environment):
         # No guidArray updates needed 
         return
 
-    def _translate_piece(self, pieceId, direction): 
+    def _translate_piece(self, pieceId, direction,overlapAllowed=True): 
         # Update guidArray
         maxX = len(self.guidArray) - 1
         maxY = maxX 
@@ -124,33 +128,43 @@ class PuzzleEnvironment(Environment):
                         newX = x - 1
                         if newX < 0: 
                             newX = 0 
+                    if overlapAllowed:
+                        self.apply_translate(pieceId,x,y,newX,newY)
+                    
+                    else:
+                        if len(self.guidArray[newY][newX]) == 0: 
+                            self.apply_translate(pieceId,x,y,newX,newY)
+                        else:
+                            self.add_overlapp_score(pieceId)
 
-                    if len(self.guidArray[newY][newX]) == 0: 
-                        self.guidArray[y][x].remove(pieceId)
-                        self.guidArray[newY][newX].append(pieceId)
-                        
-                        # Update pieceState 
-                        for piece in self.pieceState: 
-                            if piece.id == pieceId: 
-                                piece.coords_x = newX
-                                piece.coords_y = newY
                     return
-
+    def apply_translate(self,pieceId,x,y,newX,newY):
+        self.guidArray[y][x].remove(pieceId)
+        self.guidArray[newY][newX].append(pieceId)
+                                # Update pieceState 
+        for piece in self.pieceState: 
+            if piece.id == pieceId: 
+                piece.coords_x = newX
+                piece.coords_y = newY
+                piece.overlappedScore = 0 
+    def add_overlapp_score(self,pieceId):
+        for piece in self.pieceState:
+            if piece.id == pieceId:
+                piece.overlappedScore += PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
     def _convert_state(self, action):
 
-        if action == Actions.ACTION_CYCLE.value: 
-            self.currentPieceIndex = (self.currentPieceIndex + 1) % len(self.pieceState)
-
+        # if action == Actions.ACTION_CYCLE.value: 
+        #     self.currentPieceIndex = (self.currentPieceIndex + 1) % len(self.pieceState)
         if action >= Actions.ACTION_ROT90_1.value and action <= Actions.ACTION_ROT90_3.value:
             currentPiece = self.pieceState[self.currentPieceIndex]
-            numRotations = action
+            numRotations = action-3
             self._rotate_piece(currentPiece.id, numRotations) 
         
         if action >= Actions.ACTION_TRANS_UP.value and action <= Actions.ACTION_TRANS_LEFT.value:
             currentPiece = self.pieceState[self.currentPieceIndex]
             directions = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
-            direction = directions[action - 1]
-            self._translate_piece(currentPiece.id, direction)
+            direction = directions[action]
+            self._translate_piece(currentPiece.id, direction,overlapAllowed=False)
 
         return self.render()
 
@@ -162,7 +176,6 @@ class PuzzleEnvironment(Environment):
 
     def step(self, action):
         self.stepCount += 1
-        # rdb.set_trace()
         next_state = self._convert_state(action)
         currentScore = self.getScoreOfCurrentState()
         # rdb.set_trace()
@@ -172,7 +185,7 @@ class PuzzleEnvironment(Environment):
         tempOldScore = self.oldScore
         self.oldScore = currentScore
 
-        reward = currentScore # - tempOldScore
+        reward = currentScore - tempOldScore
         if self.isMaxReward(currentScore):
             reward *= 100
 
@@ -180,7 +193,7 @@ class PuzzleEnvironment(Environment):
 
         if (self.debugMode):
             print("Current Reward: {0}, IsDone: {1}, currentScore: {2}, oldScore: {3}".format(reward, done, currentScore, tempOldScore))
-            print("Peforming Action: {0}".format(Actions(action)))
+            print("Performing Action: {0}".format(Actions(action)))
 
         if (done):
             print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
@@ -194,16 +207,16 @@ class PuzzleEnvironment(Environment):
         
     def render(self, mode=None):
         boardCopy = self.puzzle.puzzleBoard.copy()
-        piece = self.pieceState[0]
+        piece1 = self.pieceState[0]
         count = 0
 
         for piece in self.pieceState: 
+
             baseY = piece.coords_y * piece.imgData.shape[0]
             yHeight = piece.imgData.shape[0]
 
             baseX = piece.coords_x * piece.imgData.shape[1]
             xWidth = piece.imgData.shape[1]
-
             boardCopy[ baseY : baseY + yHeight, baseX : baseX + xWidth] = piece.imgData.copy()
 
             if self.currentPieceIndex == count: 
@@ -215,9 +228,10 @@ class PuzzleEnvironment(Environment):
                 boardCopy[ baseY : baseY + greenSquareH, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
                 boardCopy[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
             count += 1
-            if (self.debugMode):
-                print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
+        if (self.debugMode):
+            print("piece.guid:{0}, piece.coords_x:{1}, piece.coords_y:{2}".format(piece.id, piece.coords_x, piece.coords_y))
 
+            
         return boardCopy
     def indicateCurrentPieceBy(self,board,indication,piece):
         baseX,xWidth,baseY,yHeight = piece.getCoordinates()
@@ -228,7 +242,7 @@ class PuzzleEnvironment(Environment):
             board[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX : baseX + greenSquareW] = [0, 255, 0]                
             board[ baseY : baseY + greenSquareH, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
             board[ baseY + yHeight - greenSquareH : baseY + yHeight, baseX + xWidth - greenSquareW : baseX + xWidth] = [0, 255, 0]                
-        elif indication == 'whiten':
+        # elif indication == 'whiten':
             
 
 
@@ -296,15 +310,17 @@ class PuzzleEnvironment(Environment):
 
             if len(self.guidArray[piece.coords_y][piece.coords_x]) > 1:
                 pieceScore += PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
-
+            pieceScore += piece.overlappedScore 
+            # if piece.overlappedScore < 0 :
+            #     rdb.set_trace()
             if piece.coords_x == piece.correct_coords_x and piece.coords_y == piece.correct_coords_y:
                 pieceScore += PuzzleEnvironment.CORRECT_PLACEMENT_SCORE
                 
             score += pieceScore
 
-        normalizedScore = self.getNormalizedScore(score)
-        # print("normalized Score %f"%normalizedScore)
-        return normalizedScore
+        # normalizedScore = self.getNormalizedScore(score)
+        #print("normalized Score %f"%normalizedScore)
+        return score
 
     def getNormalizedScore(self,score):
         minScore = (len(self.pieceState) -1 ) * PuzzleEnvironment.INCORRECT_OVERLAY_SCORE  # (n-1) pieces on top of each others

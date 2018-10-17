@@ -167,33 +167,61 @@ class PuzzleFactory:
 		puzzle.puzzleBoard = np.zeros((puzzle.singlePieceHeight * puzzle.yNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, puzzle.singlePieceWidth * puzzle.xNumPieces * self.NUMBER_OF_PIECES_TO_SCALE_BY, 3), dtype=np.uint8)
 	
 	def createRandomPuzzlePieceArray(self, puzzle):		
-		listOfPiecesAvailable = [puzzle.piecesArray[y][x] for y in range(puzzle.yNumPieces) for x in range(puzzle.xNumPieces)]
+		listOfPiecesAvailable = self.getPuzzlePieceArray(puzzle)
 		random.shuffle(listOfPiecesAvailable)
 
 		return listOfPiecesAvailable
+	def getPuzzlePieceArray(self,puzzle):
 
+		listOfPiecesAvailable = [puzzle.piecesArray[y][x] for y in range(puzzle.yNumPieces) for x in range(puzzle.xNumPieces)]
+		return listOfPiecesAvailable
 	# Generates the randomly placed, randomly rotated pieces
 	#  Rotation based on image data (no geom) 
-	def placePiecesOnBoard(puzzle, listOfPiecesAvailable):		
+	def getRandomAllocation(puzzle, pieces):
 		sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY
+		allocations = []
+		occupied = {}
+		for i in range(len(pieces)):
+				done = False
+				while not done:
+					coords_x = random.randint(0, sideDimension - 1)
+					coords_y = random.randint(0, sideDimension - 1)	
+					if (coords_y,coords_x) not in occupied:
+						allocations.append((coords_y,coords_x))
+						occupied[(coords_y,coords_x)] = 1 
+						done = True
+		return allocations
 
+	def getRandomAllocationOnlyOnePiece(puzzle, pieces):
+		sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY
+		allocations = []
+		occupied = {}
+		for coords_y in range(puzzle.yNumPieces):
+			for coords_x in range(puzzle.xNumPieces):
+				allocations.append((coords_y,coords_x))
+				occupied[(coords_y,coords_x)] = 1 
+		done = False
+		while not done:
+			coords_x = random.randint(puzzle.xNumPieces, sideDimension - 1)
+			coords_y = random.randint(puzzle.yNumPieces, sideDimension - 1)	
+			if (coords_x,coords_y) not in occupied:
+				allocations[-1] = (coords_y,coords_x)
+				done = True
+		return allocations	
+
+
+	def placePiecesOnBoard(puzzle, listOfPiecesAvailable,allocations):	
+		sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY	
 		initialPieceGuidArray = []
-
 		for i in range(sideDimension):
 			initialPieceGuidArray.append([])
 			for j in range(sideDimension):
 				initialPieceGuidArray[i].append([])
-		 
-		for piece in listOfPiecesAvailable:
-			# piece.rotate()
 
-			done = False 
-			while not done: 
-				piece.coords_x = random.randint(0, sideDimension - 1)
-				piece.coords_y = random.randint(0, sideDimension - 1)
 
-				if len(initialPieceGuidArray[piece.coords_y][piece.coords_x]) == 0:
-					initialPieceGuidArray[piece.coords_y][piece.coords_x].append(piece.id) 
-					done = True 
+		for i, piece in enumerate(listOfPiecesAvailable):
+			piece.coords_x = allocations[i][1]
+			piece.coords_y = allocations[i][0]
+			initialPieceGuidArray[piece.coords_y][piece.coords_x].append(piece.id)
 
 		return initialPieceGuidArray
