@@ -5,7 +5,7 @@ import time
 import numpy as np
 from scipy.misc import imsave
 from Environment.env import Actions
-
+import celery
 class Logger: 
 
     root = 'files'

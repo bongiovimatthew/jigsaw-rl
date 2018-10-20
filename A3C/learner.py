@@ -212,7 +212,7 @@ class Agent:
             self.sync_update() # Syncron update instead of asyncron!
             print(self.T)
             
-            if (self.T%100 == 0): 
+            if (self.T%1000 == 0): 
                 self.save_model_snapshot()
             if self.signal:
                 self.evaluate_during_training()
@@ -295,7 +295,7 @@ class Agent:
             # print("action:%d"%action)
             self.s_t, info = env_step(self.env, self.queue, action)
             
-            imageio.imwrite('files/state_images/puzzle_time_%d_action_%s_reward_%d.jpg'%(self.counter,Actions(action).name,info["rewards"]),deprocess_img(self.s_t)) 
+            # imageio.imwrite('files/state_images/puzzle_time_%d_action_%s_reward_%d.jpg'%(self.counter,Actions(action).name,info["rewards"]),deprocess_img(self.s_t)) 
             info = self.update_and_get_metrics(info, action)
 
             # if self.debugMode and self.t > 300 and self.t < 350 : 
@@ -329,7 +329,8 @@ class Agent:
             reward = self.queue.get_reward_at(idx)
             action = self.queue.get_action_at(idx)
             self.R = reward + self.gamma * self.R
-            self.net.train_net(state, action, self.R, False)
+            endReached = (idx == self.t_start+1)
+            self.diff = self.net.train_net(state, action, self.R, calc_diff = endReached)
             idx = idx-1
         
         # At the last training step the differences should be saved
@@ -338,11 +339,11 @@ class Agent:
         # action = self.queue.get_action_at(idx)
             
         # self.R = reward + self.gamma * self.R
-        self.diff = self.net.train_net(state, action, np.float32(self.R), True)
+        # self.diff = self.net.train_net(state, action, np.float32(self.R), True)
             
         if self.signal:
             print("last avg loss %f, T: %d, leaner id:%d"%(self.net.get_last_avg_loss(), self.T, self.learner_id))
-            # logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)
+            logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)
         
     def sync_update(self):
         lock.acquire()

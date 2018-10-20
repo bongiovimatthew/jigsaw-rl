@@ -44,7 +44,11 @@ class PuzzleEnvironment(Environment):
     CORRECT_GEOMMETRY_SCORE = 1
     INCORRECT_GEOMMETRY_SCORE = -2
     NOT_CONNECTED_SCORE = -1
-    CORRECT_PLACEMENT_SCORE = 100
+    CORRECT_PLACEMENT_SCORE = 1000
+    NOT_STRAIGHT_TO_WALL = -3
+    NOT_CONNECTED_ATALL = -5
+
+
 
     # actions: 
     # 0 - cycle selected piece 
@@ -91,11 +95,13 @@ class PuzzleEnvironment(Environment):
     def action(self): 
         return self.action_space
 
-    def _rotate_piece(self, pieceId, numRotations):
+    def _rotate_piece(self, pieceId, numRotations,overlapAllowed=False):
         # Update pieceState 
         for piece in self.pieceState: 
             if piece.id == pieceId: 
                 piece.rotate_defined(numRotations)
+                if not overlapAllowed:
+                    piece.overlappedScore = 0
 
         # No guidArray updates needed 
         return
@@ -158,7 +164,7 @@ class PuzzleEnvironment(Environment):
         if action >= Actions.ACTION_ROT90_1.value and action <= Actions.ACTION_ROT90_3.value:
             currentPiece = self.pieceState[self.currentPieceIndex]
             numRotations = action-3
-            self._rotate_piece(currentPiece.id, numRotations) 
+            self._rotate_piece(currentPiece.id, numRotations,overlapAllowed=False) 
         
         if action >= Actions.ACTION_TRANS_UP.value and action <= Actions.ACTION_TRANS_LEFT.value:
             currentPiece = self.pieceState[self.currentPieceIndex]
@@ -248,7 +254,8 @@ class PuzzleEnvironment(Environment):
 
 
     def isMaxReward(self, reward):
-        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + PuzzleEnvironment.CORRECT_PLACEMENT_SCORE * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()): 
+        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + 0 * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()):
+        # if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + PuzzleEnvironment.CORRECT_PLACEMENT_SCORE * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()): 
             return True
         return False
 
@@ -269,14 +276,14 @@ class PuzzleEnvironment(Environment):
                 adjacentPieceIdLength = len(self.guidArray[adjacentCoords_y][adjacentCoords_x])
 
                 if (adjacentPieceIdLength != 0):
-                    score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE 
+                    score += PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE
                 else:
                     score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE
 
         # Account for IN and OUT
         else:
             if adjacentCoords_x < 0 or adjacentCoords_y < 0 or adjacentCoords_x >= len(self.guidArray[0]) or adjacentCoords_y >= len(self.guidArray):
-                score += PuzzleEnvironment.NOT_CONNECTED_SCORE
+                score += PuzzleEnvironment.NOT_STRAIGHT_TO_WALL
             else:
                 adjacentPieceIds = self.guidArray[adjacentCoords_y][adjacentCoords_x]
                 if (len(adjacentPieceIds) == 0):
@@ -284,7 +291,8 @@ class PuzzleEnvironment(Environment):
                 else:
                     for adjacentPieceId in adjacentPieceIds:
                         adjacentPieceDirection = Direction.GetComplement(directionToLook)
-                        adjacentPieceGeommetry = self.getPieceUsingId(adjacentPieceId).getEdgeGeometry(adjacentPieceDirection) 
+                        adjacentPieceGeommetry = self.getPieceUsingId(
+                            adjacentPieceId).getEdgeGeometry(adjacentPieceDirection)
                         if adjacentPieceGeommetry == EdgeShape.GetComplement(pieceEdgeGeommetry):
                             score += PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE
                             if piece.correctEdgeIds[directionToLook.value] == adjacentPieceId:
@@ -294,32 +302,58 @@ class PuzzleEnvironment(Environment):
 
         return score
 
-    def getScoreOfCurrentState(self): 
+    def getNotConnectedAtAllScore(self,piece):
+        notConnectedDegree = 0 
+        score = 0 
+        neighbors = []
+        directions = [-1,+1]
+        for direction in directions:
+            neighbors.append((piece.coords_y,piece.coords_x+direction))
+            neighbors.append((piece.coords_y+direction,piece.coords_x))
+        for neighbor in neighbors:
+            if self.noexist(neighbor):
+                notConnectedDegree += 1 
+        if notConnectedDegree == 4:
+            score += PuzzleEnvironment.NOT_CONNECTED_ATALL 
+
+        return score ; 
+
+    def noexist(self,neighbor):
+        if neighbor[0] < 0 or neighbor[0] >= len(self.guidArray[0]) or neighbor[1] <0 or neighbor[1] >= len(self.guidArray):
+            return 1
+        if len(self.guidArray[neighbor[0]][neighbor[1]])==0:
+            return 1 
+        return 0
+
+
+
+    def getScoreOfCurrentState(self):
         score = 0
         count = 0
 
-        for piece in self.pieceState: 
+        for piece in self.pieceState:
             pieceScore = 0
             # piece to the left
-            lScore = self.getScoreOfAPieceInASingleDirection(piece, Direction.LEFT, piece.coords_x - 1, piece.coords_y)
-            rScore = self.getScoreOfAPieceInASingleDirection(piece, Direction.RIGHT, piece.coords_x + 1, piece.coords_y)
-            uScore = self.getScoreOfAPieceInASingleDirection(piece, Direction.UP, piece.coords_x, piece.coords_y - 1)
-            dScore = self.getScoreOfAPieceInASingleDirection(piece, Direction.DOWN, piece.coords_x, piece.coords_y + 1)
+            lScore = self.getScoreOfAPieceInASingleDirection(
+                piece, Direction.LEFT, piece.coords_x - 1, piece.coords_y)
+            rScore = self.getScoreOfAPieceInASingleDirection(
+                piece, Direction.RIGHT, piece.coords_x + 1, piece.coords_y)
+            uScore = self.getScoreOfAPieceInASingleDirection(
+                piece, Direction.UP, piece.coords_x, piece.coords_y - 1)
+            dScore = self.getScoreOfAPieceInASingleDirection(
+                piece, Direction.DOWN, piece.coords_x, piece.coords_y + 1)
             count += 1
             pieceScore += lScore + rScore + uScore + dScore
 
             if len(self.guidArray[piece.coords_y][piece.coords_x]) > 1:
                 pieceScore += PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
             pieceScore += piece.overlappedScore 
-            # if piece.overlappedScore < 0 :
-            #     rdb.set_trace()
-            if piece.coords_x == piece.correct_coords_x and piece.coords_y == piece.correct_coords_y:
-                pieceScore += PuzzleEnvironment.CORRECT_PLACEMENT_SCORE
-                
+            pieceScore += self.getNotConnectedAtAllScore(piece)
+            # if piece.coords_x == piece.correct_coords_x and piece.coords_y == piece.correct_coords_y:
+            #     pieceScore += PuzzleEnvironment.CORRECT_PLACEMENT_SCORE
+
             score += pieceScore
 
-        # normalizedScore = self.getNormalizedScore(score)
-        #print("normalized Score %f"%normalizedScore)
         return score
 
     def getNormalizedScore(self,score):
