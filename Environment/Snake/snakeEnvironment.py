@@ -55,13 +55,15 @@ class Player:
             self.y.append(-100)
 
         # initial positions, no collision.
-        self.x[0] = 2 * self.step
-        self.x[1] = 1 * self.step
-        self.x[2] = 0
+        self.headspot_x = randint(2, (SnakeEnvironment.WINDOW_WIDTH / self.step) - 2)
+        self.headspot_y = randint(0, (SnakeEnvironment.WINDOW_WIDTH / self.step))
+        self.x[0] = (self.headspot_x - 0) * self.step
+        self.x[1] = (self.headspot_x - 1) * self.step
+        self.x[2] = (self.headspot_x - 2) * self.step
 
-        self.y[0] = 0
-        self.y[1] = 0
-        self.y[2] = 0
+        self.y[0] = self.headspot_y * self.step
+        self.y[1] = self.headspot_y * self.step
+        self.y[2] = self.headspot_y * self.step
 
     def update(self):
 
@@ -169,7 +171,7 @@ class SnakeEnvironment(Environment):
         self._running = True
         self.game = Game()
         self.player = Player(3)
-        self.apple = Apple(4, 0)
+        self.apple = Apple(self.player.headspot_x + 1, self.player.headspot_y)
         self.movesCount = 0
         self.numberOfTimesExecutedEachAction = list(range(self.MAX_ACTIONS_NUM))
 
@@ -219,7 +221,7 @@ class SnakeEnvironment(Environment):
         return (next_state, reward, done, info)
 
     def check_state(self):
-        reward = 0.25
+        reward = -0.1 #0.25 (-0.1 worked well)
         info = {}
         done = False
         info['oldScore'] = self.player.length
@@ -233,17 +235,17 @@ class SnakeEnvironment(Environment):
         if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0]):
             self.apple = self.apple.place(self.player)
             self.player.length = self.player.length + 1
-            reward = 20 + 4 * self.player.length
+            reward = 10 + self.player.length
             print("Got them apples")
 
         # does snake collide with itself?
         for i in range(2, self.player.length):
             if self.game.isCollision(self.player.x[0], self.player.y[0], self.player.x[i], self.player.y[i]):
-                reward = -5
+                reward = -15
                 done = True
 
         if self.game.isOutOfBounds(self.player.x[0], self.player.y[0]):
-            reward = -5
+            reward = -15
             done = True
 
         info['score'] = self.player.length

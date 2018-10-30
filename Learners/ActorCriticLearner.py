@@ -13,6 +13,8 @@ from ActionChoosers.EpsilonGreedyActionChooser import EpsilonGreedyActionChooser
 from Learners.BatchQueue import BatchQueue
 from Learners.CircularBatchQueue import CircularBatchQueue
 from pathlib import Path
+import time
+from datetime import datetime
 
 class ActorCriticLearner:
 
@@ -69,7 +71,7 @@ class ActorCriticAgent:
         else:
             self.queue = BatchQueue(total_max_moves, ActorCriticLearner.STATE_HEIGHT) 
 
-        self.current_state = ActorCriticLearner.process_img(ActorCriticLearner.env_reset(self.env, self.queue))        
+        self.current_state = ActorCriticLearner.process_img(ActorCriticLearner.env_reset(self.env, self.queue))
 
         self.queue.add(self.current_state, 0, 0, False)
         self.queue.set_discounted_reward_at(self.queue.get_last_idx(), 0)
@@ -90,6 +92,7 @@ class ActorCriticAgent:
         self.print_images_start_end = True
         self.flag_load_model = load_model
         self.evaluate_mode = evaluate_mode 
+        self.episode_frames = []
 
         if load_model:
             self.load_model()
@@ -132,9 +135,13 @@ class ActorCriticAgent:
     def load_model(self):
         self.ActionChooser.get_brain().load_model(ActorCriticAgent.model_path)
 
+    def make_gif(self, images, fname):
+        import imageio
+        imageio.mimsave(fname, images, format='GIF', duration=0.2)
+
     def play_game_for_a_while(self):
         self.current_step_count = 0
-
+        
         if self.is_terminal:
             if self.debug_mode:
                 logger.log_state_image(self.current_state, self.total_step_count, self.learner_id, -1,
@@ -157,7 +164,13 @@ class ActorCriticAgent:
             self.episode_step_count = 0
             self.is_terminal = False
 
-        
+            # Save the episode as a GIF if it was a good one 
+            if len(self.episode_frames) > 60 or self.current_info['score'] > 6:
+                images = np.array(self.episode_frames)
+                timestr = time.strftime("%Y%m%d-%H%M%S_") + str(int(datetime.now().microsecond / 1000))
+                self.make_gif(images, './files/gifs/' + timestr + "_" + "score_" + str(self.current_info['score'] - 3) + "_" + str(len(self.episode_frames)) + '.gif')
+            self.episode_frames = []
+
         if self.evaluate_mode:
             self.epsilon = 0.07
         else:
@@ -172,8 +185,15 @@ class ActorCriticAgent:
             self.total_step_count += 1
             batch_count += 1
 
+            input_img = np.array(self.current_state)
+            out_image = np.reshape(input_img, (ActorCriticLearner.STATE_WIDTH, ActorCriticLearner.STATE_HEIGHT, 3))
+
+            self.episode_frames.append(out_image)
+
             action = self.ActionChooser.action(self.current_state, self.epsilon)
             next_state, rw, done, info = ActorCriticLearner.env_step(self.env, self.queue, action)
+            
+            self.current_info = info
 
             self.queue.add(self.current_state, rw, action, done)
             self.current_state = ActorCriticLearner.process_img(next_state)
