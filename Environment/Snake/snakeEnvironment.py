@@ -21,8 +21,8 @@ class Apple:
         counter = 0
         touchesSnake = True
         while counter < 1000000 and touchesSnake:
-            self.x = randint(0, (SnakeEnvironment.WINDOW_WIDTH / self.step) - 1) * self.step
-            self.y = randint(0, (SnakeEnvironment.WINDOW_HEIGHT / self.step) - 1) * self.step
+            self.x = randint(1, (SnakeEnvironment.WINDOW_WIDTH / self.step) - 2) * self.step
+            self.y = randint(1, (SnakeEnvironment.WINDOW_HEIGHT / self.step) - 2) * self.step
             touchesSnake = False
 
             for i in range(0, player.length):
@@ -169,7 +169,7 @@ class SnakeEnvironment(Environment):
         self._running = True
         self.game = Game()
         self.player = Player(3)
-        self.apple = Apple(0, 3)
+        self.apple = Apple(4, 0)
         self.movesCount = 0
         self.numberOfTimesExecutedEachAction = list(range(self.MAX_ACTIONS_NUM))
 
@@ -233,7 +233,7 @@ class SnakeEnvironment(Environment):
         if self.game.isCollision(self.apple.x, self.apple.y, self.player.x[0], self.player.y[0]):
             self.apple = self.apple.place(self.player)
             self.player.length = self.player.length + 1
-            reward = 10 + self.player.length
+            reward = 20 + 4 * self.player.length
             print("Got them apples")
 
         # does snake collide with itself?

@@ -14,11 +14,11 @@ class BaseTFModel():
         local_state = tf.reshape(self.state, shape=[-1, self.STATE_WIDTH, self.STATE_HEIGHT, 3])
 
         conv1 = tf.layers.conv2d(local_state, filters=8, kernel_size=(8, 8), strides=4, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv1")
-
         conv2 = tf.layers.conv2d(conv1, filters=16, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv2")
+        conv3 = tf.layers.conv2d(conv2, filters=16, kernel_size=(4, 4), strides=2, padding="VALID", use_bias=True, activation=tf.nn.relu, name="conv3")
 
         # Flatten the data to a 1-D vector for the fully connected layer
-        fc1 = tf.contrib.layers.flatten(conv2)
+        fc1 = tf.contrib.layers.flatten(conv3)
 
         # Fully connected layer (in tf contrib folder for now)
         fc1 = tf.contrib.layers.fully_connected(fc1, 256, activation_fn=tf.nn.sigmoid)
@@ -31,23 +31,24 @@ class BaseTFModel():
         if add_summaries:
             tf.contrib.layers.summarize_activation(conv1)
             tf.contrib.layers.summarize_activation(conv2)
+            tf.contrib.layers.summarize_activation(conv3)
             tf.contrib.layers.summarize_activation(fc1)
 
             if self.debugMode:
-                self.setupVisualizations(conv1, conv2, local_state)
+                self.setupVisualizations(conv1, conv2, conv3, local_state)
 
         return fc1
 
     # https://github.com/tensorflow/tensorflow/issues/908
-    def setupVisualizations(self, conv1, conv2, local_state):
+    def setupVisualizations(self, conv1, conv2, conv3, local_state):
  
         self.visualize_single_tensor(conv1, conv1.shape[1], conv1.shape[2], 4, 2, 'conv1')
-
         self.visualize_single_tensor(conv2, conv2.shape[1], conv2.shape[2], 4, 4, 'conv2')
+        self.visualize_single_tensor(conv3, conv3.shape[1], conv3.shape[2], 4, 4, 'conv3')
 
         self.visualize_single_kernel("/conv1/kernel:0", 4, 2)
-
         self.visualize_single_kernel("/conv2/kernel:0", 8, 16)
+        self.visualize_single_kernel("/conv3/kernel:0", 8, 16)
 
         tf.summary.image("input_image", local_state)
 

@@ -159,9 +159,9 @@ class ActorCriticAgent:
 
         
         if self.evaluate_mode:
-            self.epsilon = 0.1
+            self.epsilon = 0.07
         else:
-            self.epsilon = 0.1 #max(0.1, 1.0 - (((1.0 - 0.1)*1.5) / self.total_max_moves) * self.total_step_count)  # first decreasing, then it is constant
+            self.epsilon = 0.1 # max(0.1, 1.0 - (((1.0 - 0.1)*1.5) / self.total_max_moves) * self.total_step_count)  # first decreasing, then it is constant
 
         batch_count_start = self.episode_step_count
         batch_count = batch_count_start 
