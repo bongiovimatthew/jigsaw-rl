@@ -56,7 +56,7 @@ class Player:
 
         # initial positions, no collision.
         self.headspot_x = randint(2, (SnakeEnvironment.WINDOW_WIDTH / self.step) - 2)
-        self.headspot_y = randint(0, (SnakeEnvironment.WINDOW_WIDTH / self.step))
+        self.headspot_y = randint(0, (SnakeEnvironment.WINDOW_WIDTH / self.step) - 2)
         self.x[0] = (self.headspot_x - 0) * self.step
         self.x[1] = (self.headspot_x - 1) * self.step
         self.x[2] = (self.headspot_x - 2) * self.step
