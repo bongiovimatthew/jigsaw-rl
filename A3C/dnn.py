@@ -6,6 +6,7 @@ from cntk.learners import adam, learning_rate_schedule, momentum_schedule, UnitT
 from celery.contrib import rdb
 from cntk.logging.progress_print import *
 import time
+import copy as makecopy
 # Set CPU as device for the neural network.
 try_set_default_device(cpu())
 
@@ -44,6 +45,7 @@ class DeepNet:
         self.v = v(self.stacked_frames)
         self.pms_v = self.v.parameters
 
+
     def build_trainer(self):
         
         # Set the learning rate, and the momentum parameters for the Adam optimizer.
@@ -53,17 +55,17 @@ class DeepNet:
         
         # Calculate the losses.
         loss_on_v = cntk.squared_error(self.R, self.v)
-        
+        # rdb.set_trace()
         pi_a_s = cntk.log(cntk.times_transpose(self.pi, self.action))
-        loss_on_pi = cntk.times(pi_a_s, cntk.minus(self.R, self.v_calc))
+        loss_on_pi = -pi_a_s # -cntk.times(pi_a_s, cntk.squared_error(self.R, self.v))
 
         # Add tensorboard visualization 
-        tensorboard_writer_v = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.v)
-        tensorboard_writer_pi = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.pi)
+        # tensorboard_writer_v = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.v)
+        # tensorboard_writer_pi = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.pi)
         
         # Create the trainiers.
-        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_v)
-        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)], tensorboard_writer_pi)
+        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])#, tensorboard_writer_v
+        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)]) # , tensorboard_writer_pi)
         
         self.trainer_pi = trainer_pi
         self.trainer_v = trainer_v
@@ -88,23 +90,23 @@ class DeepNet:
         action_as_array = np.zeros(self.num_actions, dtype=np.float32)
         action_as_array[int(action)] = 1
         
-        v_calc = self.state_value(state)
+        # v_calc = self.state_value(state)
         # self.print_v_loss(state,R,'before')
         # rdb.set_trace()
         float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
         # print("previous square loss with R %f"%(R - v_calc)**2)
-        self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array], self.R: [float32_R], self.v_calc: [v_calc]})
+        self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array]})# , self.v_calc: [v_calc], self.R: [float32_R]}
         self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
-        v_calc2 = self.state_value(state)
+        # v_calc2 = self.state_value(state)
         # self.print_v_loss(state,R,'after')
         if calc_diff:
             # Calculate the differences between the updated and the original params.
             for idx in range(len(self.pms_pi)):
                 # self.update_pi[idx] = self.pms_pi[idx].value - self.update_pi[idx]
-                self.update_pi[idx] = self.pms_pi[idx].value - self.pms_pi_prev[idx].value
+                self.update_pi[idx] = self.pms_pi[idx].value - self.pms_pi_prev[idx]
             for idx in range(len(self.pms_v)):
                 # self.update_v[idx] = self.pms_v[idx].value - self.update_v[idx]
-                self.update_v[idx] = self.pms_v[idx].value - self.pms_v_prev[idx].value
+                self.update_v[idx] = self.pms_v[idx].value - self.pms_v_prev[idx]
             
             diff = [self.update_pi, self.update_v]
         
@@ -146,10 +148,11 @@ class DeepNet:
         self.pms_v_prev = [] 
         for idx in range(0, len(self.pms_pi)):
             self.pms_pi[idx].value = shared[0][idx]
-            self.pms_pi_prev.append(self.pms_pi[idx])
+            self.pms_pi_prev.append(self.pms_pi[idx].value.copy())
         for idx in range(0, len(self.pms_v)):
             self.pms_v[idx].value = shared[1][idx]
-            self.pms_v_prev.append(self.pms_v[idx])
+            self.pms_v_prev.append(self.pms_v[idx].value.copy())
+
                     
     def sync_update(self, shared, diff):
         for idx in range(0, len(self.pms_pi)):

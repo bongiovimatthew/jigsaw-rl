@@ -1,4 +1,4 @@
-from pynput.keyboard import Key, Listener
+from pynput.keyboard import Listener
 from enum import Enum
 import PIL as pl
 from PIL import ImageTk, Image
@@ -9,17 +9,21 @@ from threading import Thread
 from time import sleep
 
 from tkinter import *
-
+import cv2 
+import pdb
 class Actions(Enum):
-    ACTION_CYCLE = 0 
-    ACTION_TRANS_UP = 1
-    ACTION_TRANS_RIGHT = 2
-    ACTION_TRANS_DOWN = 3
-    ACTION_TRANS_LEFT = 4
-    ACTION_ROT90_1 = 5
-    ACTION_ROT90_2 = 6
-    ACTION_ROT90_3 = 7
+    ACTION_TRANS_UP = 0
+    ACTION_TRANS_RIGHT = 1
+    ACTION_TRANS_DOWN = 2
+    ACTION_TRANS_LEFT = 3
+    ACTION_ROT90_1 = 4
 
+class Key():
+    right = 2555904
+    left = 2424832
+    up = 2490368
+    down = 2621440
+    space = 32
 class HumanAgent: 
     def __init__(self):
         self.env = PuzzleEnvironment()
@@ -34,56 +38,35 @@ class HumanAgent:
         self.numStepsForRunningMetrics = 0
         self.slidingWindowScoresArray = []
 
-        startImg = self.env.render()
-        self.displayUpdatedBoard(startImg)
+        self.startImg = self.env.render()
+        cv2.namedWindow('puzzle',cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('puzzle', 600,600)
+        # self.displayUpdatedBoard(self.startImg)
 
     def displayUpdatedBoard(self, imgData):
-        # Create a window
-        #self.window = tkinter.Tk()
 
-        # Create a canvas that can fit the above image
-        #width = 228
-        #height = 228 
-        #self.canvas = tkinter.Canvas(self.window, width = width, height = height)
-        #self.canvas.pack()
-
-        img = pl.Image.fromarray(imgData, 'RGB')
-        img.show(title="Move")
-        #sleep(2)
-        #img.destroy()
-
-        # root = Tk()
-        # root_panel = Frame(root)
-        # root_panel.pack(side="bottom", fill="both", expand="yes")
-
-        # img_tk = ImageTk.PhotoImage(img)
-        # img_panel = Label(root_panel)
-        # img_panel.configure(image=img_tk)
-
-        # root.mainloop()
-        # sleep(2)
-        # root.destroy()
-
-        #self.canvas.create_image(0, 0, image=img, anchor=tkinter.NW)
-        #self.window.mainloop()
-        #sleep(2)
-        #self.window.root.destroy()
-
+        cv2.imshow('puzzle',imgData)
+        cv2.waitKey(500) 
     def on_press(self, key):
         #print('{0} pressed'.format(key))
         return 
 
-    def on_release(self, key):
-        if key == Key.esc:
-            # Stop listener
-            return False
+    def play(self):
+        imgData = self.startImg
+        while True:
+            cv2.imshow('puzzle',imgData)
+            key = cv2.waitKey(20)
+            if key == 27: # exit on ESC
+                return False
+            action = self.getActionFromUserInput(key)
+            if action != -1 :
+                self.s_t, reward, done, info = self.env.step(action)
+                imgData = self.env.render()
+                print("action: %s, reward:%f"%(Actions(info["action"]), reward))
 
-        action = self.getActionFromUserInput(key)
-
-        self.s_t, reward, done, info = self.env.step(action)
-        #info = self.update_and_get_metrics(info)
-
+    def log(self, reward,info):
         file_name = "gameOutput.txt"
+
         with open(file_name, "a+") as f:
             f.write("------------------------------------\r\n")
             f.write("Step: {0}\r\n".format(info["step"]))
@@ -94,14 +77,7 @@ class HumanAgent:
             f.write("\r\n")
             f.write("\r\n")
 
-        imgData = self.env.render()
-
-        #thread = Thread(target = self.displayUpdatedBoard(imgData), args = (10, ))
-        #thread.start()
-        #thread.join()
-
-        self.displayUpdatedBoard(imgData)
-        
+       
     def getActionFromUserInput(self, input):
         if input == Key.up:
             return Actions.ACTION_TRANS_UP.value
@@ -112,17 +88,11 @@ class HumanAgent:
         if input == Key.right:
             return Actions.ACTION_TRANS_RIGHT.value
         if input == Key.space:
-            return Actions.ACTION_CYCLE.value
-        if str(input) == "'r'": 
             return Actions.ACTION_ROT90_1.value
-        return
+        # if str(input) == "'r'": 
+        #     return Actions.ACTION_ROT90_1.value
+        return -1
     
-    def run(self):
-
-        print("Input Move (up/down/left/right/spacebar/Esc): ")
-        with Listener(on_press=self.on_press, on_release=self.on_release) as listener:
-            listener.join() 
-
     def update_and_get_metrics(self, info):
         rewards = info["rewards"]
         score = info["score"]

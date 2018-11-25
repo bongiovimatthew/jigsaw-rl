@@ -39,14 +39,14 @@ class Actions(Enum):
     ACTION_CYCLE = 10 
 
 class PuzzleEnvironment(Environment):
-    CORRECT_IMAGE_SCORE = 4
-    INCORRECT_OVERLAY_SCORE = -200
+    CORRECT_IMAGE_SCORE = 1 # 4
+    INCORRECT_OVERLAY_SCORE =  -100 # -200
     CORRECT_GEOMMETRY_SCORE = 1
-    INCORRECT_GEOMMETRY_SCORE = -2
-    NOT_CONNECTED_SCORE = -1
-    CORRECT_PLACEMENT_SCORE = 1000
-    NOT_STRAIGHT_TO_WALL = -3
-    NOT_CONNECTED_ATALL = -5
+    INCORRECT_GEOMMETRY_SCORE =  0 # -2
+    NOT_CONNECTED_SCORE = 0 # -1
+    CORRECT_PLACEMENT_SCORE =  4 # 1000
+    NOT_STRAIGHT_TO_WALL =  0 # -3
+    NOT_CONNECTED_ATALL = 0 # -10
 
 
 
@@ -156,7 +156,7 @@ class PuzzleEnvironment(Environment):
     def add_overlapp_score(self,pieceId):
         for piece in self.pieceState:
             if piece.id == pieceId:
-                piece.overlappedScore += PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
+                piece.overlappedScore = PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
     def _convert_state(self, action):
 
         # if action == Actions.ACTION_CYCLE.value: 
@@ -191,9 +191,9 @@ class PuzzleEnvironment(Environment):
         tempOldScore = self.oldScore
         self.oldScore = currentScore
 
-        reward = currentScore - tempOldScore
+        reward = currentScore if (done or currentScore<0) else 0 # - tempOldScore
         if self.isMaxReward(currentScore):
-            reward *= 100
+            reward *= 1
 
         info = {'score':currentScore, 'oldScore': tempOldScore, 'action': action, 'step': self.stepCount}
 
@@ -254,8 +254,8 @@ class PuzzleEnvironment(Environment):
 
 
     def isMaxReward(self, reward):
-        if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + 0 * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()):
-        # if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + PuzzleEnvironment.CORRECT_PLACEMENT_SCORE * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()): 
+        # if reward == (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + 0 * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()):
+        if reward == 1:
             return True
         return False
 
@@ -263,6 +263,8 @@ class PuzzleEnvironment(Environment):
         for piece in self.pieceState:
             if piece.id == id:
                 return piece
+    def maxReward(self):
+        return (PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE) * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray()) * 4 + 0 * len(self.puzzle.getCorrectPuzzleArray()) * len(self.puzzle.getCorrectPuzzleArray())
 
     def getScoreOfAPieceInASingleDirection(self, piece, directionToLook, adjacentCoords_x, adjacentCoords_y):
         score = 0
@@ -348,19 +350,14 @@ class PuzzleEnvironment(Environment):
             if len(self.guidArray[piece.coords_y][piece.coords_x]) > 1:
                 pieceScore += PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
             pieceScore += piece.overlappedScore 
+
             pieceScore += self.getNotConnectedAtAllScore(piece)
             # if piece.coords_x == piece.correct_coords_x and piece.coords_y == piece.correct_coords_y:
             #     pieceScore += PuzzleEnvironment.CORRECT_PLACEMENT_SCORE
 
             score += pieceScore
-
+        score = self.getNormalizedScore(score)
         return score
 
     def getNormalizedScore(self,score):
-        minScore = (len(self.pieceState) -1 ) * PuzzleEnvironment.INCORRECT_OVERLAY_SCORE  # (n-1) pieces on top of each others
-        minScore = minScore + len(self.pieceState) * 4* (PuzzleEnvironment.INCORRECT_GEOMMETRY_SCORE ) # all sides are wrong
-
-        maxScore = len(self.pieceState) * PuzzleEnvironment.CORRECT_PLACEMENT_SCORE   # (n) correctly placed peices
-        maxScore  = maxScore + len(self.pieceState) * 4 * ( PuzzleEnvironment.CORRECT_GEOMMETRY_SCORE + PuzzleEnvironment.CORRECT_IMAGE_SCORE)
-        normalizedScore = (score - minScore)/(maxScore - minScore) 
-        return normalizedScore
+        return round(score*1.0/self.maxReward(),4)

@@ -6,6 +6,7 @@ import numpy as np
 from scipy.misc import imsave
 from Environment.env import Actions
 import celery
+import imageio
 class Logger: 
 
     root = 'files'
@@ -61,12 +62,20 @@ class Logger:
         print(grayScaleImg.shape)
         imsave(file_path, grayScaleImg)
 
-    def log_metrics(info, iteration, learner_id):
+    def save_state_image(info,state,action,step):
+        img = np.reshape(state,(84,84))
+        img = (img).astype(np.uint8)
+        imageio.imwrite('files/state_images/puzzle_time_%d_action_%s_reward_%f.jpg'%(step,Actions(action).name,info["rewards"]),img) 
+
+
+    def log_metrics(info, iteration, epoch, learner_id):
         Logger.log_scores(iteration, learner_id, info['score'], info['oldScore'], info['averageScore'], info['slidingWindowAverageScore'])
 
         file_name = Logger.path_metrics + "metrics_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:
-            f.write("Step {0}: negativeRewardCount: {1}, zeroRewardCount: {2} positiveRewardCount: {3} averageRewards: {4}\r\n".format(iteration, info["negativeRewardCount"], info["zeroRewardCount"], info["positiveRewardCount"], info["averageRewards"]))
+            log_str = "Epoch {0}: Step {1}: negativeRewardCount: {2}, zeroRewardCount: {3} positiveRewardCount: {4} averageRewards: {5}\r\n".format(epoch,iteration, info["negativeRewardCount"], info["zeroRewardCount"], info["positiveRewardCount"], info["averageRewards"])
+            print(log_str)
+            f.write(log_str)
 
         file_name = Logger.path_metrics + "moves_" + str(learner_id) + ".txt"
         with open(file_name, "a+") as f:

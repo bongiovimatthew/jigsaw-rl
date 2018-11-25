@@ -5,7 +5,7 @@ from Environment.env import Actions
 from Diagnostics.logger import Logger as logger
 from celery.contrib import rdb
 from PIL import Image
-import imageio
+
 import cv2,time
 
 # In case of Pool the Lock object can not be passed in the initialization argument.
@@ -122,9 +122,7 @@ def process_img(observation):
     return img_final
 
 
-def deprocess_img(state):
-    img = np.reshape(state,(84,84))
-    return (img).astype(np.uint8)
+
 # Functions to avoid temporary coupling.
 def env_reset(env, queue):
     queue.queue_reset()
@@ -144,6 +142,14 @@ def env_step(env, queue, action):
     queue.add(process_img(obs), rw, action, done)
     return queue.get_recent_state(), info
 
+def exponential_decay(step, total, initial, final, rate=1e-4, stairs=None):
+    if stairs is not None:
+        step = stairs * tf.floor(step / stairs)
+    scale, offset = 1. / (1. - rate), 1. - (1. / (1. - rate))
+    progress = step / total
+    value = (initial - final) * scale * rate ** progress + offset + final
+    lower, upper = min(initial, final), max(initial, final)
+    return max(lower, min(value, upper))
 
 class Agent:
     
@@ -163,7 +169,7 @@ class Agent:
         self.gamma = gamma
         
         self.is_terminal = False
-        
+        self.terminal_state_count = 1  
         self.env = PuzzleEnvironment()
         self.queue = Queue(game_length, 84) 
         self.net = dnn.DeepNet(self.env.action_space.n, lr)
@@ -210,8 +216,7 @@ class Agent:
             self.calculate_gradients()
             
             self.sync_update() # Syncron update instead of asyncron!
-            print(self.T)
-            
+                       
             if (self.T%1000 == 0): 
                 self.save_model_snapshot()
             if self.signal:
@@ -285,8 +290,9 @@ class Agent:
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
-        # self.epsilon = 0
+        # self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
+        self.epsilon = exponential_decay(self.T, self.T_max, 1.0, 0.05, rate=.5)
+        # self.epsilon = .95
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
             self.t += 1
             self.counter += 1
@@ -294,20 +300,31 @@ class Agent:
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
             # print("action:%d"%action)
             self.s_t, info = env_step(self.env, self.queue, action)
-            
-            # imageio.imwrite('files/state_images/puzzle_time_%d_action_%s_reward_%d.jpg'%(self.counter,Actions(action).name,info["rewards"]),deprocess_img(self.s_t)) 
+            # logger.log_state_image(self.s_t, self.t, self.learner_id,action)
+            # logger.save_state_image(info,self.s_t,action,self.counter)
             info = self.update_and_get_metrics(info, action)
 
             # if self.debugMode and self.t > 300 and self.t < 350 : 
-            #     logger.log_metrics(info, self.t, self.learner_id)
-            #     logger.log_state_image(self.s_t, self.t, self.learner_id,action)
-            #     self.reset_running_metrics()
 
-            self.is_terminal = self.queue.get_is_last_terminal()
             if self.T % self.C == 0: # log loss when evaluation happens
                 self.signal = True
+            
             if self.T % 5000 == 0:
                 print('Actual iter. num.: ' + str(self.T))
+        
+            self.is_terminal = self.queue.get_is_last_terminal()
+        if self.is_terminal:
+            self.terminal_state_count += 1
+            print(self.terminal_state_count)
+        if self.terminal_state_count % 10 == 0:
+            print("epsilon:%f"%self.epsilon)
+            logger.log_metrics(info, self.t,self.T, self.learner_id)
+            self.reset_running_metrics()
+            self.terminal_state_count = 1 
+
+
+        # logger.log_state_image(self.s_t, self.t, self.learner_id,action)
+        
         
     def set_R(self):
         if self.is_terminal:
@@ -341,9 +358,9 @@ class Agent:
         # self.R = reward + self.gamma * self.R
         # self.diff = self.net.train_net(state, action, np.float32(self.R), True)
             
-        if self.signal:
-            print("last avg loss %f, T: %d, leaner id:%d"%(self.net.get_last_avg_loss(), self.T, self.learner_id))
-            logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)
+        # if self.signal:
+        #     print("last avg loss %f, T: %d, leaner id:%d"%(self.net.get_last_avg_loss(), self.T, self.learner_id))
+        #     logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)
         
     def sync_update(self):
         lock.acquire()
@@ -354,7 +371,7 @@ class Agent:
         
     def evaluate_during_training(self):
         
-        print ('Evaluation at: ' + str(self.T))
+        # print ('Evaluation at: ' + str(self.T))
         
         for rnd in range(self.eval_num): # Run more game epsiode to get more robust result for performance
             state = env_reset(self.env, self.queue)
