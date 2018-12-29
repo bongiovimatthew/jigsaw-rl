@@ -24,21 +24,21 @@ class DeepNet:
         # Defining the input variables for training and evaluation.
         self.stacked_frames = cntk.input_variable((1, 84, 84), dtype=np.float32)
         self.action = cntk.input_variable(self.num_actions)
-        self.R = cntk.input_variable(1, dtype=np.float32)
-        self.v_calc = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
+        # self.R = cntk.input_variable(1, dtype=np.float32)
+        self.v_target = cntk.input_variable(1, dtype=np.float32) # In the loss of pi, the parameters of V(s) should be fixed.
         
         # Creating the value approximator extension.
         conv1_v = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
         conv2_v = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
-        # dense_v = Dense(256, init = .1,activation=cntk.relu)
-        v = Sequential([conv1_v, conv2_v, Dense(1)])  # , relu , conv1_v, conv2_v,
+        dense_v = Dense(256, init = .1,activation=cntk.relu)
+        v = Sequential([conv1_v, conv2_v, dense_v, Dense(1)])  # , relu , conv1_v, conv2_v,
         # v = Sequential([v2, Dense(1,init = cntk.normal(1), activation = cntk.relu)])  # conv1_v, conv2_v, relu , activation=cntk.sigmoid
         
         # Creating the policy approximator extension.
-        # conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
-        # conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
-        # dense_pi = Dense(256, activation=cntk.relu)
-        pi = Sequential([conv1_v, conv2_v, Dense(self.num_actions, activation=cntk.softmax)]) # conv1_v, conv2_v,dense_v,
+        conv1_pi = Convolution2D((8, 8), num_filters = 16, pad = False, strides=4, activation=cntk.relu)
+        conv2_pi = Convolution2D((4, 4), num_filters = 32, pad = False, strides=2, activation=cntk.relu)
+        dense_pi = Dense(256, activation=cntk.relu)
+        pi = Sequential([conv1_pi, conv2_pi,dense_pi, Dense(self.num_actions, activation=cntk.softmax)]) # conv1_v, conv2_v,dense_v,
         
         self.pi = pi(self.stacked_frames)
         self.pms_pi = self.pi.parameters # List of cntk Parameter types (containes the function's parameters)
@@ -54,66 +54,62 @@ class DeepNet:
         beta2 = momentum_schedule(0.99)
         
         # Calculate the losses.
-        loss_on_v = cntk.squared_error(self.R, self.v)
+        loss_on_v_arr = cntk.squared_error(self.v_target, self.v)
+        loss_on_v = cntk.mean(loss_on_v_arr)
         # rdb.set_trace()
         pi_a_s = cntk.log(cntk.times_transpose(self.pi, self.action))
-        loss_on_pi = -pi_a_s # -cntk.times(pi_a_s, cntk.squared_error(self.R, self.v))
+        # loss_on_pi = -pi_a_s # -cntk.times(pi_a_s, cntk.squared_error(self.R, self.v))
+        entropy = -1*cntk.times_transpose(self.pi, cntk.log(self.pi + 1e-5))
+        loss_on_pi_arr = (cntk.plus(cntk.times(pi_a_s, cntk.minus(
+            self.v_target, self.v)), 0.01 * entropy))
+        loss_on_pi = cntk.mean(-loss_on_pi_arr)
 
         # Add tensorboard visualization 
         # tensorboard_writer_v = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.v)
         # tensorboard_writer_pi = TensorBoardProgressWriter(freq=10, log_dir='log', model=self.pi)
         
         # Create the trainiers.
-        trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])#, tensorboard_writer_v
-        trainer_pi = cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)]) # , tensorboard_writer_pi)
+        self.trainer_v = cntk.Trainer(self.v, (loss_on_v), [adam(self.pms_v, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)])#, tensorboard_writer_v
+        self.trainer_pi= cntk.Trainer(self.pi, (loss_on_pi), [adam(self.pms_pi, lr, beta1, variance_momentum=beta2, gradient_clipping_threshold_per_sample=1.0, l2_regularization_weight=0.01)]) # , tensorboard_writer_pi)
         
-        self.trainer_pi = trainer_pi
-        self.trainer_v = trainer_v
+
+    def train_net(self, states, actions, v_targets):
         
-    def train_net(self, state, action, R, calc_diff):
-        
-        diff = None
-        try:
-            state = self.normalizeState(state)
-        except:
-            rdb.set_trace()
-        if calc_diff:
-            # Save the parameters before a training step.
-            self.update_pi = []
-            for x in self.pms_pi:
-                self.update_pi.append(x.value)
-            self.update_v = []
-            for x in self.pms_v:
-                self.update_v.append(x.value)
+        states = self.normalizeState(states)
+
+        # if calc_diff:
+        #     # Save the parameters before a training step.
+        self.update_pi = []
+        for x in self.pms_pi:
+            self.update_pi.append(x.value)
+        self.update_v = []
+        for x in self.pms_v:
+            self.update_v.append(x.value)
         
         # Training part
-        action_as_array = np.zeros(self.num_actions, dtype=np.float32)
-        action_as_array[int(action)] = 1
+        # action_as_array = np.zeros(self.num_actions, dtype=np.float32)
+        # action_as_array[int(action)] = 1
         
         # v_calc = self.state_value(state)
         # self.print_v_loss(state,R,'before')
-        # rdb.set_trace()
-        float32_R = np.float32(R) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
+        # v_targets = np.float32(v_targets) # Without this, CNTK warns to use float32 instead of float64 to enhance performance.
         # print("previous square loss with R %f"%(R - v_calc)**2)
-        self.trainer_pi.train_minibatch({self.stacked_frames: [state], self.action: [action_as_array]})# , self.v_calc: [v_calc], self.R: [float32_R]}
-        self.trainer_v.train_minibatch({self.stacked_frames: [state], self.R: [float32_R]})
-        # v_calc2 = self.state_value(state)
-        # self.print_v_loss(state,R,'after')
-        if calc_diff:
-            # Calculate the differences between the updated and the original params.
-            for idx in range(len(self.pms_pi)):
-                # self.update_pi[idx] = self.pms_pi[idx].value - self.update_pi[idx]
-                self.update_pi[idx] = self.pms_pi[idx].value - self.pms_pi_prev[idx]
-            for idx in range(len(self.pms_v)):
-                # self.update_v[idx] = self.pms_v[idx].value - self.update_v[idx]
-                self.update_v[idx] = self.pms_v[idx].value - self.pms_v_prev[idx]
-            
-            diff = [self.update_pi, self.update_v]
+        self.trainer_pi.train_minibatch({self.stacked_frames: states, self.action: actions, self.v_target: v_targets})
+        self.trainer_v.train_minibatch({self.stacked_frames: states, self.v_target: v_targets})
+        for idx in range(len(self.pms_pi)):
+            self.update_pi[idx] = self.pms_pi[idx].value - self.update_pi[idx]
+        for idx in range(len(self.pms_v)):
+            self.update_v[idx] = self.pms_v[idx].value - self.update_v[idx]
+        
+        diff = [self.update_pi, self.update_v]
         
         return diff
     
-    def normalizeState(self,state):
-        return (state/np.max(state))
+    def normalizeState(self,states):
+        return (np.array(states)/255)
+
+    def get_avg_minibatch_loss(self):                     
+        return(abs(self.trainer_v.previous_minibatch_loss_average), abs(self.trainer_pi.previous_minibatch_loss_average))
 
     def print_params(self,update_status='before'):
         print("pi values %s:"%update_status)

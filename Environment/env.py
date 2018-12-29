@@ -43,10 +43,10 @@ class PuzzleEnvironment(Environment):
     INCORRECT_OVERLAY_SCORE =  -100 # -200
     CORRECT_GEOMMETRY_SCORE = 1
     INCORRECT_GEOMMETRY_SCORE =  0 # -2
-    NOT_CONNECTED_SCORE = 0 # -1
+    NOT_CONNECTED_SCORE = -1 # -1
     CORRECT_PLACEMENT_SCORE =  4 # 1000
-    NOT_STRAIGHT_TO_WALL =  0 # -3
-    NOT_CONNECTED_ATALL = 0 # -10
+    NOT_STRAIGHT_TO_WALL =  -2 # -3
+    NOT_CONNECTED_ATALL = -5 # -10
 
 
 
@@ -191,9 +191,14 @@ class PuzzleEnvironment(Environment):
         tempOldScore = self.oldScore
         self.oldScore = currentScore
 
-        reward = currentScore if (done or currentScore<0) else 0 # - tempOldScore
+        # reward = currentScore  if (done or currentScore<0) else 0 # - tempOldScore
         if self.isMaxReward(currentScore):
-            reward *= 1
+            reward = 10
+        elif currentScore < 0:
+            reward = -1 
+        else:
+            reward = 0 
+        # reward = 1 if self.isMaxReward(currentScore) else 0 
 
         info = {'score':currentScore, 'oldScore': tempOldScore, 'action': action, 'step': self.stepCount}
 
@@ -203,8 +208,8 @@ class PuzzleEnvironment(Environment):
 
         if (done):
             print("COMPLETED EPISODE!, reward:{0} currentScore:{1}".format(reward, currentScore))
-            img = Image.fromarray(self.render(), 'RGB')
-            img.save(r'files/state_images/episode%d.jpg'%self.stepCount)
+            # img = Image.fromarray(self.render(), 'RGB')
+            # img.save(r'files/state_images/episode%d.jpg'%self.stepCount)
 
         # if (action == Actions.ACTION_CYCLE.value):
         #     reward = -1            

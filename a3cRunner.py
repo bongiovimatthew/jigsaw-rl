@@ -15,13 +15,13 @@ parser.add_argument('--t-max', type=int, default='15', metavar='N',
         help='update frequency (default:5)')
 parser.add_argument('--game-length', type=int, default='20000', metavar='N',
         help='assumed maximal length of an episode (deafult:10000)')
-parser.add_argument('--T-max', type=int, default=4000, metavar='N',
+parser.add_argument('--T-max', type=int, default=100000, metavar='N',
         help='the length of the training (default:120)')
-parser.add_argument('--C', type=int, default=30, metavar='N',
+parser.add_argument('--epoch-size', type=int, default=1000, metavar='N',
         help='the frequency of evaluation during training (default:25)')
 parser.add_argument('--eval-num', type=int, default=0, metavar='N',
         help='the number of evaluations in an evaluation session (default:10)')
-parser.add_argument('--gamma', type=float, default=0.90, metavar='F',
+parser.add_argument('--gamma', type=float, default=0.99, metavar='F',
         help='the discounting factor (default:0.99)')
 parser.add_argument('--lr', type=float, default=0.00025, metavar='F',
         help='the learning rate (default:0.00025)')
@@ -33,7 +33,7 @@ args = parser.parse_args()
 # IF TRAIN mode -> train the learners
 
 def executable(process_id):
-    lrn.execute_agent(process_id, args.atari_env, args.t_max, args.game_length, args.T_max, args.C, args.eval_num, args.gamma, args.lr)
+    lrn.execute_agent(process_id, args.atari_env, args.t_max, args.game_length, args.T_max, args.epoch_size, args.eval_num, args.gamma, args.lr,args.num_cores)
 
 if not args.test_mode:
     
@@ -50,7 +50,7 @@ if not args.test_mode:
                                                # contains the parameters as numpy arrays
         
         pool = Pool(n, initializer = lrn.init_lock_shared, initargs = (l,sh,))
-        logger.create_folders(l,args.atari_env, args.num_cores, args.t_max, args.game_length, args.T_max, args.C, args.gamma, args.lr)
+        logger.create_folders(l,args.atari_env, args.num_cores, args.t_max, args.game_length, args.T_max, args.epoch_size, args.gamma, args.lr)
         idcs = [0] * n
         for p in range(0, n):
             idcs[p] = p
@@ -60,8 +60,8 @@ if not args.test_mode:
         pool.close()
         pool.join()
         
-        for_saving = lrn.create_agent(args.atari_env, args.t_max, args.game_length, args.T_max, args.C, args.eval_num, args.gamma, args.lr)
-        logger.save_model(for_saving, sh)
+        # for_saving = lrn.create_agent(args.atari_env, args.t_max, args.game_length, args.T_max, args.epoch_size, args.eval_num, args.gamma, args.lr)
+        # logger.save_model(for_saving, sh)
          
 # IF EVALUATION mode -> evaluate a test run (rewards, video)
 else:

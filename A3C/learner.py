@@ -5,7 +5,7 @@ from Environment.env import Actions
 from Diagnostics.logger import Logger as logger
 from celery.contrib import rdb
 from PIL import Image
-
+import json
 import cv2,time
 
 # In case of Pool the Lock object can not be passed in the initialization argument.
@@ -31,13 +31,13 @@ def create_shared(env_name):
     
     return [prms_pi, prms_v]
 
-def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
-    agent = create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
+def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores):
+    agent = create_agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores)
     agent.run(learner_id)
         
-def create_agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr):
-    agent = Agent(puzzle_env, t_max, game_length, T_max, C, eval_num, gamma, lr)
-    # logger.load_model(agent.get_net())
+def create_agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores):
+    agent = Agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores)
+    # logger.load_model(agent.get_net())  # pick up where it's left of
 
     return agent
     
@@ -48,13 +48,20 @@ def create_agent_for_evaluation():
     # meta_data = logger.read_metadata()
     # env_name = meta_data[1]
     
-    agent = Agent("puzzle", 50000, 50000, 0, 0, 0, 0, 0) 
+    agent = Agent("puzzle", 50000, 50000, 0, 0, 0, 0, 0,1) 
     logger.load_model(agent.get_net())
     
     return agent
 
 # During a game attempt, a sequence of observation are generated.
 # The last four always forms the state. Rewards and actions also saved.
+
+class OutFiles:
+    def __init__(self,configs):
+        self.perf_train = logger.path_graphs + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma_{gamma}_t_max{t_max}_cores{cores}.jpg".format(**configs) 
+        self.perf_eval = logger.path_metrics + "eval_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma_{gamma}_t_max{t_max}_cores{cores}.jpg".format(**configs)
+        self.metrics_log = logger.path_metrics + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma_{gamma}_t_max{t_max}_cores{cores}.tsv".format(**configs)
+
 class Queue:
     
     def __init__(self, max_size, img_dimensions):
@@ -102,7 +109,6 @@ class Queue:
         if idx >= 0:
             return np.float32(self.observations[idx:idx+1,:,:])
 
-
         return None
     
     def get_reward_at(self, idx):
@@ -131,14 +137,12 @@ def env_reset(env, queue):
     return queue.get_recent_state() # should return None
     
 def env_step(env, queue, action):
-
     obs, rw, done, info = env.step(action)
     # pdb.set_trace()
     # if (rw > 0):
     #     print("Action:{0}, rewards:{1}".format(action, rw))
-
     # Add rewards to info
-    info["rewards"] = rw
+    info["reward"] = rw
     queue.add(process_img(obs), rw, action, done)
     return queue.get_recent_state(), info
 
@@ -153,45 +157,46 @@ def exponential_decay(step, total, initial, final, rate=1e-4, stairs=None):
 
 class Agent:
     
-    def __init__(self, env_name, t_max, game_length, T_max, C, eval_num, gamma, lr):
+    def __init__(self, env_name, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores):
         
         self.t_start = 0
         self.t = 0
         self.counter = 0 
         self.t_max = t_max
-        
+        self.lr = lr 
         self.game_length = game_length
         self.T = 0
         self.T_max = T_max
-        
-        self.C = C
+        self.num_cores = num_cores
+        self.epoch_size = epoch_size
         self.eval_num = eval_num
         self.gamma = gamma
         
         self.is_terminal = False
-        self.terminal_state_count = 1  
         self.env = PuzzleEnvironment()
         self.queue = Queue(game_length, 84) 
         self.net = dnn.DeepNet(self.env.action_space.n, lr)
         self.s_t = env_reset(self.env, self.queue)
         
         self.R = 0
-        self.signal = False
-        
+        self.training_report = False
+        self.loss_on_v = []
+        self.loss_on_p = []
         self.diff = []
         self.epsilon = 1.0
         self.debugMode = True 
 
-        self.negativeRewardCount = 0
-        self.zeroRewardCount = 0
-        self.positiveRewardCount = 0
-        self.averageRewards = 0
+        self.reward_count = {}
+        self.average_rewards = 0
         self.averageScore = 0
         self.slidingWindowAverageScore = 0
         self.numStepsForRunningMetrics = 0
-        self.stepsForAverageRewards = 0
+        self.stepsForaverage_rewards = 0
         self.slidingWindowScoresArray = []
         self.numberOfTimesExecutedEachAction = [0 for i in range(self.env.action_space.n)]
+        self.metrics = {}
+        self.metricsHistory = []
+        self.start = time.time()
     
     def get_net(self):
         return self.net
@@ -200,8 +205,11 @@ class Agent:
     def run(self, learner_id):
         
         self.learner_id = learner_id
-        
-        print(self.T_max)
+        configs = {'learner_id':self.learner_id,'T_max':self.T_max, 'lr':self.lr, 'gamma':self.gamma,'t_max':self.t_max,'cores':self.num_cores}
+        outfiles = OutFiles(configs)
+        if self.learner_id == -1: 
+            cv2.namedWindow('puzzle',cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('puzzle', 600,600)
         while self.T < self.T_max:
 
 
@@ -210,20 +218,24 @@ class Agent:
             self.play_game_for_a_while()
             
             self.set_R()
-            
-            # According to the article the gradients should be calculated.
-            # Here: The parameters are updated and the differences are added to the shared NN's.
+
             self.calculate_gradients()
             
             self.sync_update() # Syncron update instead of asyncron!
-                       
+
+
+            if self.training_report:
+                self.training_report = False
+                metric_names = ["iteration","epsilon","negativeRewardCount","zeroRewardCount","terminal_reward_count","average_rewards"]
+                metric_names = metric_names + ["averageScore","slidingWindowAverageScore","loss_on_v","loss_on_p","reward_count","time(s)"]
+                logger.log_metrics(self.metrics, outfiles.metrics_log,metric_names)
+                self.reset_running_metrics()
+
+
             if (self.T%1000 == 0): 
                 self.save_model_snapshot()
-            if self.signal:
-                self.evaluate_during_training()
-                self.signal = False
 
-
+        logger.plot_history(self.metricsHistory,outfiles.perf_train,metric_names = ["terminal_reward_count","loss_on_v","average_rewards"])        
         print("Completed run")
     # IMPLEMENTATIONS FOR the FUNCTIONS above
         
@@ -234,23 +246,19 @@ class Agent:
         finally:
             lock.release()
 
-    def update_and_get_metrics(self, info, action):
-        rewards = info["rewards"]
+    def update_metrics(self, info, action):
+        
+
+
+        reward = info["reward"]
+        if reward in self.reward_count:
+            self.reward_count[reward] += 1 
+        else:
+            self.reward_count[reward] = 1 
         score = info["score"]
         self.numStepsForRunningMetrics += 1
-        self.stepsForAverageRewards += 1
-
-        if rewards < 0:
-            self.negativeRewardCount += 1
-
-        elif rewards == 0:
-            self.zeroRewardCount += 1
-
-        elif rewards > 0:
-            self.positiveRewardCount += 1
-
-
-        self.averageRewards = ((self.averageRewards * (self.stepsForAverageRewards - 1)) + rewards) / self.stepsForAverageRewards
+        self.stepsForaverage_rewards += 1
+        self.average_rewards = ((self.average_rewards * (self.stepsForaverage_rewards - 1)) + reward) / self.stepsForaverage_rewards
         self.averageScore = ((self.averageScore * (self.t - 1)) + score) / self.t
 
         self.slidingWindowAverageScore = 0
@@ -262,25 +270,35 @@ class Agent:
 
         self.slidingWindowAverageScore = sum(self.slidingWindowScoresArray) / len(self.slidingWindowScoresArray)
 
-        info["negativeRewardCount"] = self.negativeRewardCount
-        info["zeroRewardCount"] = self.zeroRewardCount
-        info["positiveRewardCount"] = self.positiveRewardCount
-        info["averageRewards"] = self.averageRewards
-        info["averageScore"] = self.averageScore
-        info["slidingWindowAverageScore"] = self.slidingWindowAverageScore
-        info["numberOfTimesExecutedEachAction"] = self.numberOfTimesExecutedEachAction
+        self.metrics["negativeRewardCount"] = np.sum([v for k,v in self.reward_count.items() if k < 0]) #self.negativeRewardCount
+        self.metrics["zeroRewardCount"] = self.reward_count.get(0)
+        self.metrics["terminal_reward_count"] = self.reward_count.get(1)
+        self.metrics["average_rewards"] = self.average_rewards
+        self.metrics["averageScore"] = self.averageScore
+        self.metrics["slidingWindowAverageScore"] = self.slidingWindowAverageScore
+        self.metrics["numberOfTimesExecutedEachAction"] = self.numberOfTimesExecutedEachAction
+        self.metrics["reward_count"] = json.dumps(self.reward_count)
 
         return info
 
+    def update_loss_metric(self):
+        loss = self.net.get_avg_minibatch_loss()
+        self.loss_on_v.append(loss[0])
+        self.loss_on_p.append(loss[1])
+        self.metrics['loss_on_v'] = np.mean(np.array(self.loss_on_v))
+        self.metrics['loss_on_p'] = np.mean(np.array(self.loss_on_p))
+        self.metrics['iteration'] = self.T
+        self.metrics['epsilon'] = self.epsilon
+        self.metrics['time(s)'] = time.time() - self.start
     def reset_running_metrics(self):
-        self.negativeRewardCount = 0
-        self.positiveRewardCount = 0
-        self.zeroRewardCount = 0
-        self.averageRewards = 0
-        self.stepsForAverageRewards = 0
+        self.metricsHistory.append(self.metrics.copy())
+        self.reward_count = {}
+        self.average_rewards = 0
+        self.stepsForaverage_rewards = 0
         self.numStepsForRunningMetrics = 0
         self.numberOfTimesExecutedEachAction = [0 for i in range(self.env.action_space.n)]
-
+        self.loss_on_v = []
+        self.loss_on_p = []
     def play_game_for_a_while(self):
     
         if self.is_terminal:
@@ -290,78 +308,55 @@ class Agent:
             
         self.t_start = self.t
         
-        # self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
-        self.epsilon = exponential_decay(self.T, self.T_max, 1.0, 0.05, rate=.5)
-        # self.epsilon = .95
+        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
+        # self.epsilon = exponential_decay(self.T, self.T_max, 1.0, 0.05, rate=.5)
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
+
             self.t += 1
             self.counter += 1
             self.T += 1
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
-            # print("action:%d"%action)
             self.s_t, info = env_step(self.env, self.queue, action)
-            # logger.log_state_image(self.s_t, self.t, self.learner_id,action)
-            # logger.save_state_image(info,self.s_t,action,self.counter)
-            info = self.update_and_get_metrics(info, action)
+            if self.learner_id == -1:
+                cv2.imshow('puzzle',self.env.render())
+                cv2.waitKey(5) 
+            self.update_metrics(info, action)
 
-            # if self.debugMode and self.t > 300 and self.t < 350 : 
-
-            if self.T % self.C == 0: # log loss when evaluation happens
-                self.signal = True
+            if (self.T % self.epoch_size == 0 and self.T!=0): # log loss when evaluation happens
+                self.training_report = True
             
             if self.T % 5000 == 0:
                 print('Actual iter. num.: ' + str(self.T))
         
             self.is_terminal = self.queue.get_is_last_terminal()
-        if self.is_terminal:
-            self.terminal_state_count += 1
-            print(self.terminal_state_count)
-        if self.terminal_state_count % 10 == 0:
-            print("epsilon:%f"%self.epsilon)
-            logger.log_metrics(info, self.t,self.T, self.learner_id)
-            self.reset_running_metrics()
-            self.terminal_state_count = 1 
-
-
-        # logger.log_state_image(self.s_t, self.t, self.learner_id,action)
-        
+       
         
     def set_R(self):
         if self.is_terminal:
-            # self.R = self.net.state_value(self.s_t)
-            # self.R[0][0] = 0.0 # Without this, error dropped. special format is given back.
             self.R = np.array([[0.0]])
         else:
             self.R = self.net.state_value(self.s_t)
-            # rdb.set_trace()
-            # self.R = np.array([[0.0]])
         
     def calculate_gradients(self):
-
+        states = []
+        actions = []
+        targets = []
         idx = self.queue.get_last_idx()
         final_index = idx - self.t_max
-        # while idx > final_index: # the state is 4 pieces of frames stacked together -> at least 4 frames are necessary
         while (idx > self.t_start):
-            state = self.queue.get_state_at(idx-1)
+            states.append(self.queue.get_state_at(idx-1))
             reward = self.queue.get_reward_at(idx)
             action = self.queue.get_action_at(idx)
-            self.R = reward + self.gamma * self.R
-            endReached = (idx == self.t_start+1)
-            self.diff = self.net.train_net(state, action, self.R, calc_diff = endReached)
-            idx = idx-1
+            action_as_array = np.zeros(self.net.num_actions, dtype=np.float32)
+            action_as_array[int(action)] = 1
+            actions.append(action_as_array.copy())
+            target = reward + self.gamma * self.R
+            targets.append(np.float32(target))
+            idx -= 1
         
-        # At the last training step the differences should be saved
-        # state = self.queue.get_state_at(idx)
-        # reward = self.queue.get_reward_at(idx)
-        # action = self.queue.get_action_at(idx)
-            
-        # self.R = reward + self.gamma * self.R
-        # self.diff = self.net.train_net(state, action, np.float32(self.R), True)
-            
-        # if self.signal:
-        #     print("last avg loss %f, T: %d, leaner id:%d"%(self.net.get_last_avg_loss(), self.T, self.learner_id))
-        #     logger.log_losses(self.net.get_last_avg_loss(), self.T, self.learner_id)
-        
+        self.diff = self.net.train_net(np.array(states),np.array(actions),np.array(targets))
+        self.update_loss_metric()
+
     def sync_update(self):
         lock.acquire()
         try:
@@ -391,32 +386,32 @@ class Agent:
     def evaluate(self):
         
         print ('Start evaluating.')
-        env = PuzzleEnvironment()
-        state = env_reset(env, self.queue)
-        finished = False
-        cntr = 0
-        rewards = []
-        cv2.namedWindow('puzzle',cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('puzzle', 600,600)
-        while not (finished or cntr == self.game_length):
-            # img = Image.fromarray(env.render(), 'RGB')
+        while True:
+            env = PuzzleEnvironment()
+            state = env_reset(env, self.queue)
+            finished = False
+            cntr = 0
+            rewards = []
+            cv2.namedWindow('puzzle',cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('puzzle', 600,600)
+            while not (finished or cntr == self.game_length):
+                # img = Image.fromarray(env.render(), 'RGB')
 
-            cv2.imshow('puzzle',env.render())
-            cv2.waitKey(500) 
-            env.render()
-            action = dnn.action(self.net, state)
-            state, info = env_step(env, self.queue, action)
-            rewards.append(self.queue.get_recent_reward())
-                
-            finished = self.queue.get_is_last_terminal()
-            cntr += 1  
-         
-        # Representing the results. 
-        print ('The collected rewards over duration:')
-        total_rw = 0.0
-        for x in rewards:
-            total_rw += x
-        print (total_rw)
+
+                action = dnn.action(self.net, state)
+                state, info = env_step(env, self.queue, action)
+                rewards.append(self.queue.get_recent_reward())
+                cv2.imshow('puzzle',env.render())
+                cv2.waitKey(500)                    
+                finished = self.queue.get_is_last_terminal()
+                cntr += 1  
+             
+            # Representing the results. 
+            print ('The collected rewards over duration:')
+            total_rw = 0.0
+            for x in rewards:
+                total_rw += x
+            print (total_rw)
 
     def save_model_snapshot(self):
         lock.acquire()
