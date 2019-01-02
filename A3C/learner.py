@@ -7,7 +7,7 @@ from celery.contrib import rdb
 from PIL import Image
 import json
 import cv2,time
-
+from HumanGame.humanAgent import Key
 # In case of Pool the Lock object can not be passed in the initialization argument.
 # This is the solution
 lock = 0
@@ -19,8 +19,9 @@ def init_lock_shared(l, sh):
     shared = sh
 
 # Easier to call these functions from other modules.
-def create_shared(env_name):
-    temp_env = PuzzleEnvironment()
+
+def create_shared(cut_pieces_num):
+    temp_env = PuzzleEnvironment(cut_pieces_num)
     # temp_env = gym.make(env_name)
     num_actions = temp_env.action_space.n
     net = dnn.DeepNet(num_actions, 0)
@@ -31,36 +32,35 @@ def create_shared(env_name):
     
     return [prms_pi, prms_v]
 
-def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores):
-    agent = create_agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores)
+def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num):
+    agent = create_agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num)
     agent.run(learner_id)
         
-def create_agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores):
-    agent = Agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores)
+def create_agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num):
+    agent = Agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num)
     # logger.load_model(agent.get_net())  # pick up where it's left of
 
     return agent
     
-def create_agent_for_evaluation():
+def create_agent_for_evaluation(cut_pieces_num):
     
     # read the json with data (environemnt name and dnn model)
     
     # meta_data = logger.read_metadata()
     # env_name = meta_data[1]
     
-    agent = Agent("puzzle", 50000, 50000, 0, 0, 0, 0, 0,1) 
+    agent = Agent("puzzle", 50000, 50000, 0, 0, 0, 0, 0,1,cut_pieces_num) 
     logger.load_model(agent.get_net())
     
     return agent
 
 # During a game attempt, a sequence of observation are generated.
 # The last four always forms the state. Rewards and actions also saved.
-
 class OutFiles:
     def __init__(self,configs):
-        self.perf_train = logger.path_graphs + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma_{gamma}_t_max{t_max}_cores{cores}.jpg".format(**configs) 
-        self.perf_eval = logger.path_metrics + "eval_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma_{gamma}_t_max{t_max}_cores{cores}.jpg".format(**configs)
-        self.metrics_log = logger.path_metrics + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma_{gamma}_t_max{t_max}_cores{cores}.tsv".format(**configs)
+        self.perf_train = logger.path_graphs + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{cut_pieces_num}.jpg".format(**configs) 
+        self.perf_eval = logger.path_metrics + "eval_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{cut_pieces_num}.jpg".format(**configs)
+        self.metrics_log = logger.path_metrics + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{cut_pieces_num}.tsv".format(**configs)
 
 class Queue:
     
@@ -157,7 +157,7 @@ def exponential_decay(step, total, initial, final, rate=1e-4, stairs=None):
 
 class Agent:
     
-    def __init__(self, env_name, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores):
+    def __init__(self, env_name, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num):
         
         self.t_start = 0
         self.t = 0
@@ -171,9 +171,9 @@ class Agent:
         self.epoch_size = epoch_size
         self.eval_num = eval_num
         self.gamma = gamma
-        
+        self.cut_pieces_num = cut_pieces_num
         self.is_terminal = False
-        self.env = PuzzleEnvironment()
+        self.env = PuzzleEnvironment(cut_pieces_num)
         self.queue = Queue(game_length, 84) 
         self.net = dnn.DeepNet(self.env.action_space.n, lr)
         self.s_t = env_reset(self.env, self.queue)
@@ -205,9 +205,9 @@ class Agent:
     def run(self, learner_id):
         
         self.learner_id = learner_id
-        configs = {'learner_id':self.learner_id,'T_max':self.T_max, 'lr':self.lr, 'gamma':self.gamma,'t_max':self.t_max,'cores':self.num_cores}
+        configs = {'learner_id':self.learner_id,'T_max':self.T_max, 'lr':self.lr, 'gamma':self.gamma,'t_max':self.t_max,'cores':self.num_cores,'cut_pieces_num':self.cut_pieces_num}
         outfiles = OutFiles(configs)
-        if self.learner_id == -1: 
+        if self.learner_id == 0: 
             cv2.namedWindow('puzzle',cv2.WINDOW_NORMAL)
             cv2.resizeWindow('puzzle', 600,600)
         while self.T < self.T_max:
@@ -315,9 +315,13 @@ class Agent:
             self.t += 1
             self.counter += 1
             self.T += 1
+            # if (self.T < 20000 and self.T%2000 in range(60)):
+            #     action = self.action_via_operator()
+            #     print("iteration:%d"%self.T)
+            # else:
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
             self.s_t, info = env_step(self.env, self.queue, action)
-            if self.learner_id == -1:
+            if self.learner_id == 0:
                 cv2.imshow('puzzle',self.env.render())
                 cv2.waitKey(5) 
             self.update_metrics(info, action)
@@ -330,7 +334,31 @@ class Agent:
         
             self.is_terminal = self.queue.get_is_last_terminal()
        
-        
+    def action_via_operator(self):
+        cv2.imshow('puzzle',self.env.render())
+        key = cv2.waitKey(0)
+        if key == 27: # exit on ESC
+            return False
+        action = self.getActionFromUserInput(key)  
+        return action
+
+    def getActionFromUserInput(self, input):
+        if input == Key.UP:
+            return Actions.ACTION_TRANS_UP.value
+        if input == Key.DOWN:
+            return Actions.ACTION_TRANS_DOWN.value
+        if input == Key.LEFT:
+            return Actions.ACTION_TRANS_LEFT.value
+        if input == Key.RIGHT:
+            return Actions.ACTION_TRANS_RIGHT.value
+        if input == Key.SPACE:
+            return Actions.ACTION_ROT90_1.value
+        if input == Key.NEXT:
+            return Actions.ACTION_CYCLE.value
+        # if str(input) == "'r'": 
+        #     return Actions.ACTION_ROT90_1.value
+        return -1
+
     def set_R(self):
         if self.is_terminal:
             self.R = np.array([[0.0]])
@@ -363,7 +391,7 @@ class Agent:
             self.net.sync_update(shared, self.diff)
         finally:
             lock.release()
-        
+       
     def evaluate_during_training(self):
         
         # print ('Evaluation at: ' + str(self.T))

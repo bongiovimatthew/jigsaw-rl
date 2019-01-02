@@ -7,7 +7,7 @@ from Environment.puzzlePiece import PuzzlePiece
 from Environment.direction import Direction 
 from Environment.edge import EdgeShape 
 from Environment.puzzle import Puzzle 
-
+import pdb
 class PuzzleFactory:
 	NUMBER_OF_PIECES_TO_SCALE_BY = 2
 
@@ -192,21 +192,27 @@ class PuzzleFactory:
 						done = True
 		return allocations
 
-	def getRandomAllocationOnlyOnePiece(puzzle, pieces):
+	def getRandomCutAllocation(puzzle, pieces,cutPiecesNum):
 		sideDimension = puzzle.xNumPieces * PuzzleFactory.NUMBER_OF_PIECES_TO_SCALE_BY
 		allocations = []
 		occupied = {}
+		count = 0 
+		fixedPiecesNum = len(pieces) - cutPiecesNum
 		for coords_y in range(puzzle.yNumPieces):
 			for coords_x in range(puzzle.xNumPieces):
-				allocations.append((coords_y,coords_x))
-				occupied[(coords_y,coords_x)] = 1 
-		done = False
-		while not done:
-			coords_x = random.randint(puzzle.xNumPieces, sideDimension - 1)
-			coords_y = random.randint(puzzle.yNumPieces, sideDimension - 1)	
-			if (coords_x,coords_y) not in occupied:
-				allocations[-1] = (coords_y,coords_x)
-				done = True
+				if count < fixedPiecesNum:
+					allocations.append((coords_y,coords_x))
+					occupied[(coords_y,coords_x)] = 1 
+					count += 1
+		for i in range(fixedPiecesNum,len(pieces)):
+			done = False
+			while not done:
+				coords_x = random.randint(0, sideDimension - 1)
+				coords_y = random.randint(0, sideDimension - 1)	
+				if (coords_x,coords_y) not in occupied:
+					allocations.append((coords_y,coords_x))
+					occupied[(coords_y,coords_x)] = 1
+					done = True
 		return allocations	
 
 

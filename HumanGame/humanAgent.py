@@ -17,16 +17,18 @@ class Actions(Enum):
     ACTION_TRANS_DOWN = 2
     ACTION_TRANS_LEFT = 3
     ACTION_ROT90_1 = 4
+    ACTION_CYCLE = 5
 
 class Key():
-    right = 2555904
-    left = 2424832
-    up = 2490368
-    down = 2621440
-    space = 32
+    RIGHT = 2555904
+    LEFT = 2424832
+    UP = 2490368
+    DOWN = 2621440
+    SPACE = 32
+    NEXT = 110 
 class HumanAgent: 
     def __init__(self):
-        self.env = PuzzleEnvironment()
+        self.env = PuzzleEnvironment(2)
         self.s_t = self.env.reset()
         self.R = 0
         self.negativeRewardCount = 0
@@ -55,10 +57,11 @@ class HumanAgent:
         imgData = self.startImg
         while True:
             cv2.imshow('puzzle',imgData)
-            key = cv2.waitKey(20)
+            key = cv2.waitKey(500)
             if key == 27: # exit on ESC
                 return False
             action = self.getActionFromUserInput(key)
+            
             if action != -1 :
                 self.s_t, reward, done, info = self.env.step(action)
                 imgData = self.env.render()
@@ -79,16 +82,18 @@ class HumanAgent:
 
        
     def getActionFromUserInput(self, input):
-        if input == Key.up:
+        if input == Key.UP:
             return Actions.ACTION_TRANS_UP.value
-        if input == Key.down:
+        if input == Key.DOWN:
             return Actions.ACTION_TRANS_DOWN.value
-        if input == Key.left:
+        if input == Key.LEFT:
             return Actions.ACTION_TRANS_LEFT.value
-        if input == Key.right:
+        if input == Key.RIGHT:
             return Actions.ACTION_TRANS_RIGHT.value
-        if input == Key.space:
+        if input == Key.SPACE:
             return Actions.ACTION_ROT90_1.value
+        if input == Key.NEXT:
+            return Actions.ACTION_CYCLE.value
         # if str(input) == "'r'": 
         #     return Actions.ACTION_ROT90_1.value
         return -1

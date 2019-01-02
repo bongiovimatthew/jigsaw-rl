@@ -25,6 +25,8 @@ parser.add_argument('--gamma', type=float, default=0.99, metavar='F',
         help='the discounting factor (default:0.99)')
 parser.add_argument('--lr', type=float, default=0.00025, metavar='F',
         help='the learning rate (default:0.00025)')
+parser.add_argument('--moving-pieces-count', type=int, default=None, metavar='F',
+        help='number of pieces that are dislocated in the puzzle. default is all. ')
 parser.add_argument('--test-mode', action='store_true',
         help='training or evaluation')
 
@@ -33,7 +35,7 @@ args = parser.parse_args()
 # IF TRAIN mode -> train the learners
 
 def executable(process_id):
-    lrn.execute_agent(process_id, args.atari_env, args.t_max, args.game_length, args.T_max, args.epoch_size, args.eval_num, args.gamma, args.lr,args.num_cores)
+    lrn.execute_agent(process_id, args.atari_env, args.t_max, args.game_length, args.T_max, args.epoch_size, args.eval_num, args.gamma, args.lr,args.num_cores,args.moving_pieces_count)
 
 if not args.test_mode:
     
@@ -46,7 +48,7 @@ if not args.test_mode:
         n = args.num_cores
         l = Lock()
 
-        sh = lrn.create_shared(args.atari_env) # list with two lists inside
+        sh = lrn.create_shared(args.moving_pieces_count) # list with two lists inside
                                                # contains the parameters as numpy arrays
         
         pool = Pool(n, initializer = lrn.init_lock_shared, initargs = (l,sh,))
@@ -68,5 +70,5 @@ else:
     
     print ('Evaluation mode.')
     
-    ag = lrn.create_agent_for_evaluation()
+    ag = lrn.create_agent_for_evaluation(args.moving_pieces_count)
     ag.evaluate()    

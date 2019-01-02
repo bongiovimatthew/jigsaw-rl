@@ -26,6 +26,9 @@ class ActionSpace(object):
     def __init__(self, actions):
         self.actions = actions
         self.n = len(actions)
+class PermutationType():
+    ALL = 'all'
+    LAST_ONE = 'one'
 
 class Actions(Enum):
  
@@ -34,9 +37,10 @@ class Actions(Enum):
     ACTION_TRANS_DOWN = 2
     ACTION_TRANS_LEFT = 3
     ACTION_ROT90_1 = 4
-    ACTION_ROT90_2 = 6
-    ACTION_ROT90_3 = 7
-    ACTION_CYCLE = 10 
+    ACTION_CYCLE = 5
+    # ACTION_ROT90_2 = 6
+    # ACTION_ROT90_3 = 7
+    # ACTION_CYCLE = 10 
 
 class PuzzleEnvironment(Environment):
     CORRECT_IMAGE_SCORE = 1 # 4
@@ -60,22 +64,27 @@ class PuzzleEnvironment(Environment):
     # 6 - translate down 
     # 7 - translate left 
 
-    MAX_ACTIONS_NUM = 5
+    
 
-    def __init__(self):
-        self.oldScore = 0
-        self.debugMode = False
-        self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
-
+    def __init__(self,moving_pieces_count=None):
         # Generate the puzzle 
         factory = PuzzleFactory()
-        puzzle = factory.generatePuzzle('images\\green_square.jpg', 2, 2)
+        puzzle = factory.generatePuzzle('images\\rainier.JPG', 2, 2)
         # self.pieceState = factory.createRandomPuzzlePieceArray(puzzle)
         self.pieceState = factory.getPuzzlePieceArray(puzzle)
+        self.moving_pieces_count = moving_pieces_count if moving_pieces_count else 4
+
+        self.oldScore = 0
+        self.debugMode = False
+        self.MAX_ACTIONS_NUM = 5 if self.moving_pieces_count==1 else 6
+        self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
+
         # pieceState is an array of PuzzlePiece objects
         self.puzzle = puzzle
-
         self.setupEnvironment()
+
+        self.debugMode = False
+        
 
 
     def reset(self):
@@ -84,9 +93,10 @@ class PuzzleEnvironment(Environment):
 
     def setupEnvironment(self):
         # Contains the relative position of the piece IDs in the current state 
-        allocations = PuzzleFactory.getRandomAllocationOnlyOnePiece(self.puzzle,self.pieceState)
-
-        self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState,allocations)
+        cutAllocation = PuzzleFactory.getRandomCutAllocation(self.puzzle,self.pieceState,self.moving_pieces_count)
+        # else:
+        #     allocations = PuzzleFactory.getRandomAllocation(self.puzzle,self.pieceState)
+        self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState,cutAllocation)
 
         self.currentPieceIndex = len(self.pieceState)-1  # only last piece gets to move
         self.oldScore = self.getScoreOfCurrentState()
@@ -159,9 +169,11 @@ class PuzzleEnvironment(Environment):
                 piece.overlappedScore = PuzzleEnvironment.INCORRECT_OVERLAY_SCORE
     def _convert_state(self, action):
 
-        # if action == Actions.ACTION_CYCLE.value: 
-        #     self.currentPieceIndex = (self.currentPieceIndex + 1) % len(self.pieceState)
-        if action >= Actions.ACTION_ROT90_1.value and action <= Actions.ACTION_ROT90_3.value:
+        if action == Actions.ACTION_CYCLE.value: 
+            self.currentPieceIndex = (self.currentPieceIndex + 1)% len(self.pieceState)
+            if self.currentPieceIndex == 0: 
+                self.currentPieceIndex = len(self.pieceState)-self.moving_pieces_count 
+        if action >= Actions.ACTION_ROT90_1.value and action <= Actions.ACTION_ROT90_1.value:
             currentPiece = self.pieceState[self.currentPieceIndex]
             numRotations = action-3
             self._rotate_piece(currentPiece.id, numRotations,overlapAllowed=False) 
@@ -198,7 +210,7 @@ class PuzzleEnvironment(Environment):
             reward = -1 
         else:
             reward = 0 
-        # reward = 1 if self.isMaxReward(currentScore) else 0 
+
 
         info = {'score':currentScore, 'oldScore': tempOldScore, 'action': action, 'step': self.stepCount}
 
