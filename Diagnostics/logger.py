@@ -27,7 +27,7 @@ class Logger:
     path_state_images = 'files/state_images/'
     path_metrics = 'files/metrics/'
     path_graphs = 'files/graphs/'
-    def create_folders(lock, atari_name, cores, tmax, game_length, Tmax, C, gamma, lr):
+    def create_folders(lock, args):
         lock.acquire()
         # try:
         if not os.path.exists(Logger.root):
@@ -45,7 +45,7 @@ class Logger:
             os.makedirs(Logger.path_metrics)
             os.makedirs(Logger.path_graphs)
 
-        metadata = [time.strftime("%d/%m/%y"), atari_name, 'cores '+str(cores), 'tmax '+str(tmax), 'gl '+str(game_length), 'Tmax '+str(Tmax), 'C '+str(C), 'gamma '+str(gamma), 'lr '+str(lr)]
+        metadata = [time.strftime("%d/%m/%y"),  'cores '+str(args.num_cores), 'tmax '+str(args.t_max), 'gl '+str(args.game_length), 'Tmax '+str(args.T_max), 'gamma '+str(args.gamma), 'lr '+str(args.lr)]
         with open(Logger.path_meta, "w") as f:
             f.write(json.dumps(metadata))
         lock.release()

@@ -20,8 +20,8 @@ def init_lock_shared(l, sh):
 
 # Easier to call these functions from other modules.
 
-def create_shared(cut_pieces_num):
-    temp_env = PuzzleEnvironment(cut_pieces_num)
+def create_shared(moving_pieces_count):
+    temp_env = PuzzleEnvironment(moving_pieces_count)
     # temp_env = gym.make(env_name)
     num_actions = temp_env.action_space.n
     net = dnn.DeepNet(num_actions, 0)
@@ -32,24 +32,24 @@ def create_shared(cut_pieces_num):
     
     return [prms_pi, prms_v]
 
-def execute_agent(learner_id, puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num):
-    agent = create_agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num)
+def execute_agent(learner_id,args):
+    agent = create_agent(args)
     agent.run(learner_id)
         
-def create_agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num):
-    agent = Agent(puzzle_env, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num)
+def create_agent(args):
+    agent = Agent(args)
     # logger.load_model(agent.get_net())  # pick up where it's left of
 
     return agent
     
-def create_agent_for_evaluation(cut_pieces_num):
+def create_agent_for_evaluation(args):
     
     # read the json with data (environemnt name and dnn model)
     
     # meta_data = logger.read_metadata()
     # env_name = meta_data[1]
     
-    agent = Agent("puzzle", 50000, 50000, 0, 0, 0, 0, 0,1,cut_pieces_num) 
+    agent = Agent(args) 
     logger.load_model(agent.get_net())
     
     return agent
@@ -58,9 +58,9 @@ def create_agent_for_evaluation(cut_pieces_num):
 # The last four always forms the state. Rewards and actions also saved.
 class OutFiles:
     def __init__(self,configs):
-        self.perf_train = logger.path_graphs + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{cut_pieces_num}.jpg".format(**configs) 
-        self.perf_eval = logger.path_metrics + "eval_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{cut_pieces_num}.jpg".format(**configs)
-        self.metrics_log = logger.path_metrics + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{cut_pieces_num}.tsv".format(**configs)
+        self.perf_train = logger.path_graphs + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{moving_pieces_count}.jpg".format(**configs) 
+        self.perf_eval = logger.path_metrics + "eval_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{moving_pieces_count}.jpg".format(**configs)
+        self.metrics_log = logger.path_metrics + "train_learner_id_{learner_id}_T_max{T_max}_lr{lr}_gamma{gamma}_t_max{t_max}_cores{cores}_missing_pieces{moving_pieces_count}.tsv".format(**configs)
 
 class Queue:
     
@@ -157,25 +157,26 @@ def exponential_decay(step, total, initial, final, rate=1e-4, stairs=None):
 
 class Agent:
     
-    def __init__(self, env_name, t_max, game_length, T_max, epoch_size, eval_num, gamma, lr,num_cores,cut_pieces_num):
-        
+    def __init__(self, args):
         self.t_start = 0
         self.t = 0
         self.counter = 0 
-        self.t_max = t_max
-        self.lr = lr 
-        self.game_length = game_length
+        self.t_max = args.t_max
+        self.lr = args.lr 
+        self.game_length = args.game_length
         self.T = 0
-        self.T_max = T_max
-        self.num_cores = num_cores
-        self.epoch_size = epoch_size
-        self.eval_num = eval_num
-        self.gamma = gamma
-        self.cut_pieces_num = cut_pieces_num
+        self.T_max = args.T_max
+        self.num_cores = args.num_cores
+        self.epoch_size = args.epoch_size
+        self.eval_num = args.eval_num
+        self.gamma = args.gamma
+        self.display = args.display
+        self.moving_pieces_count = args.moving_pieces_count
         self.is_terminal = False
-        self.env = PuzzleEnvironment(cut_pieces_num)
-        self.queue = Queue(game_length, 84) 
-        self.net = dnn.DeepNet(self.env.action_space.n, lr)
+        self.env = PuzzleEnvironment(self.moving_pieces_count)
+
+        self.queue = Queue(self.game_length, 84) 
+        self.net = dnn.DeepNet(self.env.action_space.n, self.lr)
         self.s_t = env_reset(self.env, self.queue)
         
         self.R = 0
@@ -205,9 +206,9 @@ class Agent:
     def run(self, learner_id):
         
         self.learner_id = learner_id
-        configs = {'learner_id':self.learner_id,'T_max':self.T_max, 'lr':self.lr, 'gamma':self.gamma,'t_max':self.t_max,'cores':self.num_cores,'cut_pieces_num':self.cut_pieces_num}
+        configs = {'learner_id':self.learner_id,'T_max':self.T_max, 'lr':self.lr, 'gamma':self.gamma,'t_max':self.t_max,'cores':self.num_cores,'moving_pieces_count':self.moving_pieces_count}
         outfiles = OutFiles(configs)
-        if self.learner_id == 0: 
+        if self.learner_id == 0 and self.display: 
             cv2.namedWindow('puzzle',cv2.WINDOW_NORMAL)
             cv2.resizeWindow('puzzle', 600,600)
         while self.T < self.T_max:
@@ -272,7 +273,7 @@ class Agent:
 
         self.metrics["negativeRewardCount"] = np.sum([v for k,v in self.reward_count.items() if k < 0]) #self.negativeRewardCount
         self.metrics["zeroRewardCount"] = self.reward_count.get(0)
-        self.metrics["terminal_reward_count"] = self.reward_count.get(1)
+        self.metrics["terminal_reward_count"] = self.reward_count.get(10)
         self.metrics["average_rewards"] = self.average_rewards
         self.metrics["averageScore"] = self.averageScore
         self.metrics["slidingWindowAverageScore"] = self.slidingWindowAverageScore
@@ -300,7 +301,7 @@ class Agent:
         self.loss_on_v = []
         self.loss_on_p = []
     def play_game_for_a_while(self):
-    
+
         if self.is_terminal:
             self.s_t = env_reset(self.env, self.queue)
             self.t = 0
@@ -308,7 +309,8 @@ class Agent:
             
         self.t_start = self.t
         
-        self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
+        # self.epsilon = max(0.1, 1.0 - (((1.0 - 0.1)*1)/self.T_max) * self.T) # first decreasing, then it is constant
+        self.epsilon = 1 
         # self.epsilon = exponential_decay(self.T, self.T_max, 1.0, 0.05, rate=.5)
         while not (self.is_terminal or self.t - self.t_start == self.t_max):
 
@@ -321,7 +323,7 @@ class Agent:
             # else:
             action = dnn.action_with_exploration(self.net, self.s_t, self.epsilon)
             self.s_t, info = env_step(self.env, self.queue, action)
-            if self.learner_id == 0:
+            if (self.learner_id == 0 and self.display):
                 cv2.imshow('puzzle',self.env.render())
                 cv2.waitKey(5) 
             self.update_metrics(info, action)
@@ -415,17 +417,16 @@ class Agent:
         
         print ('Start evaluating.')
         while True:
-            env = PuzzleEnvironment()
+            env = PuzzleEnvironment(self.moving_pieces_count)
             state = env_reset(env, self.queue)
+            cv2.imshow('puzzle',env.render())
+            cv2.waitKey(500)  
             finished = False
             cntr = 0
             rewards = []
             cv2.namedWindow('puzzle',cv2.WINDOW_NORMAL)
             cv2.resizeWindow('puzzle', 600,600)
             while not (finished or cntr == self.game_length):
-                # img = Image.fromarray(env.render(), 'RGB')
-
-
                 action = dnn.action(self.net, state)
                 state, info = env_step(env, self.queue, action)
                 rewards.append(self.queue.get_recent_reward())

@@ -26,9 +26,6 @@ class ActionSpace(object):
     def __init__(self, actions):
         self.actions = actions
         self.n = len(actions)
-class PermutationType():
-    ALL = 'all'
-    LAST_ONE = 'one'
 
 class Actions(Enum):
  
@@ -78,7 +75,7 @@ class PuzzleEnvironment(Environment):
         self.debugMode = False
         self.MAX_ACTIONS_NUM = 5 if self.moving_pieces_count==1 else 6
         self.action_space = ActionSpace(range(self.MAX_ACTIONS_NUM))
-
+        self.lastPieceLoc = None
         # pieceState is an array of PuzzlePiece objects
         self.puzzle = puzzle
         self.setupEnvironment()
@@ -94,8 +91,10 @@ class PuzzleEnvironment(Environment):
     def setupEnvironment(self):
         # Contains the relative position of the piece IDs in the current state 
         cutAllocation = PuzzleFactory.getRandomCutAllocation(self.puzzle,self.pieceState,self.moving_pieces_count)
+        self.lastPieceLoc = cutAllocation[-1]
         # else:
         #     allocations = PuzzleFactory.getRandomAllocation(self.puzzle,self.pieceState)
+        # rdb.set_trace()
         self.guidArray = PuzzleFactory.placePiecesOnBoard(self.puzzle, self.pieceState,cutAllocation)
 
         self.currentPieceIndex = len(self.pieceState)-1  # only last piece gets to move
@@ -198,7 +197,7 @@ class PuzzleEnvironment(Environment):
         currentScore = self.getScoreOfCurrentState()
         # rdb.set_trace()
 
-        done = self.isMaxReward(currentScore) or (self.stepCount > 1000)
+        done = self.isMaxReward(currentScore) or (self.stepCount > 100000)
 
         tempOldScore = self.oldScore
         self.oldScore = currentScore

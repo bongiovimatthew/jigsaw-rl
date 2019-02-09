@@ -209,7 +209,7 @@ class PuzzleFactory:
 			while not done:
 				coords_x = random.randint(0, sideDimension - 1)
 				coords_y = random.randint(0, sideDimension - 1)	
-				if (coords_x,coords_y) not in occupied:
+				if (coords_y,coords_x) not in occupied:
 					allocations.append((coords_y,coords_x))
 					occupied[(coords_y,coords_x)] = 1
 					done = True

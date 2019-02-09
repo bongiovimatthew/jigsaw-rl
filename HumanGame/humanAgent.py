@@ -28,7 +28,7 @@ class Key():
     NEXT = 110 
 class HumanAgent: 
     def __init__(self):
-        self.env = PuzzleEnvironment(2)
+        self.env = PuzzleEnvironment(1)
         self.s_t = self.env.reset()
         self.R = 0
         self.negativeRewardCount = 0
